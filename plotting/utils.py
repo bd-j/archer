@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import numpy as np
 from astropy.io import fits
 
@@ -9,22 +11,22 @@ vmap = {"x": "u",
         "z": "w"}
 
 
-def h3_quiver(cat, zz, vtot=1.0, show="xy", ax=None):
+def h3_quiver(cat, zz, vtot=1.0, show="xy", ax=None, scale=20):
     x, y = [cat["{}_gal".format(s.upper())] for s in show]
     vx, vy = [cat["V{}_gal".format(s)] for s in show]
     cb = ax.quiver(x, y, vx / vtot, vy / vtot, zz,
                    angles="xy", pivot="mid", cmap="viridis",
-                   scale_units="height", scale=20)
+                   scale_units="height", scale=scale)
 
     return cb
 
 
-def lm_quiver(cat, zz, vtot=1.0, show="xy", ax=None):
+def lm_quiver(cat, zz, vtot=1.0, show="xy", ax=None, scale=20):
     x, y = [cat["{}gc".format(s)] for s in show]
     vx, vy = [cat[vmap[s]] for s in show]
     cb = ax.quiver(x, y, vx / vtot, vy / vtot, zz,
                    angles="xy", pivot="mid", cmap="viridis",
-                   scale_units="height", scale=20)
+                   scale_units="height", scale=scale)
 
     return cb
 
@@ -32,7 +34,7 @@ def lm_quiver(cat, zz, vtot=1.0, show="xy", ax=None):
 def read_lm(lmfile):
 
     try:
-        lm = fits.getdata(lmockfile)
+        lm = fits.getdata(lmfile)
         # switch colums
         for a in "xyz":
             lm["{}gc".format(a)] = lm["{}_gal".format(a.upper())]

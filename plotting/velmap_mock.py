@@ -1,3 +1,14 @@
+#!/usr/bin/python
+
+"""Script to plot velocity vectors for H3 stars (and Sgr mocks) in X-Z, Y-Z 
+projections.
+
+Also plots:
+ * Vtheta-Vr
+ * v_gsr vs \Lambda_sgr
+ * B_sgr vs \Lambda_sgr
+"""
+
 import sys
 import numpy as np
 import matplotlib.pyplot as pl
@@ -13,7 +24,7 @@ if __name__ == "__main__":
               "../data/mocks/LM10/LM10_h3_noisy_v1.fits"]
     rcat_vers = "1.4"
     rcatfile = "../data/catalogs/rcat_V{}_MSG.fits".format(rcat_vers)
-    lmockfile, noisiness = lmocks[2], "noisy"
+    lmockfile, noisiness = lmocks[1], "noisless"
 
     # --- L & M 2010 model ---
 
@@ -42,6 +53,7 @@ if __name__ == "__main__":
     good = ((rcat["logg"] < 3.5) & np.isfinite(rcat["Z_gal"]) &
             (rcat["FLAG"] == 0) & np.isfinite(vtot) & (vtot < 3000))
     sgr = np.abs(rcat["Sgr_B"]) < 40
+    far = rcat["R_gal"] > 20
     etot = rcat["E_tot_pot1"]
     sel = good #& (etot > -130000) & (etot < -50000)
     sel = np.arange(len(sel))[sel]
@@ -148,8 +160,9 @@ if __name__ == "__main__":
                     vmin=-2, vmax=3, cmap="viridis")
 
     lax = laxes[2]
-    lbh = lax.scatter(rcat[good & sgr]["sgr_l"], rcat["V_gsr"][good & sgr], 
-                    c=rcat["dist_adpt"][good & sgr], marker="o", alpha=0.7, s=4,
+    vsel = good & sgr & far
+    lbh = lax.scatter(rcat[vsel]["sgr_l"], rcat["V_gsr"][vsel], 
+                    c=rcat["dist_adpt"][vsel], marker="o", alpha=0.7, s=4,
                     vmin=0, vmax=100, cmap="viridis")
 
     lax.set_ylim(-350, 350)
@@ -160,7 +173,8 @@ if __name__ == "__main__":
     [ax.set_xlabel(r"$\Lambda_{Sgr}$") for ax in laxes]
     [ax.set_ylabel(r"$V_{GSR}$") for ax in laxes]
     [ax.yaxis.set_tick_params(which='both', labelbottom=True) 
-    for ax in laxes[1:]]
+     for ax in laxes[1:]]
+    [ax.invert_xaxis() for ax in laxes]
 
     lfig.colorbar(lbh, ax=laxes)
     lfig.savefig("figures/sgr_lvgsr_lm10_h3.png")
