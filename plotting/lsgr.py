@@ -149,10 +149,20 @@ if __name__ == "__main__":
     feh = np.clip(rcat["feh"], -2.0, 0.1)
     good = ((rcat["logg"] < 3.5) & np.isfinite(rcat["Z_gal"]) &
             (rcat["FLAG"] == 0) & np.isfinite(vtot) & (vtot < 3000))
+    extra = (rcat["Vrot"] < 5) & (rcat["SNR"] > 3)
+    good = good & extra
     sgr = np.abs(rcat["Sgr_B"]) < 40
-    far = rcat["R_gal"] > 20
-    etot = rcat["E_tot_pot1"]
-    theta_thresh = 0.75
+    far = rcat["R_gal"] > 10
+    etot = rcat["E_tot_pot2"]
+    theta_thresh = 0.8
+    aligned = (h3Theta > theta_thresh)
+    clump = (
+             (h3Proj > 1000) & (h3Proj < 4000) &
+             (etot > -175000) & (etot < -140000) &
+             #(h3Proj > 5000) & (h3Proj < 10000) & 
+             #(etot > -88500) & (etot < -75500) &
+             aligned & good
+             )
     
     
     np.random.seed(101)
@@ -169,8 +179,8 @@ if __name__ == "__main__":
         dax.hist(lmTheta[psel], bins=100, range=(-1, 1), 
                  alpha=0.5, label="LM10 peri #{}".format(peri.max()-p))
     hfig, hax = pl.subplots()
-    hax.hist(h3Theta[good], bins=100, range=(-1, 1), alpha=0.3, color="maroon", label="H3")
-    [ax.set_xlabel(r"$\cos \theta_{Sgr}$") for ax in [hax, dax]]
+    hax.hist(h3Theta[good & far], bins=100, range=(-1, 1), alpha=0.3, color="maroon", label="H3")
+    [ax.set_xlabel(r"$\cos \phi_{Sgr}$") for ax in [hax, dax]]
     [ax.legend() for ax in [hax, dax]]
 
     dfig.savefig("figures/theta_sgr_dist.lm10{}.png".format(noisiness))
@@ -183,7 +193,7 @@ if __name__ == "__main__":
     projections = ["xz", "xy"]
 
     
-    sel = good & (h3Theta > theta_thresh)
+    sel = good & aligned & far
     fig, axes = pl.subplots(nrow, ncol, sharex=True, sharey="row", figsize=(24, 12.5))
     cbl = [lm_quiver(lm[lmsel], z[lmsel], vtot=vtot_lm[lmsel], show=s, ax=ax, scale=ascale)
            for s, ax, z in zip(projections, axes[:, 0], lcatz)]
@@ -207,10 +217,84 @@ if __name__ == "__main__":
             axes[i, j].set_xlabel(xl.upper())
             axes[i, j].set_ylabel(yl.upper())
 
+    clumpcolor = "orange"
+    axes[1, -1].plot(rcat["X_gal"][clump], rcat["Y_gal"][clump], 'o', 
+                     alpha=0.5, color=clumpcolor)
+    axes[0, -1].plot(rcat["X_gal"][clump], rcat["Z_gal"][clump], 'o', 
+                     alpha=0.5, color=clumpcolor)
+
     #for i in range(2):
     #    c = fig.colorbar(cbh[i], ax=axes[i,:])
     #    c.set_label("yz"[i].upper())
 
     fig.subplots_adjust(hspace=0.15, wspace=0.2)
-
     fig.savefig("figures/sgr_lm10_h3v{}_{}.cutTheta_sgr.png".format(rcat_vers, noisiness), dpi=150)
+    
+    
+    # --- Bifurcation ---
+    stream = good & (rcat["Sgr_l"] > 200) & (rcat["Sgr_l"] < 300)
+    A = stream & (rcat["Sgr_b"] > 0)
+    B = stream & (rcat["Sgr_b"] < 0)
+    
+    
+    # --- E-Lsgr ---
+    efig, eaxes = pl.subplots(1, 2, sharey=True)
+    eax = eaxes[1]
+    eax.plot(h3Proj[good & ~sel], rcat[good & ~sel]["E_tot_pot2"], 'o', alpha=0.4)
+    eax.plot(h3Proj[sel], rcat[sel]["E_tot_pot2"], 'o', alpha=0.4)
+    eax = eaxes[0]
+    eax.scatter(lmProj[lmhsel], lm[lmhsel]["E_tot_pot2"], c=lm[lmhsel]["Pcol"], marker='o', alpha=0.4)
+    
+    [a.set_ylim(-2e5, -5e4) for a in eaxes]
+    [a.set_xlim(-1e4, 2e4) for a in eaxes]
+    
+    # --- Vgsr lambda ----
+
+    lfig, laxes = pl.subplots(1, 3, sharex=True, sharey=True,
+                            figsize=(16, 4))
+
+    lax = laxes[0]
+    lbm = lax.scatter(lm[lmsel]["lambda"], lm[lmsel]["V_gsr"], 
+                    c=lm[lmsel]["Pcol"], marker=".", s=1,
+                    vmin=-2, vmax=3, cmap="viridis")
+    lax = laxes[1]
+    lbm = lax.scatter(lm[lmhsel]["lambda"], lm[lmhsel]["V_gsr"], 
+                    c=lm[lmhsel]["Pcol"], marker="o", alpha=0.7, s=4,
+                    vmin=-2, vmax=3, cmap="viridis")
+
+    lax = laxes[2]
+    vsel = good  & far
+    lbh = lax.scatter(rcat[sel]["sgr_l"], rcat["V_gsr"][sel], 
+                    c=rcat["dist_adpt"][sel], marker="o", alpha=0.7, s=4,
+                    vmin=0, vmax=100, cmap="viridis")
+
+    lax.set_ylim(-350, 350)
+    laxes[0].set_title("LM10")
+    laxes[1].set_title("LM10xH3")
+    laxes[2].set_title("H3")
+
+    [ax.set_xlabel(r"$\Lambda_{Sgr}$") for ax in laxes]
+    [ax.set_ylabel(r"$V_{GSR}$") for ax in laxes]
+    [ax.yaxis.set_tick_params(which='both', labelbottom=True) 
+     for ax in laxes[1:]]
+    [ax.invert_xaxis() for ax in laxes]
+
+    lfig.colorbar(lbh, ax=laxes)
+    
+    
+    # --- FeH ---
+    
+    trail = (good & aligned & 
+             (rcat["sgr_l"] < 150) & (rcat["V_gsr"] < 0) &
+             (etot > -150000))
+    
+    lead = (good & aligned & 
+             (rcat["sgr_l"] > 200) & (rcat["V_gsr"] < 25) & (rcat["V_gsr"] > -140) &
+             (etot > -150000))
+    
+    zfig, zax = pl.subplots()
+    zax.hist(feh[trail], bins=30, alpha=0.5, label="Trailing")
+    zax.hist(feh[lead], bins=30, alpha=0.5, label="Leading")
+    zax.set_xlim(-3, 0.0)
+    zax.legend()
+    zax.set_xlabel(r"[Fe/H]")
