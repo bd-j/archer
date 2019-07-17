@@ -162,16 +162,19 @@ if __name__ == "__main__":
     lmhsel = (lm["in_h3"] == 1) & (np.random.uniform(0, 1, len(lm)) < 0.5) #& (lmTheta > theta_thresh)
     
     import matplotlib.pyplot as pl
-    fig, dax = pl.subplots()
+    dfig, dax = pl.subplots()
     peri = np.unique(lm["Pcol"])
     for p in peri:
         psel = lmhsel & (lm["Pcol"] == p)
         dax.hist(lmTheta[psel], bins=100, range=(-1, 1), 
                  alpha=0.5, label="LM10 peri #{}".format(peri.max()-p))
-    fig, hax = pl.subplots()
+    hfig, hax = pl.subplots()
     hax.hist(h3Theta[good], bins=100, range=(-1, 1), alpha=0.3, color="maroon", label="H3")
     [ax.set_xlabel(r"$\cos \theta_{Sgr}$") for ax in [hax, dax]]
     [ax.legend() for ax in [hax, dax]]
+
+    dfig.savefig("figures/theta_sgr_dist.lm10{}.png".format(noisiness))
+    hfig.savefig("figures/theta_sgr_dist.h3v{}.png".format(rcat_vers))
 
     lcatz = [lm["Pcol"], lm["Pcol"]]
     rcatz = [feh, feh]
@@ -189,9 +192,9 @@ if __name__ == "__main__":
     cbh = [h3_quiver(rcat[sel], z[sel], vtot=vtot[sel], show=s, ax=ax, scale=ascale)
            for s, ax, z in zip(projections, axes[:, 2], rcatz)]
 
-    axes[0, 0].set_xlim(-90, 40)
-    axes[0, 0].set_ylim(-80, 100)
-    axes[1, 0].set_ylim(-40, 60)
+    axes[0, 0].set_xlim(-70, 40)
+    axes[0, 0].set_ylim(-80, 80)
+    axes[1, 0].set_ylim(-30, 40)
     [ax.xaxis.set_tick_params(which='both', labelbottom=True) for ax in axes[0, :]]
     [ax.yaxis.set_tick_params(which='both', labelbottom=True) for ax in axes[:, 1:].flat]
 
@@ -210,4 +213,4 @@ if __name__ == "__main__":
 
     fig.subplots_adjust(hspace=0.15, wspace=0.2)
 
-    fig.savefig("figures/")
+    fig.savefig("figures/sgr_lm10_h3v{}_{}.cutTheta_sgr.png".format(rcat_vers, noisiness), dpi=150)
