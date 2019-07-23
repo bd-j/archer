@@ -11,24 +11,34 @@ vmap = {"x": "u",
         "z": "w"}
 
 
-def h3_quiver(cat, zz, vtot=1.0, show="xy", ax=None, scale=20):
+def h3_quiver(cat, zz, vtot=1.0, show="xy", ax=None, scale=20, 
+              cmap="viridis", **quiver_kwargs):
     x, y = [cat["{}_gal".format(s.upper())] for s in show]
     vx, vy = [cat["V{}_gal".format(s)] for s in show]
     cb = ax.quiver(x, y, vx / vtot, vy / vtot, zz,
-                   angles="xy", pivot="mid", cmap="viridis",
-                   scale_units="height", scale=scale)
+                   angles="xy", pivot="mid", cmap=cmap,
+                   scale_units="height", scale=scale, **quiver_kwargs)
 
     return cb
 
 
-def lm_quiver(cat, zz, vtot=1.0, show="xy", ax=None, scale=20):
+def lm_quiver(cat, zz, vtot=1.0, show="xy", ax=None, scale=20, 
+              cmap="viridis", **quiver_kwargs):
     x, y = [cat["{}gc".format(s)] for s in show]
     vx, vy = [cat[vmap[s]] for s in show]
     cb = ax.quiver(x, y, vx / vtot, vy / vtot, zz,
-                   angles="xy", pivot="mid", cmap="viridis",
-                   scale_units="height", scale=scale)
+                   angles="xy", pivot="mid", cmap=cmap,
+                   scale_units="height", scale=scale, **quiver_kwargs)
 
     return cb
+
+
+def overplot_clump(axes, subcat, clumpcolor="maroon"):
+    axes[1, -1].plot(subcat["X_gal"], subcat["Y_gal"], 'o', 
+                     alpha=0.5, color=clumpcolor)
+    axes[0, -1].plot(subcat["X_gal"], subcat["Z_gal"], 'o', 
+                     alpha=0.5, color=clumpcolor)
+    return axes
 
 
 def read_lm(lmfile):
