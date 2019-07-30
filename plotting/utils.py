@@ -2,8 +2,14 @@
 
 import numpy as np
 from astropy.io import fits
+import astropy.coordinates as coord
+import astropy.units as u
 
-__all__ = ["h3_quiver", "lm_quiver", "read_lm", "get_sgr"]
+__all__ = ["h3_quiver", "lm_quiver",
+           "read_lm", "read_segue",
+           "get_sgr", "gsr_to_rv",
+           "get_Lsgr", "compute_Lstar", "angle_to_sgr",
+           ]
 
 
 vmap = {"x": "u",
@@ -11,7 +17,7 @@ vmap = {"x": "u",
         "z": "w"}
 
 
-def h3_quiver(cat, zz, vtot=1.0, show="xy", ax=None, scale=20, 
+def h3_quiver(cat, zz, vtot=1.0, show="xy", ax=None, scale=20,
               cmap="viridis", **quiver_kwargs):
     x, y = [cat["{}_gal".format(s.upper())] for s in show]
     vx, vy = [cat["V{}_gal".format(s)] for s in show]
@@ -22,7 +28,7 @@ def h3_quiver(cat, zz, vtot=1.0, show="xy", ax=None, scale=20,
     return cb
 
 
-def lm_quiver(cat, zz, vtot=1.0, show="xy", ax=None, scale=20, 
+def lm_quiver(cat, zz, vtot=1.0, show="xy", ax=None, scale=20,
               cmap="viridis", **quiver_kwargs):
     x, y = [cat["{}gc".format(s)] for s in show]
     vx, vy = [cat[vmap[s]] for s in show]
@@ -34,9 +40,9 @@ def lm_quiver(cat, zz, vtot=1.0, show="xy", ax=None, scale=20,
 
 
 def overplot_clump(axes, subcat, clumpcolor="maroon"):
-    axes[1, -1].plot(subcat["X_gal"], subcat["Y_gal"], 'o', 
+    axes[1, -1].plot(subcat["X_gal"], subcat["Y_gal"], 'o',
                      alpha=0.5, color=clumpcolor)
-    axes[0, -1].plot(subcat["X_gal"], subcat["Z_gal"], 'o', 
+    axes[0, -1].plot(subcat["X_gal"], subcat["Z_gal"], 'o',
                      alpha=0.5, color=clumpcolor)
     return axes
 
@@ -58,17 +64,122 @@ def read_lm(lmfile):
         # Make right handed
         lm["xgc"] = -lm["xgc"]
         lm["u"] = -lm["u"]
-    
+
     return lm
+
+
+def read_segue(seguefile, dtype):
+
+    name_map = {
+                # quantities
+                "RA": "ra",
+                "DEC": "dec",
+                "dist_adpt": "Dist",
+                "GaiaDR2_pmra": "gaia.pmra",
+                "GaiaDR2_pmdec": "gaia.pmdec",
+                "Vrad": "HRV",
+                "std_Vrad": "e_HRV",
+                "feh": "FeH",
+                "SDSS_R": "rmag",
+                } 
+
+    segin = fits.getdata(seguefile)
+    nrow = len(segin)
+    segout = np.zeros(nrow, dtype=dtype)
+
+    for c in segout.dtype.names:
+        if c in segin.dtype.names:
+            segout[c] = segin[c]
+        elif c in name_map:
+            segout[c] = segin[name_map[c]]
+
+    segout["SNR"] = 20.0
+    sgr = get_sgr(segout)
+    segout["Sgr_l"] = np.mod(sgr.Lambda.value, 360.)
+    segout["Sgr_b"] = sgr.Beta.value
+
+    return segout
 
 
 def get_sgr(cat):
     import astropy.units as u
     import astropy.coordinates as coord
     import gala.coordinates as gc
-    ceq = coord.ICRS(ra=cat['GaiaDR2_ra']*u.deg, dec=cat['GaiaDR2_dec']*u.deg,
-                     distance=cat["dist_MS"] * u.kpc,
+    ceq = coord.ICRS(ra=cat['RA']*u.deg, dec=cat['DEC']*u.deg,
+                     distance=cat["dist_adpt"] * u.kpc,
                      pm_ra_cosdec=cat['GaiaDR2_pmra']*u.mas/u.yr, pm_dec=cat['GaiaDR2_pmdec']*u.mas/u.yr,
                      radial_velocity=cat['Vrad']*u.km/u.s)
     sgr = ceq.transform_to(gc.Sagittarius)
     return sgr
+
+
+def get_Lsgr(sgr_icrs, gc_frame=coord.Galactocentric()):
+
+    sgr_gc = sgr_icrs.transform_to(gc_frame)
+    # because cross doesn't work on sgr_gc.cartesian & sgr_gc.velocity
+    xx = np.array([getattr(sgr_gc, a).to("kpc").value for a in "xyz"])
+    p = np.array([getattr(sgr_gc, "v_{}".format(a)).to("km/s").value for a in "xyz"])
+    # units are kpc * km/s
+    L = np.cross(xx, p)
+    return L
+
+
+def compute_Lstar(ra, dec, distance, pmra, pmdec, vlos,
+                  gc_frame=coord.Galactocentric()):
+    ceq = coord.ICRS(ra=ra*u.deg, dec=dec*u.deg,
+                     distance=distance * u.kpc,
+                     pm_ra_cosdec=pmra*u.mas/u.yr, pm_dec=pmdec*u.mas/u.yr,
+                     radial_velocity=vlos*u.km/u.s)
+
+    gc = ceq.transform_to(gc_frame)
+    xx = np.array([getattr(gc, a).to("kpc").value for a in "xyz"]).T
+    p = np.array([getattr(gc, "v_{}".format(a)).to("km/s").value for a in "xyz"]).T
+    Lstar = np.cross(xx, p)
+
+    return Lstar
+
+
+def angle_to_sgr(Lsgr, Lstar):
+    """ Returns the cosine of the angle between Lsgr and Lstar:
+
+        Lstar: shape (nstar, 3)
+    """
+    v1u = Lsgr / np.linalg.norm(Lsgr)
+    v2u = Lstar.T / np.linalg.norm(Lstar, axis=-1)
+    costheta = np.dot(v1u, v2u)
+    projection = np.linalg.norm(Lstar, axis=-1) * costheta
+    return costheta, projection
+
+
+def gsr_to_rv(vgsr, ra, dec, dist, gc_frame=coord.Galactocentric()):
+    """Transform a barycentric radial velocity to the Galactic Standard of Rest
+    (GSR).
+
+    The input radial velocity must be passed in as a
+
+    Parameters
+    ----------
+    c : `~astropy.coordinates.BaseCoordinateFrame` subclass instance
+        The radial velocity, associated with a sky coordinates, to be
+        transformed.
+    v_sun : `~astropy.units.Quantity` (optional)
+        The 3D velocity of the solar system barycenter in the GSR frame.
+        Defaults to the same solar motion as in the
+        `~astropy.coordinates.Galactocentric` frame.
+
+    Returns
+    -------
+    v_gsr : `~astropy.units.Quantity`
+        The input radial velocity transformed to a GSR frame.
+
+    """
+    c = coord.SkyCoord(ra=ra*u.deg, dec=dec*u.deg, distance=dist*u.kpc)
+    v_sun = gc_frame.galcen_v_sun.to_cartesian()
+
+    gal = c.transform_to(gc_frame)
+    cart_data = gal.data.to_cartesian()
+    unit_vector = cart_data / cart_data.norm()
+
+    v_proj = v_sun.dot(unit_vector)
+
+    return vgsr*u.km/u.s - v_proj
