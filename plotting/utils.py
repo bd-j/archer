@@ -7,14 +7,65 @@ import astropy.units as u
 
 __all__ = ["h3_quiver", "lm_quiver",
            "read_lm", "read_segue",
+           "get_values",
            "get_sgr", "gsr_to_rv",
            "get_Lsgr", "compute_Lstar", "angle_to_sgr",
+           "v_sun_law10", "gc_frame_law10", "sgr_law10", "sgr_fritz18"
            ]
 
 
 vmap = {"x": "u",
         "y": "v",
         "z": "w"}
+
+
+v_sun_law10 = coord.CartesianDifferential([11.1, 220, 7.25]*u.km/u.s)
+gc_frame_law10 = coord.Galactocentric(galcen_distance=8.0*u.kpc,
+                                      z_sun=0*u.pc,
+                                      galcen_v_sun=v_sun_law10)
+
+sgr_law10 = coord.SkyCoord(ra=283.7629*u.deg, dec=-30.4783*u.deg,
+                           distance=28.0*u.kpc,
+                           pm_ra_cosdec=-2.45*u.mas/u.yr, 
+                           pm_dec=-1.30*u.mas/u.yr,
+                           radial_velocity=171*u.km/u.s)
+
+sgr_fritz18 = coord.SkyCoord(ra=283.7629*u.deg, dec=-30.4783*u.deg,
+                             distance=26.6*u.kpc,
+                             pm_ra_cosdec=-2.736*u.mas/u.yr, 
+                             pm_dec=-1.357*u.mas/u.yr,
+                             radial_velocity=140*u.km/u.s)
+
+
+
+lmcols = {"ra": "ra", "dec": "dec",
+          "pmra": "mua", "pmdec": "mud",
+          "dist": "dist"}
+rcatcols = {"ra": "RA", "dec": "DEC",
+            "pmra": "GaiaDR2_pmra", "pmdec": "GaiaDR2_pmdec",
+            "dist": "dist_adpt"}
+
+
+def get_values(cat, sgr=sgr_law10, frame=gc_frame_law10):
+    if "mua" in cat.dtype.names:
+        # LM10
+        cols = lmcols
+        vlos = gsr_to_rv(cat["v"], cat["ra"], cat["dec"], cat["dist"], 
+                         gc_frame=frame)
+        vlos = vlos.value
+    else:
+        cols = rcatcols
+        vlos = cat["Vrad"]
+
+    Lsgr = get_Lsgr(sgr, gc_frame=frame)
+    lstar = compute_Lstar(cat[cols["ra"]], cat[cols["dec"]], cat[cols["dist"]],
+                          cat[cols["pmra"]], cat[cols["pmdec"]], vlos,
+                          gc_frame=frame)
+    phi_sgr, lsgr = angle_to_sgr(Lsgr, lstar)
+    lx, ly, lz = cat["Lx"], cat["Ly"], cat["Lz"]
+    etot = cat["E_tot_pot2"]
+
+    return etot, lx, ly, lz, phi_sgr, lsgr
 
 
 def h3_quiver(cat, zz, vtot=1.0, show="xy", ax=None, scale=20,
@@ -183,3 +234,6 @@ def gsr_to_rv(vgsr, ra, dec, dist, gc_frame=coord.Galactocentric()):
     v_proj = v_sun.dot(unit_vector)
 
     return vgsr*u.km/u.s - v_proj
+
+
+

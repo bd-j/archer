@@ -18,26 +18,10 @@ import gala.coordinates as gc
 from utils import read_lm, read_segue
 from utils import lm_quiver, h3_quiver, overplot_clump
 from utils import get_Lsgr, compute_Lstar, angle_to_sgr, gsr_to_rv
+from utils import gc_frame_law10, sgr_law10, sgr_fritz18
+
 
 rcParams["font.family"] = "serif"
-
-v_sun_law10 = coord.CartesianDifferential([11.1, 220, 7.25]*u.km/u.s)
-gc_frame_law10 = coord.Galactocentric(galcen_distance=8.0*u.kpc,
-                                      z_sun=0*u.pc,
-                                      galcen_v_sun=v_sun_law10)
-
-sgr_law10 = coord.SkyCoord(ra=283.7629*u.deg, dec=-30.4783*u.deg,
-                           distance=28.0*u.kpc,
-                           pm_ra_cosdec=-2.45*u.mas/u.yr, 
-                           pm_dec=-1.30*u.mas/u.yr,
-                           radial_velocity=171*u.km/u.s)
-
-sgr_fritz18 = coord.SkyCoord(ra=283.7629*u.deg, dec=-30.4783*u.deg,
-                             distance=26.6*u.kpc,
-                             pm_ra_cosdec=-2.736*u.mas/u.yr, 
-                             pm_dec=-1.357*u.mas/u.yr,
-                             radial_velocity=140*u.km/u.s)
-
 
 
 if __name__ == "__main__":
