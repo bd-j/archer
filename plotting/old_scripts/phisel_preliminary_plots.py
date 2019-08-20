@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-"""Script to calculate the angular offset between H3 stars and the 
-Sagittarius dwarf galaxy angular momentum vector. Do it for mocks as well.
+"""Script to make a number of plots for a selection based on angular
+momentum alignment with the Sgr dSph
 """
 
 import sys

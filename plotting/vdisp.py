@@ -3,6 +3,7 @@
 """Script to examine metallicity distributions in Sgr
 """
 
+import sys
 
 import numpy as np
 import matplotlib.pyplot as pl
@@ -17,7 +18,9 @@ if __name__ == "__main__":
     ext = "png"  # "pdf" | "png"
     savefigs = False
     segue_cat = False
+    noisiness  = "noisy"
 
+    lmockfile = "../data/mocks/LM10/LM10_15deg_{}_v5.fits".format(noisiness)
     seguefile = "../data/catalogs/ksegue_gaia_v5.fits"
     rcat_vers = "1_4"
     rcatfile = "../data/catalogs/rcat_V{}_MSG.fits".format(rcat_vers.replace("_", "."))
@@ -98,13 +101,16 @@ if __name__ == "__main__":
                     alpha=0.8, vmin=-200, vmax=25)
     fig.colorbar(cb)
     pl.show()
-    sys.exit()
+    #sys.exit()
 
     lam = rcat["Sgr_l"][sel & trail]
     vgsr = rcat["V_gsr"][sel & trail]
+    
+    #lam = lm["V_gsr"][lmhsel & ]
 
     # --- Smaht fit ---
     alpha_order, beta_order = 3, 2
+
 
     def model_lnlike(lam, vel, alpha, beta, pout=0.0, vmu_bad=-100, vsig_bad=200):
         vmu = np.dot(alpha[::-1], np.vander(lam, len(alpha)).T)
@@ -134,8 +140,8 @@ if __name__ == "__main__":
         return lnlike + lnprior
 
 
-    alpha_min = np.array([0.,  -4., -0.5])
-    alpha_max = np.array([200., 0.1, 0.5])
+    alpha_min = np.array([100., -10., -0.2])
+    alpha_max = np.array([1000., 0.1, 0.2])
     beta_min = np.array( [-50., 0.])
     beta_max = np.array( [50.,  1.0])
     pout_min = np.array( [0.0])
@@ -147,7 +153,6 @@ if __name__ == "__main__":
         b = beta_min + u[na:(na + nb)] * (beta_max - beta_min)
         pout = pout_min + u[-1] * (pout_max - pout_min)
         return np.hstack([a, b, pout])
-
 
     ndim = alpha_order + beta_order + 1
     import dynesty
@@ -162,3 +167,16 @@ if __name__ == "__main__":
     tfig, taxes = dyplot.traceplot(dresults)
     # Plot the 2-D marginalized posteriors.
     cfig, caxes = dyplot.cornerplot(dresults)
+
+    ll = np.arange(0, 150)
+    imax = dresults["logl"].argmax()
+    pmax = dresults["samples"][imax]
+    na, nb = alpha_order, beta_order
+    alpha = pmax[:na]
+    beta = pmax[na: (na + nb)]
+
+    mu = np.dot(alpha[::-1], np.vander(ll, len(alpha)).T)
+    sigma = np.dot(beta[::-1], np.vander(ll, len(beta)).T)
+
+    lax.plot(ll, mu)
+    lax.fill_between(ll, mu-sigma, mu+sigma, alpha=0.5)
