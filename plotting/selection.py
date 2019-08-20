@@ -1,6 +1,6 @@
 #!/usr/bin/python
-
-"""Script to 
+# -*- coding: utf-8 -*-
+"""Script to plot up a Sgr selection
 """
 
 import sys
@@ -48,6 +48,7 @@ if __name__ == "__main__":
 
     # --- Quantity shortcuts ---
     etot, lx, ly, lz, phisgr, lsgr = get_values(rcat, sgr=sgr_law10)
+    feh = rcat["FeH"]
     lmq = get_values(lm, sgr=sgr_law10)
     etot_lm, lx_lm, ly_lm, lz_lm, phisgr_lm, lsgr_lm = lmq
 
@@ -91,15 +92,15 @@ if __name__ == "__main__":
     sel, selname = phisel & lsel & esel, "allsel"
 
     # make a superplot
-    nsel = 3
-    figsize = (9.5, 12)
+    nsel = 2
+    figsize = (12, 8)
     ms = 3
-    fig, axes = pl.subplots(nsel, 2, sharex="row", sharey="row",
+    fig, axes = pl.subplots(2, nsel, sharex="col", sharey="col",
                             figsize=figsize)
 
     # --- lsgr vs phi
     #pfig, paxes = pl.subplots(1, 2, sharey=True, sharex=True)
-    paxes = axes[0, :]
+    paxes = axes[:, 0]
     ax = paxes[0]
     cb = ax.scatter(phisgr_lm[lmr][ro], lsgr_lm[lmr][ro], c=lm["Lmflag"][lmr][ro],
                     marker='+', alpha=0.3, vmin=-2, vmax=3, s=16 )
@@ -111,63 +112,65 @@ if __name__ == "__main__":
     hist2d(phisgr_lm, lsgr_lm, ax=ax, span=[(0, 1), (-10000, 15000)], weights=p)
 
     ax = paxes[1]
-    ax.plot(phisgr[good & ~sel], lsgr[good & ~sel], 'o', markersize=ms, alpha=0.3)
-    ax.plot(phisgr[good & sel], lsgr[good & sel], 'o', markersize=ms, alpha=0.3)
+    ax.plot(phisgr[good & ~sel], lsgr[good & ~sel], 'o', markersize=ms, alpha=0.3, color="grey")
+    ax.scatter(phisgr[good & sel], lsgr[good & sel], c=feh[good & sel],
+               marker='o', s=16, vmin=-2.5, vmax=0, alpha=0.7)
     
     # prettify
     ax.set_ylim(-2000, 15000)
-    paxes[0].set_ylabel(r"$L_{Sgr}$")
-    [ax.set_xlabel(r"$\cos \phi_{Sgr}$") for ax in paxes]
+    [ax.set_ylabel(r"$L_{Sgr}$") for ax in paxes]
+    paxes[1].set_xlabel(r"$\cos \phi_{Sgr}$")# for ax in paxes]
     #[ax.axhline(-lslim, linestyle=":", color="tomato") for ax in paxes]
     [ax.axhline(lslim, linestyle=":", color="tomato") for ax in paxes]
     [ax.axvline(philim, linestyle=":", color="tomato") for ax in paxes]
     #pfig.colorbar(cb, ax=paxes)
-    paxes[0].set_title("LM10")
-    paxes[1].set_title("H3 Giants")
-
+    paxes[0].text(0.1, 0.9, "LM10", transform=paxes[0].transAxes)
+    paxes[1].text(0.1, 0.9, "H3 Giants", transform=paxes[1].transAxes)
 
     # --- E-Lsgr ---
     #efig, eaxes = pl.subplots(1, 2, sharey=True, sharex=True)
-    eaxes = axes[1, :]
-    eax = eaxes[0]
-    ec = eax.scatter(lsgr_lm[lmr][ro], etot_lm[lmr][ro], c=lm["Lmflag"][lmr][ro],
-                     marker='+', alpha=0.3, vmin=-2, vmax=3)
-    ec = eax.scatter(lsgr_lm[lmhsel][ho], etot_lm[lmhsel][ho], c=lm["Lmflag"][lmhsel][ho],
-                     marker='o', alpha=0.3, vmin=-2, vmax=3, s=14,)
-    eax = eaxes[1]
-    eax.plot(lsgr[good & ~sel], etot[good & ~sel], 'o', markersize=ms, alpha=0.3, label="H3")
-    eax.plot(lsgr[good & sel], etot[good & sel], 'o', markersize=ms, alpha=0.3, label="H3 Selected")
+    #eaxes = axes[1, :]
+    #eax = eaxes[0]
+    #ec = eax.scatter(lsgr_lm[lmr][ro], etot_lm[lmr][ro], c=lm["Lmflag"][lmr][ro],
+    #                 marker='+', alpha=0.3, vmin=-2, vmax=3)
+    #ec = eax.scatter(lsgr_lm[lmhsel][ho], etot_lm[lmhsel][ho], c=lm["Lmflag"][lmhsel][ho],
+    #                 marker='o', alpha=0.3, vmin=-2, vmax=3, s=14,)
+    #eax = eaxes[1]
+    #eax.plot(lsgr[good & ~sel], etot[good & ~sel], 'o', markersize=ms, alpha=0.3, label="H3")
+    #eax.plot(lsgr[good & sel], etot[good & sel], 'o', markersize=ms, alpha=0.3, label="H3 Selected")
     
     # Prettify
-    [a.set_ylim(-2e5, -5e4) for a in eaxes]
-    [a.set_xlim(-1e4, 2e4) for a in eaxes]
-    [a.set_xlabel(r"$L_{sgr}$") for a in eaxes]
-    eaxes[0].set_ylabel(r"$E_{tot}$")
-    [ax.axvline(lslim, linestyle=":", color="tomato") for ax in eaxes]
-    [ax.axhline(elim, linestyle=":", color="tomato") for ax in eaxes]
+    #[a.set_ylim(-2e5, -5e4) for a in eaxes]
+    #[a.set_xlim(-1e4, 2e4) for a in eaxes]
+    #[a.set_xlabel(r"$L_{sgr}$") for a in eaxes]
+    #eaxes[0].set_ylabel(r"$E_{tot}$")
+    #[ax.axvline(lslim, linestyle=":", color="tomato") for ax in eaxes]
+    #[ax.axhline(elim, linestyle=":", color="tomato") for ax in eaxes]
 
 
     # --- Lx - Ly ---
     #lfig, laxes = pl.subplots(1, 2, sharey=True, sharex=True)
-    laxes = axes[2, :]
+    laxes = axes[:, 1]
     ax = laxes[0]
     lc = ax.scatter(lz_lm[lmr][ro], ly_lm[lmr][ro], c=lm["Lmflag"][lmr][ro],
                     marker="+", alpha=0.3, vmin=-2, vmax=3)
     lc = ax.scatter(lz_lm[lmhsel][ho], ly_lm[lmhsel][ho], c=lm["Lmflag"][lmhsel][ho],
                     marker="o", alpha=0.3, vmin=-2, vmax=3, s=14)
     ax = laxes[1]
-    ax.plot(lz[good & ~sel], ly[good & ~sel], 'o', markersize=ms, alpha=0.3)
-    ax.plot(lz[good & sel], ly[good & sel], 'o', markersize=ms, alpha=0.3)
+    ax.plot(lz[good & ~sel], ly[good & ~sel], 'o', markersize=ms, alpha=0.3, color='grey')
+    ax.scatter(lz[good & sel], ly[good & sel], c=feh[good & sel], 
+               marker='o', s=16, vmin=-2.5, vmax=0.0, alpha=0.7)
     
     # prettify
-    laxes[0].set_ylabel(r"$L_y$")
-    [ax.set_xlabel(r"$L_z$") for ax in laxes]
+    [ax.set_ylabel(r"$L_y$")  for ax in laxes]
+    laxes[1].set_xlabel(r"$L_z$")
     laxes[0].set_ylim(-14000, 10000)
     laxes[0].set_xlim(-10000, 10000)
     [ax.plot(y, x, linestyle=":", color="tomato", linewidth=3) for ax in laxes]
 
 
     if savefigs:
+        fig.tight_layout()
         names = data_name, noisiness, selname, ext
         fig.savefig("figures/selection_{}_{}_{}.{}".format(*names), dpi=300)
         pl.close(fig)
@@ -188,7 +191,6 @@ if __name__ == "__main__":
     ax.set_ylim(-300, 300)
     vaxes[0].set_ylabel(r"$V_{GSR}$")
     [ax.set_xlabel(r"$\Lambda_{Sgr}$") for ax in vaxes]
-    
 
     # --- polar sky position ---
 
@@ -206,7 +208,7 @@ if __name__ == "__main__":
     norm = colors.Normalize(vmin=-1., vmax=1., clip=False)
     lcatz = [phisgr_lm, phisgr_lm]
     vtot_lm = np.sqrt(lm["u"]**2 + lm["v"]**2 + lm["w"]**2)
-    
+
     sel = np.random.uniform(size=len(lm)) < 0.2
     cbl = [lm_quiver(lm[sel], z[sel], vtot=vtot_lm[sel], show=s, ax=ax, 
                      scale=ascale, cmap=cmap, norm=norm)

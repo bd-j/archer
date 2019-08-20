@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import matplotlib.pyplot as pl
+#import matplotlib.pyplot as pl
 
 class Model:
 
@@ -53,8 +53,8 @@ class Model:
     def prior_transform(self, u):
         na, nb = self.alpha_order, self.beta_order
         ar, br = self.alpha_range, self.beta_range
-        a = ar[0] + u[:na] * np.diff(ar, axis=0)
-        a = br[0] + u[na:(na+nb)] * np.diff(br, axis=0)
+        a = ar[0] + u[:na] * np.diff(ar, axis=0)[0]
+        b = br[0] + u[na:(na+nb)] * np.diff(br, axis=0)[0]
         pout = self.pout_range[0] + u[-1] * np.diff(self.pout_range)
         return np.hstack([a, b, pout])
 
@@ -68,7 +68,7 @@ class Model:
 
     @property
     def ndim(self):
-        return self.beta_order + self.alpha_roder + 1
+        return self.beta_order + self.alpha_order + 1
 
 
 def musig(lam, alpha, beta):
@@ -94,12 +94,12 @@ def model_lnlike(lam, vel, alpha, beta, pout=0.0,
 
 
 if __name__ == "__main__":
-    
+
     # --- Set Priors ---
     alpha_range = np.array([[100., -10., -0.2],
                             [1000., 0.1, 0.2]])
     beta_range = np.array([[-50., 0.],
-                           [50.,  1.0]])
+                           [50., 1.0]])
     pout_range = np.array([0, 0.1])
 
     # --- Instantiate model ---

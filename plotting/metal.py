@@ -62,26 +62,11 @@ if __name__ == "__main__":
     #sel, selname = esel, "LsEsel"
     ssel, selname = phisel & lsel & esel, "allsel"
 
-    trail = (rcat["Sgr_l"] < 150) & (rcat["V_gsr"] < 0)
-    lead = (rcat["Sgr_l"] > 200) & (rcat["V_gsr"] < 25) & (rcat["V_gsr"] > -140)
+    trail = (rcat["Sgr_l"] < 150) #& (rcat["V_gsr"] < 0)
+    lead = (rcat["Sgr_l"] > 200) #& (rcat["V_gsr"] < 25) & (rcat["V_gsr"] > -140)
 
-    # --- Vgsr lambda ----
-    sel = good & ssel
-    lfig, lax = pl.subplots()
-
-    z, vmin, vmax = "FeH", -2.5, 0.0
-    lbh = lax.scatter(rcat[sel]["Sgr_l"], rcat["V_gsr"][sel], 
-                      c=rcat[z][sel], marker="o", alpha=0.7, s=4,
-                      vmin=vmin, vmax=vmax, cmap="viridis")
-    cb = lfig.colorbar(lbh, ax=lax)
-    cb.set_label(z)
-
-
-    lax.set_ylim(-300, 100)
- 
-    lax.set_xlabel(r"$\Lambda_{Sgr}$")
-    lax.set_ylabel(r"$V_{GSR}$")
-    lax.yaxis.set_tick_params(which='both', labelbottom=True) 
+    tvsel = (rcat["V_gsr"] < 0)
+    lvsel = (rcat["V_gsr"] < 25) & (rcat["V_gsr"] > -140)
 
     # --- FeH vs Lambda ---
     fig, ax = pl.subplots()
@@ -91,56 +76,26 @@ if __name__ == "__main__":
     fig.colorbar(cb)
     pl.show()
 
-    nvsig = 1
-    lam = rcat["Sgr_l"]
-
-    lmin = 40
-    lmax = 320
-    nbin = 14
-    #bins = np.linspace(lmin, lmax, nbin + 1)
-    bins = [50, 70, 80, 90, 100, 110, 120,
-            220, 240, 260, 270, 290]
-    bins = np.array(bins)
-    nbin = len(bins) - 1
-    binno = np.digitize(lam, bins, right=False)
-
-    vbar, vsig = np.zeros(nbin), np.zeros(nbin)
-    zbar, zsig = np.zeros(nbin), np.zeros(nbin)
-    nz, nv = np.zeros(nbin), np.zeros(nbin)
-    vsel = np.zeros_like(lam, dtype=bool)
-
-    # --- Dumb fit ---
-    for i in range(nbin):
-        s = arms & (binno == i + 1)
-        nv[i] = s.sum()
-        if s.sum() < 5:
-            continue
-        rs = rcat[s]
-        vbar[i] = rs["V_gsr"].mean()
-        vsig[i] = rs["V_gsr"].std()
-
-        gv = np.abs(rs["V_gsr"] - vbar[i]) / vsig[i] < nvsig
-        nz[i] = gv.sum()
-        vsel[s] = vsel[s] | gv
-        if gv.sum() < 5:
-            continue
-        zbar[i] = rs[gv]["FeH"].mean()
-        zsig[i] = rs[gv]["FeH"].std()
-
-    #tfig, tax = pl.subplots()
-
-    lax.errorbar((bins[1:] + bins[:-1]) / 2., vbar, vsig, marker="o")
-
-    lead = (binno > 1) & (binno < 6)
-    tail = (binno > 7) & (binno < 12)
-
-    zfig, zax = pl.subplots()
-    zax.hist(rcat[good & ssel & trail & vsel]["FeH"], bins=20, 
+    zfig, zaxes = pl.subplots(1, 2, sharey=True)
+    zax = zaxes[0]
+    zax.hist(rcat[good & ssel & trail]["FeH"], bins=20, #density=True,
              range=(-2.8, 0.0), alpha=0.5, label="Trailing")
-    zax.hist(rcat[good & ssel & lead & vsel]["FeH"], bins=20, 
+    zax.hist(rcat[good & ssel & lead]["FeH"], bins=20, #density=True,
              range=(-2.8, 0.0), alpha=0.5, label="Leading")
     zax.legend(loc=0)
     zax.set_xlabel("[Fe/H]")
-    zfig.savefig("figures/sgr_feh_{}_streams.{}".format(data_name, ext))
+    zax.set_title("All velocities")
+    
+    zax = zaxes[1]
+    zax.hist(rcat[good & ssel & trail & tvsel]["FeH"], bins=20, #density=True,
+             range=(-2.8, 0.0), alpha=0.5, label="Trailing")
+    zax.hist(rcat[good & ssel & lead & lvsel]["FeH"], bins=20, #density=True,
+             range=(-2.8, 0.0), alpha=0.5, label="Leading")
+    zax.legend(loc=0)
+    zax.set_xlabel("[Fe/H]")
+    zax.set_title("Crude velocity cut")
+
+    
+    #zfig.savefig("figures/sgr_feh_{}_streams.{}".format(data_name, ext))
 
     pl.show()

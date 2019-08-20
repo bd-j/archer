@@ -11,6 +11,32 @@ import matplotlib.pyplot as pl
 from astropy.io import fits
 from utils import get_values, sgr_law10
 from utils import read_lm, read_segue
+from fit import Model
+
+
+gibbons = [(240, 250, 260, 270), 
+            (15.7, 13.5, 12.5, 12.6), (1.5, 1.1, 1.1, 1.5),
+            (14.0, 8.5, 7.1, 6.4), (2.6, 1.3, 1.4, 3.0),
+            (-142.5, -124.2, -107.4, -79.0),
+            (-143.5, -114.7, -98.6, -75.7)]
+
+cols = ["lam", "vsig1", "vsig1_err", "vsig2", "vsig2_err", "vel1", "vel2"]
+dt = np.dtype([(n, np.float) for n in cols])
+gib = np.zeros(4, dtype=dt)
+for d, c in zip(gibbons, cols):
+    gib[c] = d
+
+def dump_to_h5(results, model, oname):
+    model_columns = ["alpha_range", "beta_range", "pout_range", "lamb", "vel"]
+    import h5py
+    with h5py.File(oname, "w") as out:
+        for mc in model_columns:
+            out.create_dataset(mc, data=model.__dict__[mc])
+        for k, v in results.items():
+            try:
+                out.create_dataset(k, data=v)
+            except:
+                pass
 
 if __name__ == "__main__":
 
@@ -41,6 +67,9 @@ if __name__ == "__main__":
     etot_lm, lx_lm, ly_lm, lz_lm, phisgr_lm, lsgr_lm = lmq
 
     # --- Basic selections ---
+
+    lmhsel = (lm["in_h3"] == 1)
+
     # selections
     basic = ((rcat["FLAG"] == 0) & np.isfinite(rcat["Z_gal"]))
     giant = (rcat["logg"] < 3.5)
@@ -93,90 +122,96 @@ if __name__ == "__main__":
     lax.set_ylabel(r"$V_{GSR}$")
     lax.yaxis.set_tick_params(which='both', labelbottom=True)
 
-    # --- FeH vs Lambda ---
-    fig, ax = pl.subplots()
-    arms = sel & (lead | trail)
-    cb = ax.scatter(rcat[arms]["Sgr_l"], rcat[arms]["feh"],
-                    c=rcat[arms]["V_gsr"],
-                    alpha=0.8, vmin=-200, vmax=25)
-    fig.colorbar(cb)
-    pl.show()
-    #sys.exit()
-
+    # select stars
     lam = rcat["Sgr_l"][sel & trail]
     vgsr = rcat["V_gsr"][sel & trail]
-    
-    #lam = lm["V_gsr"][lmhsel & ]
 
     # --- Smaht fit ---
-    alpha_order, beta_order = 3, 2
+    # Set Priors ---
+    alpha_range = np.array([[ 100., -10., -0.2],
+                            [1000.,  0.1,  0.2]])
+    beta_range = np.array([[-50., 0., -0.1],
+                           [ 50., 1.,  0.1]])
+    pout_range = np.array([0, 0.1])
 
+    # Instantiate model ---
+    model = Model(alpha_range=alpha_range, beta_range=beta_range, 
+                  pout_range=pout_range)
+    model.set_data(lam, vgsr)
 
-    def model_lnlike(lam, vel, alpha, beta, pout=0.0, vmu_bad=-100, vsig_bad=200):
-        vmu = np.dot(alpha[::-1], np.vander(lam, len(alpha)).T)
-        vsig = np.dot(beta[::-1], np.vander(lam, len(beta)).T)
-
-        norm = -np.log(np.sqrt(2 * np.pi * vsig**2))
-        lnlike_good = norm - 0.5 * ((vel - vmu) / vsig)**2
-
-        if pout > 0:
-            bnorm = -np.log(np.sqrt(2 * np.pi * vsig_bad**2))
-            lnlike_bad = bnorm - 0.5 * ((vel - vmu_bad) / vsig_bad)**2
-            like = (1 - pout) * np.exp(lnlike_good) + pout * np.exp(lnlike_bad)
-            return np.sum(np.log(like))
-        else:
-            return lnlike_good.sum()
-
-
-    def lnprob(theta):
-        lnprior = 0
-        na, nb = alpha_order, beta_order
-        alpha = theta[:na]
-        beta = theta[na: (na + nb)]
-        pout = theta[-1]
-
-        lnlike = model_lnlike(lam, vgsr, alpha, beta, pout=pout)
-        assert np.isfinite(lnlike), "{}".format(theta)
-        return lnlike + lnprior
-
-
-    alpha_min = np.array([100., -10., -0.2])
-    alpha_max = np.array([1000., 0.1, 0.2])
-    beta_min = np.array( [-50., 0.])
-    beta_max = np.array( [50.,  1.0])
-    pout_min = np.array( [0.0])
-    pout_max = np.array( [0.1])
-
-    def prior_transform(u):
-        na, nb = alpha_order, beta_order
-        a = alpha_min[:na] + u[:na] * (alpha_max - alpha_min)[:na]
-        b = beta_min + u[na:(na + nb)] * (beta_max - beta_min)
-        pout = pout_min + u[-1] * (pout_max - pout_min)
-        return np.hstack([a, b, pout])
-
-    ndim = alpha_order + beta_order + 1
-    import dynesty
-    dsampler = dynesty.DynamicNestedSampler(lnprob, prior_transform, ndim)
+    # Fit ---
+    from dynesty import DynamicNestedSampler as Sampler
+    dsampler = Sampler(model.lnprob, model.prior_transform, model.ndim)
     dsampler.run_nested()
-    dresults = dsampler.results
+    h3results = dsampler.results
+    dump_to_h5(h3results, model, "h3_trail_vfit.h5")
 
     from dynesty import plotting as dyplot
     # Plot a summary of the run.
-    rfig, raxes = dyplot.runplot(dresults)
+    #rfig, raxes = dyplot.runplot(dresults)
     # Plot traces and 1-D marginalized posteriors.
-    tfig, taxes = dyplot.traceplot(dresults)
+    #tfig, taxes = dyplot.traceplot(dresults)
     # Plot the 2-D marginalized posteriors.
-    cfig, caxes = dyplot.cornerplot(dresults)
+    cfig, caxes = dyplot.cornerplot(h3results)
 
-    ll = np.arange(0, 150)
-    imax = dresults["logl"].argmax()
-    pmax = dresults["samples"][imax]
-    na, nb = alpha_order, beta_order
-    alpha = pmax[:na]
-    beta = pmax[na: (na + nb)]
+    ll = np.arange(70, 140)
 
-    mu = np.dot(alpha[::-1], np.vander(ll, len(alpha)).T)
-    sigma = np.dot(beta[::-1], np.vander(ll, len(beta)).T)
-
+    imax = h3results["logl"].argmax()
+    pmax = h3results["samples"][imax]
+    mu, sigma = model.model(ll, pmax)
     lax.plot(ll, mu)
     lax.fill_between(ll, mu-sigma, mu+sigma, alpha=0.5)
+
+    vf, vax = pl.subplots()
+    vax.plot(ll, np.abs(sigma), label="H3 fit")
+    vax.errorbar(360 - gib["lam"], gib["vsig1"], yerr=gib["vsig1_err"], label="Gib1")
+    vax.errorbar(360 - gib["lam"], gib["vsig2"], yerr=gib["vsig2_err"], label="Gib2")
+    vax.set_xlabel(r"$\Lambda_{Sgr}$")
+    vax.set_ylabel(r"$\sigma_v$")
+
+    # --- Fit the mock ---
+    msel = ((lm["Lmflag"] == -1) & (lm["Pcol"] < 3) &
+            (lm["lambda"] < 125) & lmhsel) #(lm["lambda"] > 25) )
+    lmlam = lm["lambda"][msel]
+    lmvgsr = lm["V_gsr"][msel]
+
+    model.set_data(lmlam, lmvgsr)
+    dsampler = Sampler(model.lnprob, model.prior_transform, model.ndim)
+    dsampler.run_nested()
+    lmresults = dsampler.results
+    dump_to_h5(lmresults, model, "lm_trail_vfit.h5")
+
+    mfig, mlax = pl.subplots()
+    mlax.plot(lmlam, lmvgsr, "o")
+    imax = lmresults["logl"].argmax()
+    pmax = lmresults["samples"][imax]
+    mu, sigma = model.model(ll, pmax)
+    mlax.plot(ll, mu)
+    mlax.fill_between(ll, mu-sigma, mu+sigma, alpha=0.5, color="tomato")
+
+    mu_pred, vpred = model.model(lmlam, pmax)
+    vemp = ((lmvgsr - mu_pred)).std()
+    vax.plot(ll, np.abs(sigma), label="LM10 fit")
+    lax.plot(ll, mu, label="LM10")
+    lax.plot(360 - gib["lam"], gib["vel1"], label="Gib1")   
+
+    vax.legend(loc=0)
+    
+    
+    import h5py
+    with h5py.File("h3_trail_vfit.h5", "w") as out:
+        for mc in model_columns:
+            out.create_dataset(mc, data=model.__dict__[mc])
+        for k, v in h3results.items():
+            try:
+                out.create_dataset(k, data=v)
+            except:
+                pass
+    with h5py.File("lm_trail_vfit.h5", "w") as out:
+        for k, v in lmresults.items():
+            try:
+                out.create_dataset(k, data=v)
+            except:
+                pass
+    
+    
