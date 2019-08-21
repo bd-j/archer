@@ -14,7 +14,7 @@ from utils import read_lm, read_segue
 from fit import Model
 
 
-gibbons = [(240, 250, 260, 270), 
+gibbons17 = [(240, 250, 260, 270), 
             (15.7, 13.5, 12.5, 12.6), (1.5, 1.1, 1.1, 1.5),
             (14.0, 8.5, 7.1, 6.4), (2.6, 1.3, 1.4, 3.0),
             (-142.5, -124.2, -107.4, -79.0),
@@ -25,6 +25,9 @@ dt = np.dtype([(n, np.float) for n in cols])
 gib = np.zeros(4, dtype=dt)
 for d, c in zip(gibbons, cols):
     gib[c] = d
+    
+belokurov14 = [(217.5, 227.5, 232.5, 237.5, 242.5, 247.5, 252.5, 257.5, 262.5, 267.5, 272.5, 277.5, 285.0, 292.5),
+               (-127.2, -141.1, -150.8, -141.9, -135.1, -129.5, -120.0, -108.8, -98.6, -87.2, -71.8, -58.8, -35.4, -7.8)]
 
 def dump_to_h5(results, model, oname):
     model_columns = ["alpha_range", "beta_range", "pout_range", "lamb", "vel"]
@@ -107,27 +110,27 @@ if __name__ == "__main__":
     lead = (rcat["Sgr_l"] > 200) & (rcat["V_gsr"] < 25) & (rcat["V_gsr"] > -140)
 
 
-    # --- Vgsr lambda ----
-    lfig, lax = pl.subplots()
+    # superfigure
+    hcmap = "magma"
+    fig, axes = pl.subplots(2, 1, sharex=True)
+    lax, vax = axes
 
+    # --- Vgsr lambda ----
     z, vmin, vmax = "FeH", -2.5, 0.0
-    lbh = lax.scatter(rcat[sel]["Sgr_l"], rcat["V_gsr"][sel], 
+    lbh = lax.scatter(rcat[sel]["Sgr_l"], rcat["V_gsr"][sel],
                       c=rcat[z][sel], marker="o", alpha=0.7, s=4,
-                      vmin=vmin, vmax=vmax, cmap="viridis")
+                      vmin=vmin, vmax=vmax, cmap=hcmap)
     cb = lfig.colorbar(lbh, ax=lax)
     cb.set_label(z)
 
     lax.set_ylim(-300, 100)
-    lax.set_xlabel(r"$\Lambda_{Sgr}$")
+    #lax.set_xlabel(r"$\Lambda_{Sgr}$")
     lax.set_ylabel(r"$V_{GSR}$")
     lax.yaxis.set_tick_params(which='both', labelbottom=True)
 
-    # select stars
-    lam = rcat["Sgr_l"][sel & trail]
-    vgsr = rcat["V_gsr"][sel & trail]
 
     # --- Smaht fit ---
-    # Set Priors ---
+    # Set Priors and instantiate model---
     alpha_range = np.array([[ 100., -10., -0.2],
                             [1000.,  0.1,  0.2]])
     beta_range = np.array([[-50., 0., -0.1],
@@ -135,11 +138,14 @@ if __name__ == "__main__":
     pout_range = np.array([0, 0.1])
 
     # Instantiate model ---
-    model = Model(alpha_range=alpha_range, beta_range=beta_range, 
+    model = Model(alpha_range=alpha_range, beta_range=beta_range,
                   pout_range=pout_range)
-    model.set_data(lam, vgsr)
 
-    # Fit ---
+    # Fit trailing data ---
+    # select stars
+    lam = rcat["Sgr_l"][sel & trail]
+    vgsr = rcat["V_gsr"][sel & trail]
+    model.set_data(lam, vgsr)
     from dynesty import DynamicNestedSampler as Sampler
     dsampler = Sampler(model.lnprob, model.prior_transform, model.ndim)
     dsampler.run_nested()
@@ -147,31 +153,12 @@ if __name__ == "__main__":
     dump_to_h5(h3results, model, "h3_trail_vfit.h5")
 
     from dynesty import plotting as dyplot
-    # Plot a summary of the run.
-    #rfig, raxes = dyplot.runplot(dresults)
-    # Plot traces and 1-D marginalized posteriors.
-    #tfig, taxes = dyplot.traceplot(dresults)
-    # Plot the 2-D marginalized posteriors.
     cfig, caxes = dyplot.cornerplot(h3results)
 
-    ll = np.arange(70, 140)
-
-    imax = h3results["logl"].argmax()
-    pmax = h3results["samples"][imax]
-    mu, sigma = model.model(ll, pmax)
-    lax.plot(ll, mu)
-    lax.fill_between(ll, mu-sigma, mu+sigma, alpha=0.5)
-
-    vf, vax = pl.subplots()
-    vax.plot(ll, np.abs(sigma), label="H3 fit")
-    vax.errorbar(360 - gib["lam"], gib["vsig1"], yerr=gib["vsig1_err"], label="Gib1")
-    vax.errorbar(360 - gib["lam"], gib["vsig2"], yerr=gib["vsig2_err"], label="Gib2")
-    vax.set_xlabel(r"$\Lambda_{Sgr}$")
-    vax.set_ylabel(r"$\sigma_v$")
-
-    # --- Fit the mock ---
+    # Fit trailing mock ---
+    # select stars
     msel = ((lm["Lmflag"] == -1) & (lm["Pcol"] < 3) &
-            (lm["lambda"] < 125) & lmhsel) #(lm["lambda"] > 25) )
+            (lm["lambda"] < 125) & lmhsel)  # (lm["lambda"] > 25) )
     lmlam = lm["lambda"][msel]
     lmvgsr = lm["V_gsr"][msel]
 
@@ -180,6 +167,39 @@ if __name__ == "__main__":
     dsampler.run_nested()
     lmresults = dsampler.results
     dump_to_h5(lmresults, model, "lm_trail_vfit.h5")
+
+
+    # --- Plot fits ---
+    ll = np.arange(70, 140)
+    vax.set_xlabel(r"$\Lambda_{Sgr}$")
+    vax.set_ylabel(r"$\sigma_v$")
+
+
+    # plot best to data on v-L and sigma-L plot
+    imax = h3results["logl"].argmax()
+    pmax = h3results["samples"][imax]
+    mu, sigma = model.model(ll, pmax)
+    lax.plot(ll, mu, label="H3 fit")
+    lax.fill_between(ll, mu - sigma, mu + sigma, alpha=0.5)
+    vax.plot(ll, np.abs(sigma), label="H3 fit")
+
+    # plot the best fit for the LM data
+    imax = lmresults["logl"].argmax()
+    pmax = lmresults["samples"][imax]
+    mu, sigma = model.model(ll, pmax)
+    vax.plot(ll, np.abs(sigma), label="LM10 fit")
+    lax.plot(ll, mu, label="LM10 fit")
+    #lax.fill_between(ll, mu - sigma, mu + sigma, alpha=0.5)
+
+    # Plot the gibson and belokurov trends
+    lax.plot(360 - gib["lam"], gib["vel1"], label="Gib1")
+    lax.plot(360 - gib["lam"], gib["vel1"], label="Gib2")
+
+    vax.errorbar(360 - gib["lam"], gib["vsig1"], yerr=gib["vsig1_err"], label="Gib1")
+    vax.errorbar(360 - gib["lam"], gib["vsig2"], yerr=gib["vsig2_err"], label="Gib2")
+
+    vax.legend()
+    sys.exit()
 
     mfig, mlax = pl.subplots()
     mlax.plot(lmlam, lmvgsr, "o")
@@ -191,27 +211,3 @@ if __name__ == "__main__":
 
     mu_pred, vpred = model.model(lmlam, pmax)
     vemp = ((lmvgsr - mu_pred)).std()
-    vax.plot(ll, np.abs(sigma), label="LM10 fit")
-    lax.plot(ll, mu, label="LM10")
-    lax.plot(360 - gib["lam"], gib["vel1"], label="Gib1")   
-
-    vax.legend(loc=0)
-    
-    
-    import h5py
-    with h5py.File("h3_trail_vfit.h5", "w") as out:
-        for mc in model_columns:
-            out.create_dataset(mc, data=model.__dict__[mc])
-        for k, v in h3results.items():
-            try:
-                out.create_dataset(k, data=v)
-            except:
-                pass
-    with h5py.File("lm_trail_vfit.h5", "w") as out:
-        for k, v in lmresults.items():
-            try:
-                out.create_dataset(k, data=v)
-            except:
-                pass
-    
-    

@@ -59,7 +59,7 @@ if __name__ == "__main__":
     giant = (rcat["logg"] < 3.5)
     extra = ((rcat["Vrot"] < 5) & (rcat["SNR"] > 3) &
              (rcat["BHB"] == 0) & (rcat["Teff"] < 7000) &
-             (rcat["V_tan"] < 500))
+             (rcat["V_tan"] < 600))
     good = basic & giant & extra
 
     # Lm10 selections
@@ -93,7 +93,8 @@ if __name__ == "__main__":
     sel, selname = phisel & lsel & esel, "allsel"
 
     # Plot defaults
-    ms = 3  # markersize
+    ms = 2  # markersize
+    hcmap = "magma"
     # make a superplot
     ncol = 2
     figsize = (16, 10)
@@ -104,15 +105,15 @@ if __name__ == "__main__":
     vlaxes = axes[:, 0]
     ax = vlaxes[0]
     cb = ax.scatter(lm[lmr][ro]["lambda"], lm[lmr][ro]["V_gsr"], c=lm[lmr][ro]["Lmflag"],
-                    marker='+', alpha=0.3, vmin=-2, vmax=3, s=16 )
+                    marker='+', alpha=0.1, vmin=-2, vmax=3, s=16 )
     cb = ax.scatter(lm[lmhsel][ho]["lambda"], lm[lmhsel][ho]["V_gsr"], c=lm[lmhsel][ho]["Lmflag"],
                     marker='o', alpha=0.5, vmin=-2, vmax=3, s=12, edgecolor="")
 
     ax = vlaxes[1]
     ax.plot(rcat[good & ~sel]["Sgr_l"], rcat[good & ~sel]["V_gsr"], 
-            'o', markersize=ms, alpha=0.3, color="grey", zorder=1)
-    ax.scatter(rcat[good & sel]["Sgr_l"], rcat[good & sel]["V_gsr"], c=feh[good & sel], 
-               marker='o', s=16, vmin=-2.5, vmax=0.0, alpha=0.6, zorder=2)
+            'o', markersize=ms, alpha=0.2, color="grey", zorder=1, mew=0)
+    cbh = ax.scatter(rcat[good & sel]["Sgr_l"], rcat[good & sel]["V_gsr"], c=feh[good & sel], 
+                     marker='o', s=16, vmin=-2.5, vmax=0.0, alpha=0.6, zorder=2, cmap=hcmap)
 
     # prettify
     ax.set_ylim(-300, 300)
@@ -123,23 +124,27 @@ if __name__ == "__main__":
     dlaxes = axes[:, 1]
     ax = dlaxes[0]
     cb = ax.scatter(lm[lmr][ro]["lambda"], lm[lmr][ro]["dist"], c=lm[lmr][ro]["Lmflag"],
-                    marker='+', alpha=0.3, vmin=-2, vmax=3, s=16 )
+                    marker='+', alpha=0.1, vmin=-2, vmax=3, s=16 )
     cb = ax.scatter(lm[lmhsel][ho]["lambda"], lm[lmhsel][ho]["dist"], c=lm[lmhsel][ho]["Lmflag"],
                     marker='o', alpha=0.5, vmin=-2, vmax=3, s=12, edgecolor="")
 
     ax = dlaxes[1]
     ax.plot(rcat[good & ~sel]["Sgr_l"], rcat[good & ~sel]["dist_adpt"], 
-            'o', markersize=ms, alpha=0.3, color="grey", zorder=1)
-    ax.scatter(rcat[good & sel]["Sgr_l"], rcat[good & sel]["dist_adpt"], c=feh[good & sel],
-               marker='o', s=16, vmin=-2.5, vmax=0.0, alpha=0.6, zorder=2)
+            'o', markersize=ms, alpha=0.2, color="grey", zorder=1, mew=0)
+    cbh = ax.scatter(rcat[good & sel]["Sgr_l"], rcat[good & sel]["dist_adpt"], c=feh[good & sel],
+               marker='o', s=16, vmin=-2.5, vmax=0.0, alpha=0.6, zorder=2, cmap=hcmap)
 
     # prettify
     ax.set_ylim(0, 80)
     [ax.set_ylabel(r"$D_{Sun}$") for ax in dlaxes]
     dlaxes[1].set_xlabel(r"$\Lambda_{Sgr}$")
 
+    # colorbars
+    fig.colorbar(cb, ax=axes[0, :], label="Arm #")
+    fig.colorbar(cbh, ax=axes[1, :], label="[Fe/H]")
+
     if savefigs:
-        fig.tight_layout()
+        #fig.tight_layout()
         names = data_name, noisiness, selname, ext
         fig.savefig("figures/vsLambda_{}_{}_{}.{}".format(*names), dpi=300)
         pl.close(fig)

@@ -58,12 +58,12 @@ if __name__ == "__main__":
     giant = (rcat["logg"] < 3.5)
     extra = ((rcat["Vrot"] < 5) & (rcat["SNR"] > 3) &
              (rcat["BHB"] == 0) & (rcat["Teff"] < 7000) &
-             (rcat["V_tan"] < 500))
+             (rcat["V_tan"] < 600))
     good = basic & giant & extra
 
     # Lm10 selections
     lmhsel = (lm["in_h3"] == 1)
-    lmr = (np.random.uniform(size=len(lm)) < 0.3) & (~lmhsel)
+    lmr = (np.random.uniform(size=len(lm)) < 0.1) & (~lmhsel)
     # for random order
     ho = np.random.choice(lmhsel.sum(), size=lmhsel.sum(), replace=False)
     ro = np.random.choice(lmr.sum(), size=lmr.sum(), replace=False)
@@ -94,7 +94,8 @@ if __name__ == "__main__":
     # make a superplot
     nsel = 2
     figsize = (12, 8)
-    ms = 3
+    ms = 2
+    hcmap = "magma"
     fig, axes = pl.subplots(2, nsel, sharex="col", sharey="col",
                             figsize=figsize)
 
@@ -103,9 +104,9 @@ if __name__ == "__main__":
     paxes = axes[:, 0]
     ax = paxes[0]
     cb = ax.scatter(phisgr_lm[lmr][ro], lsgr_lm[lmr][ro], c=lm["Lmflag"][lmr][ro],
-                    marker='+', alpha=0.3, vmin=-2, vmax=3, s=16 )
+                    marker='+', alpha=0.1, vmin=-2, vmax=3, s=16 )
     cb = ax.scatter(phisgr_lm[lmhsel][ho], lsgr_lm[lmhsel][ho], c=lm["Lmflag"][lmhsel][ho],
-                    marker='o', alpha=0.6, vmin=-2, vmax=3, s=16)
+                    marker='o', alpha=0.5, vmin=-2, vmax=3, s=16)
 
     p = lm["Pcol"] - lm["Pcol"].min() + 1.0
     p = None
@@ -113,8 +114,8 @@ if __name__ == "__main__":
 
     ax = paxes[1]
     ax.plot(phisgr[good & ~sel], lsgr[good & ~sel], 'o', markersize=ms, alpha=0.3, color="grey")
-    ax.scatter(phisgr[good & sel], lsgr[good & sel], c=feh[good & sel],
-               marker='o', s=16, vmin=-2.5, vmax=0, alpha=0.7)
+    cbh = ax.scatter(phisgr[good & sel], lsgr[good & sel], c=feh[good & sel],
+               marker='o', s=16, vmin=-2.5, vmax=0, alpha=0.7, cmap=hcmap)
     
     # prettify
     ax.set_ylim(-2000, 15000)
@@ -153,13 +154,13 @@ if __name__ == "__main__":
     laxes = axes[:, 1]
     ax = laxes[0]
     lc = ax.scatter(lz_lm[lmr][ro], ly_lm[lmr][ro], c=lm["Lmflag"][lmr][ro],
-                    marker="+", alpha=0.3, vmin=-2, vmax=3)
+                    marker="+", alpha=0.1, vmin=-2, vmax=3)
     lc = ax.scatter(lz_lm[lmhsel][ho], ly_lm[lmhsel][ho], c=lm["Lmflag"][lmhsel][ho],
-                    marker="o", alpha=0.3, vmin=-2, vmax=3, s=14)
+                    marker="o", alpha=0.5, vmin=-2, vmax=3, s=14)
     ax = laxes[1]
     ax.plot(lz[good & ~sel], ly[good & ~sel], 'o', markersize=ms, alpha=0.3, color='grey')
-    ax.scatter(lz[good & sel], ly[good & sel], c=feh[good & sel], 
-               marker='o', s=16, vmin=-2.5, vmax=0.0, alpha=0.7)
+    cbh = ax.scatter(lz[good & sel], ly[good & sel], c=feh[good & sel], 
+               marker='o', s=16, vmin=-2.5, vmax=0.0, alpha=0.7, cmap=hcmap)
     
     # prettify
     [ax.set_ylabel(r"$L_y$")  for ax in laxes]
@@ -168,12 +169,17 @@ if __name__ == "__main__":
     laxes[0].set_xlim(-10000, 10000)
     [ax.plot(y, x, linestyle=":", color="tomato", linewidth=3) for ax in laxes]
 
+    # colorbars
+    fig.colorbar(lc, ax=axes[0, :], label="Arm #")
+    fig.colorbar(cbh, ax=axes[1, :], label="[Fe/H]")
 
     if savefigs:
-        fig.tight_layout()
+        #fig.tight_layout()
         names = data_name, noisiness, selname, ext
         fig.savefig("figures/selection_{}_{}_{}.{}".format(*names), dpi=300)
         pl.close(fig)
+    else:
+        pl.show()
 
 
     sys.exit()

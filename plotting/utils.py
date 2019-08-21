@@ -72,10 +72,15 @@ def h3_quiver(cat, zz, vtot=1.0, show="xy", ax=None, scale=20,
               cmap="viridis", **quiver_kwargs):
     x, y = [cat["{}_gal".format(s.upper())] for s in show]
     vx, vy = [cat["V{}_gal".format(s)] for s in show]
-    cb = ax.quiver(x, y, vx / vtot, vy / vtot, zz,
-                   angles="xy", pivot="mid", cmap=cmap,
-                   scale_units="height", scale=scale, **quiver_kwargs)
-
+    if zz is not None:
+        cb = ax.quiver(x, y, vx / vtot, vy / vtot, zz,
+                       angles="xy", pivot="mid", cmap=cmap,
+                       scale_units="height", scale=scale, **quiver_kwargs)
+    else:
+        cb = ax.quiver(x, y, vx / vtot, vy / vtot,
+                       angles="xy", pivot="mid", cmap=cmap,
+                       scale_units="height", scale=scale, **quiver_kwargs)
+        
     return cb
 
 
