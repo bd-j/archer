@@ -21,7 +21,11 @@ from utils import gc_frame_law10, sgr_law10, sgr_fritz18
 from utils import get_values
 
 rcParams["font.family"] = "serif"
-
+rcParams["font.serif"] = ["STIXGeneral"]
+rcParams["mathtext.fontset"] = "custom"
+rcParams["mathtext.rm"] = "serif"
+rcParams["mathtext.sf"] = "serif"
+rcParams['mathtext.it'] = 'serif:italic'
 
 if __name__ == "__main__":
 
@@ -93,18 +97,25 @@ if __name__ == "__main__":
 
     # make a superplot
     nsel = 2
-    figsize = (12, 8)
+    figsize = (10, 8)
     ms = 2
     hcmap = "magma"
-    fig, axes = pl.subplots(2, nsel, sharex="col", sharey="col",
-                            figsize=figsize)
+    #gridspec_kw = {"width_ratios": [8, 8, 1]}#, "wspace": 0.1}
+    #fig, axes = pl.subplots(2, nsel+1, sharex="col", sharey="col",
+    #                        figsize=figsize, gridspec_kw=gridspec_kw)
+
+    fig = pl.figure(figsize=figsize)
+    from matplotlib.gridspec import GridSpec
+    gs = GridSpec(2, 2, width_ratios= [10, 10], left=0.1, right=0.87, wspace=0.28)
+    gsc = GridSpec(2, 1, left=0.9, right=0.93)
 
     # --- lsgr vs phi
     #pfig, paxes = pl.subplots(1, 2, sharey=True, sharex=True)
-    paxes = axes[:, 0]
+    #paxes = axes[:, 0]
+    paxes = [fig.add_subplot(gs[0, 0])]
     ax = paxes[0]
     cb = ax.scatter(phisgr_lm[lmr][ro], lsgr_lm[lmr][ro], c=lm["Lmflag"][lmr][ro],
-                    marker='+', alpha=0.1, vmin=-2, vmax=3, s=16 )
+                    marker='+', alpha=0.2, vmin=-2, vmax=3, s=16 )
     cb = ax.scatter(phisgr_lm[lmhsel][ho], lsgr_lm[lmhsel][ho], c=lm["Lmflag"][lmhsel][ho],
                     marker='o', alpha=0.5, vmin=-2, vmax=3, s=16)
 
@@ -112,21 +123,22 @@ if __name__ == "__main__":
     p = None
     hist2d(phisgr_lm, lsgr_lm, ax=ax, span=[(0, 1), (-10000, 15000)], weights=p)
 
+    paxes.append(fig.add_subplot(gs[1, 0], sharey=paxes[0], sharex=paxes[0]))
     ax = paxes[1]
     ax.plot(phisgr[good & ~sel], lsgr[good & ~sel], 'o', markersize=ms, alpha=0.3, color="grey")
     cbh = ax.scatter(phisgr[good & sel], lsgr[good & sel], c=feh[good & sel],
                marker='o', s=16, vmin=-2.5, vmax=0, alpha=0.7, cmap=hcmap)
     
     # prettify
-    ax.set_ylim(-2000, 15000)
-    [ax.set_ylabel(r"$L_{Sgr}$") for ax in paxes]
-    paxes[1].set_xlabel(r"$\cos \phi_{Sgr}$")# for ax in paxes]
+    ax.set_ylim(-1000, 15000)
+    [ax.set_ylabel(r"L$_{\rm Sgr}$") for ax in paxes]
+    paxes[1].set_xlabel(r"$\cos \, \phi_{\rm Sgr}$")# for ax in paxes]
     #[ax.axhline(-lslim, linestyle=":", color="tomato") for ax in paxes]
     [ax.axhline(lslim, linestyle=":", color="tomato") for ax in paxes]
     [ax.axvline(philim, linestyle=":", color="tomato") for ax in paxes]
     #pfig.colorbar(cb, ax=paxes)
-    paxes[0].text(0.1, 0.9, "LM10", transform=paxes[0].transAxes)
-    paxes[1].text(0.1, 0.9, "H3 Giants", transform=paxes[1].transAxes)
+    paxes[0].text(0.1, 0.9, r"LM10", transform=paxes[0].transAxes)
+    paxes[1].text(0.1, 0.9, r"H3 Giants", transform=paxes[1].transAxes)
 
     # --- E-Lsgr ---
     #efig, eaxes = pl.subplots(1, 2, sharey=True, sharex=True)
@@ -151,30 +163,35 @@ if __name__ == "__main__":
 
     # --- Lx - Ly ---
     #lfig, laxes = pl.subplots(1, 2, sharey=True, sharex=True)
-    laxes = axes[:, 1]
+    #laxes = axes[:, 1]
+    laxes = [fig.add_subplot(gs[0, 1])]
     ax = laxes[0]
     lc = ax.scatter(lz_lm[lmr][ro], ly_lm[lmr][ro], c=lm["Lmflag"][lmr][ro],
-                    marker="+", alpha=0.1, vmin=-2, vmax=3)
+                    marker="+", alpha=0.2, vmin=-2, vmax=3)
     lc = ax.scatter(lz_lm[lmhsel][ho], ly_lm[lmhsel][ho], c=lm["Lmflag"][lmhsel][ho],
                     marker="o", alpha=0.5, vmin=-2, vmax=3, s=14)
+    laxes.append(fig.add_subplot(gs[1, 1], sharey=laxes[0], sharex=laxes[0]))
     ax = laxes[1]
     ax.plot(lz[good & ~sel], ly[good & ~sel], 'o', markersize=ms, alpha=0.3, color='grey')
     cbh = ax.scatter(lz[good & sel], ly[good & sel], c=feh[good & sel], 
                marker='o', s=16, vmin=-2.5, vmax=0.0, alpha=0.7, cmap=hcmap)
-    
+
     # prettify
-    [ax.set_ylabel(r"$L_y$")  for ax in laxes]
-    laxes[1].set_xlabel(r"$L_z$")
+    [ax.set_ylabel(r"L$_{\rm y}$")  for ax in laxes]
+    laxes[1].set_xlabel(r"L$_{\rm z}$")
     laxes[0].set_ylim(-14000, 10000)
     laxes[0].set_xlim(-10000, 10000)
     [ax.plot(y, x, linestyle=":", color="tomato", linewidth=3) for ax in laxes]
 
     # colorbars
-    fig.colorbar(lc, ax=axes[0, :], label="Arm #")
-    fig.colorbar(cbh, ax=axes[1, :], label="[Fe/H]")
+    cax = fig.add_subplot(gsc[0,-1])
+    pl.colorbar(lc, cax=cax, label=r"Arm #")
+    cax2 = fig.add_subplot(gsc[1,-1])
+    pl.colorbar(cbh, cax=cax2, label=r"[Fe/H]")
 
     if savefigs:
         #fig.tight_layout()
+        #fig.subplots_adjust(hspace=0.15)
         names = data_name, noisiness, selname, ext
         fig.savefig("figures/selection_{}_{}_{}.{}".format(*names), dpi=300)
         pl.close(fig)
@@ -195,8 +212,8 @@ if __name__ == "__main__":
     ax.plot(rcat[good & ~sel]["Sgr_l"], rcat[good & ~sel]["V_gsr"], 'o', alpha=0.3)
     ax.plot(rcat[good & sel]["Sgr_l"], rcat[good & sel]["V_gsr"], 'o', alpha=0.5)
     ax.set_ylim(-300, 300)
-    vaxes[0].set_ylabel(r"$V_{GSR}$")
-    [ax.set_xlabel(r"$\Lambda_{Sgr}$") for ax in vaxes]
+    vaxes[0].set_ylabel("$V_{GSR}$")
+    [ax.set_xlabel("$\Lambda_{Sgr}$") for ax in vaxes]
 
     # --- polar sky position ---
 

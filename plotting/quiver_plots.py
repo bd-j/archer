@@ -105,25 +105,37 @@ if __name__ == "__main__":
 
     bb = good
 
-    fig, axes = pl.subplots(nrow, ncol, sharex="col", sharey="col", figsize=(12, 7))
+    figsize = 14, 8
+    fig = pl.figure(figsize=figsize)
+    from matplotlib.gridspec import GridSpec
+    gs = GridSpec(2, 3, width_ratios= [10, 10, 10], left=0.1, right=0.87, wspace=0.28)
+    gsc = GridSpec(2, 1, left=0.9, right=0.93)
+
+    laxes = [fig.add_subplot(gs[0, 0])]
+    laxes.append(fig.add_subplot(gs[0, 1]))
+    haxes = [fig.add_subplot(gs[1, 0], sharex=laxes[0], sharey=laxes[0])]
+    haxes.append(fig.add_subplot(gs[1, 1], sharex=laxes[1], sharey=laxes[1]))
+    
+    axes = np.vstack([laxes, haxes])
+    
     #cbl = [lm_quiver(lm[lmsel], z[lmsel], vtot=vtot_lm[lmsel], show=s, ax=ax, scale=ascale)
     #       for s, ax, z in zip(projections, axes[0, :], lcatz)]
     cbl = [lm_quiver(lm[lmr], z[lmr], vtot=vtot_lm[lmr], show=s, ax=ax, scale=ascale, alpha=0.3)
-           for s, ax, z in zip(projections, axes[0, :], lcatz)]
+           for s, ax, z in zip(projections, laxes, lcatz)]
     cbl = [lm_quiver(lm[lmhsel], z[lmhsel], vtot=vtot_lm[lmhsel], show=s, ax=ax, scale=ascale)
-           for s, ax, z in zip(projections, axes[0, :], lcatz)]
+           for s, ax, z in zip(projections, laxes, lcatz)]
     #cblh = [lm_quiver(lm[lmhsel], z[lmhsel], vtot=vtot_lm[lmhsel], show=s, ax=ax, scale=ascale)
     #        for s, ax, z in zip(projections, axes[:, 1], lcatz)]
     cbh = [h3_quiver(rcat[good], None, vtot=vtot[good], 
                      show=s, ax=ax, scale=ascale, alpha=0.3, color="grey")
-           for s, ax, z in zip(projections, axes[1, :], rcatz)]
+           for s, ax, z in zip(projections, haxes, rcatz)]
     cbh = [h3_quiver(rcat[bb & sel], z[bb & sel], vtot=vtot[bb & sel],
                      show=s, ax=ax, scale=ascale, cmap=hcmap)
-           for s, ax, z in zip(projections, axes[1, :], rcatz)]
+           for s, ax, z in zip(projections, haxes, rcatz)]
 
     axes[0, 0].set_xlim(-79, 40)
     axes[0, 0].set_ylim(-45, 65)
-    axes[0, 1].set_xlim(-80, 40)
+    axes[0, 1].set_xlim(-79, 40)
     axes[0, 1].set_ylim(-39, 59)
 
     [ax.xaxis.set_tick_params(which='both', labelbottom=True) for ax in axes[0, :]]
@@ -134,13 +146,16 @@ if __name__ == "__main__":
     for i in range(ncol-1):
         xl, yl = projections[i]
         for j in range(nrow):
-            axes[j, i].set_xlabel(xl.upper())
-            axes[j, i].set_ylabel(yl.upper())
+            axes[j, i].set_xlabel(r"{}$_{{\rm GC}}$".format(xl.upper()))
+            axes[j, i].set_ylabel(r"{}$_{{\rm GC}}$".format(yl.upper()))
 
     # colorbars
-    fig.colorbar(cbl[-1], ax=axes[0, :], label="Arm #")
-    fig.colorbar(cbh[-1], ax=axes[1, :], label="[Fe/H]")
+    cax = fig.add_subplot(gsc[0,-1])
+    pl.colorbar(cbl[-1], cax=cax, label=r"Arm #")
+    cax2 = fig.add_subplot(gsc[1,-1])
+    pl.colorbar(cbh[-1], cax=cax2, label=r"[Fe/H]")
 
+ 
 
     fig.savefig("figures/quiver_placeholder.png", dpi=300)
     #for i in range(2):

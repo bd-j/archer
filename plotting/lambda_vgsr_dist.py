@@ -22,7 +22,11 @@ from utils import gc_frame_law10, sgr_law10, sgr_fritz18
 from utils import get_values
 
 rcParams["font.family"] = "serif"
-
+rcParams["font.serif"] = ["STIXGeneral"]
+rcParams["mathtext.fontset"] = "custom"
+rcParams["mathtext.rm"] = "serif"
+rcParams["mathtext.sf"] = "serif"
+rcParams['mathtext.it'] = 'serif:italic'
 
 if __name__ == "__main__":
 
@@ -97,18 +101,22 @@ if __name__ == "__main__":
     hcmap = "magma"
     # make a superplot
     ncol = 2
-    figsize = (16, 10)
-    fig, axes = pl.subplots(2, ncol, sharex="col", sharey="col",
-                            figsize=figsize)
+    figsize = (10, 8)
+    fig = pl.figure(figsize=figsize)
+    from matplotlib.gridspec import GridSpec
+    gs = GridSpec(2, 2, width_ratios= [10, 10], left=0.1, right=0.87, wspace=0.2)
+    gsc = GridSpec(2, 1, left=0.9, right=0.93)
+
 
     # --- Vgsr vs Lambda ---
-    vlaxes = axes[:, 0]
+    vlaxes = [fig.add_subplot(gs[0, 0])]
     ax = vlaxes[0]
     cb = ax.scatter(lm[lmr][ro]["lambda"], lm[lmr][ro]["V_gsr"], c=lm[lmr][ro]["Lmflag"],
                     marker='+', alpha=0.1, vmin=-2, vmax=3, s=16 )
     cb = ax.scatter(lm[lmhsel][ho]["lambda"], lm[lmhsel][ho]["V_gsr"], c=lm[lmhsel][ho]["Lmflag"],
                     marker='o', alpha=0.5, vmin=-2, vmax=3, s=12, edgecolor="")
 
+    vlaxes.append(fig.add_subplot(gs[1, 0], sharey=vlaxes[0], sharex=vlaxes[0]))
     ax = vlaxes[1]
     ax.plot(rcat[good & ~sel]["Sgr_l"], rcat[good & ~sel]["V_gsr"], 
             'o', markersize=ms, alpha=0.2, color="grey", zorder=1, mew=0)
@@ -117,17 +125,18 @@ if __name__ == "__main__":
 
     # prettify
     ax.set_ylim(-300, 300)
-    [ax.set_ylabel(r"$V_{GSR}$") for ax in vlaxes]
-    vlaxes[1].set_xlabel(r"$\Lambda_{Sgr}$")
+    [ax.set_ylabel(r"V$_{\rm GSR}$ (km/s)") for ax in vlaxes]
+    vlaxes[1].set_xlabel(r"$\Lambda_{\rm Sgr}$")
 
     # --- Rgc vs Lambda
-    dlaxes = axes[:, 1]
+    dlaxes = [fig.add_subplot(gs[0, 1])]
     ax = dlaxes[0]
     cb = ax.scatter(lm[lmr][ro]["lambda"], lm[lmr][ro]["dist"], c=lm[lmr][ro]["Lmflag"],
                     marker='+', alpha=0.1, vmin=-2, vmax=3, s=16 )
     cb = ax.scatter(lm[lmhsel][ho]["lambda"], lm[lmhsel][ho]["dist"], c=lm[lmhsel][ho]["Lmflag"],
                     marker='o', alpha=0.5, vmin=-2, vmax=3, s=12, edgecolor="")
 
+    dlaxes.append(fig.add_subplot(gs[1, 1], sharey=dlaxes[0], sharex=dlaxes[0]))
     ax = dlaxes[1]
     ax.plot(rcat[good & ~sel]["Sgr_l"], rcat[good & ~sel]["dist_adpt"], 
             'o', markersize=ms, alpha=0.2, color="grey", zorder=1, mew=0)
@@ -136,12 +145,15 @@ if __name__ == "__main__":
 
     # prettify
     ax.set_ylim(0, 80)
-    [ax.set_ylabel(r"$D_{Sun}$") for ax in dlaxes]
-    dlaxes[1].set_xlabel(r"$\Lambda_{Sgr}$")
+    [ax.set_ylabel(r"D$_{\odot}$ (kpc)", labelpad=2) for ax in dlaxes]
+    dlaxes[1].set_xlabel(r"$\Lambda_{\rm Sgr}$")
 
     # colorbars
-    fig.colorbar(cb, ax=axes[0, :], label="Arm #")
-    fig.colorbar(cbh, ax=axes[1, :], label="[Fe/H]")
+    cax = fig.add_subplot(gsc[0,-1])
+    pl.colorbar(cb, cax=cax, label=r"Arm #")
+    cax2 = fig.add_subplot(gsc[1,-1])
+    pl.colorbar(cbh, cax=cax2, label=r"[Fe/H]")
+
 
     if savefigs:
         #fig.tight_layout()
