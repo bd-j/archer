@@ -19,23 +19,22 @@ vmap = {"x": "u",
         "z": "w"}
 
 
-v_sun_law10 = coord.CartesianDifferential([11.1, 220, 7.25]*u.km/u.s)
-gc_frame_law10 = coord.Galactocentric(galcen_distance=8.0*u.kpc,
-                                      z_sun=0*u.pc,
+v_sun_law10 = coord.CartesianDifferential([11.1, 220, 7.25] * u.km / u.s)
+gc_frame_law10 = coord.Galactocentric(galcen_distance=8.0 * u.kpc,
+                                      z_sun=0 * u.pc,
                                       galcen_v_sun=v_sun_law10)
 
-sgr_law10 = coord.SkyCoord(ra=283.7629*u.deg, dec=-30.4783*u.deg,
-                           distance=28.0*u.kpc,
-                           pm_ra_cosdec=-2.45*u.mas/u.yr, 
-                           pm_dec=-1.30*u.mas/u.yr,
-                           radial_velocity=171*u.km/u.s)
+sgr_law10 = coord.SkyCoord(ra=283.7629 * u.deg, dec=-30.4783 * u.deg,
+                           distance=28.0 * u.kpc,
+                           pm_ra_cosdec=-2.45 * u.mas / u.yr,
+                           pm_dec=-1.30 * u.mas / u.yr,
+                           radial_velocity=171 * u.km / u.s)
 
-sgr_fritz18 = coord.SkyCoord(ra=283.7629*u.deg, dec=-30.4783*u.deg,
-                             distance=26.6*u.kpc,
-                             pm_ra_cosdec=-2.736*u.mas/u.yr, 
-                             pm_dec=-1.357*u.mas/u.yr,
-                             radial_velocity=140*u.km/u.s)
-
+sgr_fritz18 = coord.SkyCoord(ra=283.7629 * u.deg, dec=-30.4783 * u.deg,
+                             distance=26.6 * u.kpc,
+                             pm_ra_cosdec=-2.736 * u.mas / u.yr,
+                             pm_dec=-1.357 * u.mas / u.yr,
+                             radial_velocity=140 * u.km / u.s)
 
 
 lmcols = {"ra": "ra", "dec": "dec",
@@ -50,7 +49,7 @@ def get_values(cat, sgr=sgr_law10, frame=gc_frame_law10):
     if "mua" in cat.dtype.names:
         # LM10
         cols = lmcols
-        vlos = gsr_to_rv(cat["v"], cat["ra"], cat["dec"], cat["dist"], 
+        vlos = gsr_to_rv(cat["v"], cat["ra"], cat["dec"], cat["dist"],
                          gc_frame=frame)
         vlos = vlos.value
     else:
@@ -69,7 +68,7 @@ def get_values(cat, sgr=sgr_law10, frame=gc_frame_law10):
 
 
 def hquiver(cat, zz, vtot=1.0, show="xy", ax=None, scale=20,
-              cmap="viridis", **quiver_kwargs):
+            cmap="viridis", **quiver_kwargs):
     # --- Get quantitues ---
     if "xgc" in cat.dtype.names:
         print("galactic: LM10")
@@ -94,7 +93,7 @@ def hquiver(cat, zz, vtot=1.0, show="xy", ax=None, scale=20,
                        angles="xy", pivot="mid", cmap=cmap,
                        scale_units="height", scale=scale, **quiver_kwargs)
 
-    return cb        
+    return cb
 
 
 def h3_quiver(cat, zz, vtot=1.0, show="xy", ax=None, scale=20,
@@ -109,7 +108,7 @@ def h3_quiver(cat, zz, vtot=1.0, show="xy", ax=None, scale=20,
         cb = ax.quiver(x, y, vx / vtot, vy / vtot,
                        angles="xy", pivot="mid", cmap=cmap,
                        scale_units="height", scale=scale, **quiver_kwargs)
-        
+
     return cb
 
 
@@ -155,8 +154,7 @@ def read_lm(lmfile):
 
 def read_segue(seguefile, dtype):
 
-    name_map = {
-                # quantities
+    name_map = {# quantities
                 "RA": "ra",
                 "DEC": "dec",
                 "dist_adpt": "Dist",
@@ -166,7 +164,7 @@ def read_segue(seguefile, dtype):
                 "std_Vrad": "e_HRV",
                 "feh": "FeH",
                 "SDSS_R": "rmag",
-                } 
+                }
 
     segin = fits.getdata(seguefile)
     nrow = len(segin)
@@ -190,10 +188,11 @@ def get_sgr(cat):
     import astropy.units as u
     import astropy.coordinates as coord
     import gala.coordinates as gc
-    ceq = coord.ICRS(ra=cat['RA']*u.deg, dec=cat['DEC']*u.deg,
+    ceq = coord.ICRS(ra=cat['RA'] * u.deg, dec=cat['DEC'] * u.deg,
                      distance=cat["dist_adpt"] * u.kpc,
-                     pm_ra_cosdec=cat['GaiaDR2_pmra']*u.mas/u.yr, pm_dec=cat['GaiaDR2_pmdec']*u.mas/u.yr,
-                     radial_velocity=cat['Vrad']*u.km/u.s)
+                     pm_ra_cosdec=cat['GaiaDR2_pmra'] * u.mas / u.yr,
+                     pm_dec=cat['GaiaDR2_pmdec'] * u.mas / u.yr,
+                     radial_velocity=cat['Vrad'] * u.km / u.s)
     sgr = ceq.transform_to(gc.Sagittarius)
     return sgr
 
@@ -203,7 +202,8 @@ def get_Lsgr(sgr_icrs, gc_frame=coord.Galactocentric()):
     sgr_gc = sgr_icrs.transform_to(gc_frame)
     # because cross doesn't work on sgr_gc.cartesian & sgr_gc.velocity
     xx = np.array([getattr(sgr_gc, a).to("kpc").value for a in "xyz"])
-    p = np.array([getattr(sgr_gc, "v_{}".format(a)).to("km/s").value for a in "xyz"])
+    p = np.array([getattr(sgr_gc, "v_{}".format(a)).to("km/s").value
+                  for a in "xyz"])
     # units are kpc * km/s
     L = np.cross(xx, p)
     return L
@@ -211,14 +211,16 @@ def get_Lsgr(sgr_icrs, gc_frame=coord.Galactocentric()):
 
 def compute_Lstar(ra, dec, distance, pmra, pmdec, vlos,
                   gc_frame=coord.Galactocentric()):
-    ceq = coord.ICRS(ra=ra*u.deg, dec=dec*u.deg,
+    ceq = coord.ICRS(ra=ra * u.deg, dec=dec * u.deg,
                      distance=distance * u.kpc,
-                     pm_ra_cosdec=pmra*u.mas/u.yr, pm_dec=pmdec*u.mas/u.yr,
-                     radial_velocity=vlos*u.km/u.s)
+                     pm_ra_cosdec=pmra * u.mas / u.yr,
+                     pm_dec=pmdec * u.mas / u.yr,
+                     radial_velocity=vlos * u.km / u.s)
 
     gc = ceq.transform_to(gc_frame)
     xx = np.array([getattr(gc, a).to("kpc").value for a in "xyz"]).T
-    p = np.array([getattr(gc, "v_{}".format(a)).to("km/s").value for a in "xyz"]).T
+    p = np.array([getattr(gc, "v_{}".format(a)).to("km/s").value
+                  for a in "xyz"]).T
     Lstar = np.cross(xx, p)
 
     return Lstar
@@ -258,7 +260,8 @@ def gsr_to_rv(vgsr, ra, dec, dist, gc_frame=coord.Galactocentric()):
         The input radial velocity transformed to a GSR frame.
 
     """
-    c = coord.SkyCoord(ra=ra*u.deg, dec=dec*u.deg, distance=dist*u.kpc)
+    c = coord.SkyCoord(ra=ra * u.deg, dec=dec * u.deg,
+                       distance=dist * u.kpc)
     v_sun = gc_frame.galcen_v_sun.to_cartesian()
 
     gal = c.transform_to(gc_frame)
@@ -267,7 +270,7 @@ def gsr_to_rv(vgsr, ra, dec, dist, gc_frame=coord.Galactocentric()):
 
     v_proj = v_sun.dot(unit_vector)
 
-    return vgsr*u.km/u.s - v_proj
+    return vgsr * u.km / u.s - v_proj
 
 
 def rotation_v1v2(V1, V2=np.array([0., 0., 1.])):
@@ -281,11 +284,11 @@ def rotation_v1v2(V1, V2=np.array([0., 0., 1.])):
     v1 = V1 / np.linalg.norm(V1)
     v2 = V2 / np.linalg.norm(V2)
     axis = np.cross(v1, v2)
-    rcos = np.dot(v1, v2) # cos(phi)
+    rcos = np.dot(v1, v2)  # cos(phi)
     rsin = np.linalg.norm(axis)
     u, v, w = axis
 
-    matrix = np.zeros([3,3])
+    matrix = np.zeros([3, 3])
     matrix[0, 0] =      rcos + u*u*(1-rcos)
     matrix[1, 0] =  w * rsin + v*u*(1-rcos)
     matrix[2, 0] = -v * rsin + w*u*(1-rcos)

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-"""Script to plot velocity vectors for H3 stars (and Sgr mocks) in X-Z, Y-Z 
+"""Script to plot velocity vectors for H3 stars (and Sgr mocks) in X-Z, Y-Z
 projections.
 
 Also plots:
@@ -12,7 +12,6 @@ Also plots:
 import sys
 import numpy as np
 import matplotlib.pyplot as pl
-pl.ion()
 from astropy.io import fits
 
 from utils import hquiver
@@ -28,6 +27,7 @@ rcParams["mathtext.rm"] = "serif"
 rcParams["mathtext.sf"] = "serif"
 rcParams['mathtext.it'] = 'serif:italic'
 
+pl.ion()
 
 if __name__ == "__main__":
 
@@ -116,29 +116,28 @@ if __name__ == "__main__":
     figsize = 10, 8
     fig = pl.figure(figsize=figsize)
     from matplotlib.gridspec import GridSpec
-    gs = GridSpec(2, 2, width_ratios= [10, 10], left=0.1, right=0.87, wspace=0.2)
+    gs = GridSpec(2, 2, width_ratios=[10, 10],
+                  left=0.1, right=0.87, wspace=0.2)
     gsc = GridSpec(2, 1, left=0.9, right=0.93)
 
     laxes = [fig.add_subplot(gs[0, 0])]
     laxes.append(fig.add_subplot(gs[0, 1]))
     haxes = [fig.add_subplot(gs[1, 0], sharex=laxes[0], sharey=laxes[0])]
     haxes.append(fig.add_subplot(gs[1, 1], sharex=laxes[1], sharey=laxes[1]))
-    
+
     axes = np.vstack([laxes, haxes])
-    
-    #cbl = [lm_quiver(lm[lmsel], z[lmsel], vtot=vtot_lm[lmsel], show=s, ax=ax, scale=ascale)
-    #       for s, ax, z in zip(projections, axes[0, :], lcatz)]
-    cbl = [hquiver(lm[lmr], z[lmr], vtot=vtot_lm[lmr], show=s, ax=ax, scale=ascale, alpha=0.3)
+
+    cbl = [hquiver(lm[lmr], z[lmr], vtot=vtot_lm[lmr],
+                   show=s, ax=ax, scale=ascale, alpha=0.3)
            for s, ax, z in zip(projections, laxes, lcatz)]
-    cbl = [hquiver(lm[lmhsel], z[lmhsel], vtot=vtot_lm[lmhsel], show=s, ax=ax, scale=ascale)
+    cbl = [hquiver(lm[lmhsel], z[lmhsel], vtot=vtot_lm[lmhsel],
+                   show=s, ax=ax, scale=ascale)
            for s, ax, z in zip(projections, laxes, lcatz)]
-    #cblh = [lm_quiver(lm[lmhsel], z[lmhsel], vtot=vtot_lm[lmhsel], show=s, ax=ax, scale=ascale)
-    #        for s, ax, z in zip(projections, axes[:, 1], lcatz)]
-    cbh = [hquiver(rcat[good], None, vtot=vtot[good], 
-                     show=s, ax=ax, scale=ascale, alpha=0.3, color="grey")
+    cbh = [hquiver(rcat[good], None, vtot=vtot[good],
+                   show=s, ax=ax, scale=ascale, alpha=0.3, color="grey")
            for s, ax, z in zip(projections, haxes, rcatz)]
     cbh = [hquiver(rcat[bb & sel], z[bb & sel], vtot=vtot[bb & sel],
-                     show=s, ax=ax, scale=ascale, cmap=hcmap)
+                   show=s, ax=ax, scale=ascale, cmap=hcmap)
            for s, ax, z in zip(projections, haxes, rcatz)]
 
     axes[0, 0].set_xlim(-70, 40)  # x in x-z
@@ -146,29 +145,28 @@ if __name__ == "__main__":
     axes[0, 1].set_xlim(-70, 40)  # x in x-y
     axes[0, 1].set_ylim(-32, 42)  # y in x-y
 
-    [ax.xaxis.set_tick_params(which='both', labelbottom=True) for ax in axes[0, :]]
-    [ax.yaxis.set_tick_params(which='both', labelbottom=True) for ax in axes[:, 1:].flat]
+    [ax.xaxis.set_tick_params(which='both', labelbottom=True)
+     for ax in axes[0, :]]
+    [ax.yaxis.set_tick_params(which='both', labelbottom=True)
+     for ax in axes[:, 1:].flat]
 
-    axes[0, 0].text(0.1, 0.9, "LM10", transform=axes[0,0].transAxes, fontsize=14)
-    axes[1, 0].text(0.1, 0.9, "H3 Giants", transform=axes[1,0].transAxes, fontsize=14)
-    for i in range(ncol-1):
+    axes[0, 0].text(0.1, 0.9, "LM10", transform=axes[0, 0].transAxes, fontsize=14)
+    axes[1, 0].text(0.1, 0.9, "H3 Giants", transform=axes[1, 0].transAxes, fontsize=14)
+    for i in range(ncol - 1):
         xl, yl = projections[i]
         for j in range(nrow):
             axes[j, i].set_xlabel(r"{}$_{{\rm GC}}$ (kpc)".format(xl.upper()))
             axes[j, i].set_ylabel(r"{}$_{{\rm GC}}$ (kpc)".format(yl.upper()))
 
     # colorbars
-    cax = fig.add_subplot(gsc[0,-1])
+    cax = fig.add_subplot(gsc[0, -1])
     pl.colorbar(cbl[-1], cax=cax, label=r"Arm #")
-    cax2 = fig.add_subplot(gsc[1,-1])
+    cax2 = fig.add_subplot(gsc[1, -1])
     pl.colorbar(cbh[-1], cax=cax2, label=r"[Fe/H]")
-
- 
 
     fig.savefig("figures/quiver_placeholder.png", dpi=300)
     #for i in range(2):
     #    c = fig.colorbar(cbh[i], ax=axes[i,:])
     #    c.set_label("yz"[i].upper())
-    
-    pl.show()
 
+    pl.show()
