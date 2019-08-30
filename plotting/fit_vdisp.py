@@ -15,7 +15,7 @@ from fit import Model
 
 
 def dump_to_h5(results, model, oname):
-    model_columns = ["alpha_range", "beta_range", "pout_range", "lamb", "vel"]
+    model_columns = ["alpha_range", "beta_range", "pout_range", "lamb", "vel", "idx"]
     import h5py
     with h5py.File(oname, "w") as out:
         for mc in model_columns:
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     ext = "png"  # "pdf" | "png"
     savefigs = False
     segue_cat = False
-    noisiness  = "noisy"
+    noisiness = "noisy"
 
     lmockfile = "../data/mocks/LM10/LM10_15deg_{}_v5.fits".format(noisiness)
     seguefile = "../data/catalogs/ksegue_gaia_v5.fits"
@@ -90,8 +90,8 @@ if __name__ == "__main__":
     #sel, selname = esel, "LsEsel"
     sel, selname = phisel & lsel & esel, "allsel"
     sel = good & sel
-    trail = (rcat["Sgr_l"] < 150) & (rcat["V_gsr"] < 0)
-    lead = (rcat["Sgr_l"] > 200) & (rcat["V_gsr"] < 25) & (rcat["V_gsr"] > -140)
+    trail = (rcat["Sgr_l"] < 150) & (rcat["V_gsr"] < 100)
+    lead = (rcat["Sgr_l"] > 220) & (rcat["V_gsr"] < 100)
 
     # --- Smaht fit ---
     # Set Priors and instantiate model---
@@ -105,32 +105,22 @@ if __name__ == "__main__":
     model = Model(alpha_range=alpha_range, beta_range=beta_range,
                   pout_range=pout_range)
 
-
+    from dynesty import DynamicNestedSampler as Sampler
 
     # Fit trailing data ---
     # select stars
     lam = rcat["Sgr_l"][sel & trail]
     vgsr = rcat["V_gsr"][sel & trail]
-    model.set_data(lam, vgsr)
-    from dynesty import DynamicNestedSampler as Sampler
-    dsampler = Sampler(model.lnprob, model.prior_transform, model.ndim)
-    dsampler.run_nested()
-    h3results = dsampler.results
-    dump_to_h5(h3results, model, "h3_trail_vfit.h5")
-    #from dynesty import plotting as dyplot
-    #cfig, caxes = dyplot.cornerplot(h3results)
+    idx_trail = np.arange(len(rcat))[sel & trail]
 
-    # Fit leading data ---
-    # select stars
-    lam = rcat["Sgr_l"][sel & lead]
-    vgsr = rcat["V_gsr"][sel & lead]
-    model.set_data(lam, vgsr)
-    from dynesty import DynamicNestedSampler as Sampler
-    dsampler = Sampler(model.lnprob, model.prior_transform, model.ndim)
-    dsampler.run_nested()
-    h3results = dsampler.results
-    dump_to_h5(h3results, model, "h3_lead_vfit.h5")
-
+    if False:
+        model.set_data(lam, vgsr, idx=idx_trail)
+        dsampler = Sampler(model.lnprob, model.prior_transform, model.ndim)
+        dsampler.run_nested()
+        h3results = dsampler.results
+        dump_to_h5(h3results, model, "h3_trail_vfit.h5")
+        #from dynesty import plotting as dyplot
+        #cfig, caxes = dyplot.cornerplot(h3results)
 
     # Fit trailing mock ---
     # select stars
@@ -138,29 +128,56 @@ if __name__ == "__main__":
             (lm["lambda"] < 125) & lmhsel)  # (lm["lambda"] > 25) )
     lmlam = lm["lambda"][msel]
     lmvgsr = lm["V_gsr"][msel]
+    idx_lmt = np.arange(len(lm))[msel]
 
-    model.set_data(lmlam, lmvgsr)
-    dsampler = Sampler(model.lnprob, model.prior_transform, model.ndim)
-    dsampler.run_nested()
-    lmresults = dsampler.results
-    dump_to_h5(lmresults, model, "lm_trail_vfit.h5")
+    if False:
+        model.set_data(lmlam, lmvgsr, idx=idx_lmt)
+        dsampler = Sampler(model.lnprob, model.prior_transform, model.ndim)
+        dsampler.run_nested()
+        lmresults = dsampler.results
+        dump_to_h5(lmresults, model, "lm_trail_vfit.h5")
 
-    sys.exit()
+    # --- Leading Arm ---
+
+    # Set Priors and instantiate model---
+    alpha_range = np.array([[ -500., -10., -0.2],
+                            [1000.,  0.1,  0.2]])
+    beta_range = np.array([[-300., 0.],
+                           [ 0., 1.]])
+    pout_range = np.array([0, 0.4])
+
+    model = Model(alpha_range=alpha_range, beta_range=beta_range,
+                  pout_range=pout_range)
+
+    # Fit leading data ---
+    # select stars
+    lam = rcat["Sgr_l"][sel & lead]
+    vgsr = rcat["V_gsr"][sel & lead]
+    idx_lead = np.arange(len(rcat))[sel & lead]
+
+    if True:
+        model.set_data(lam, vgsr, idx=idx_lead)
+        dsampler = Sampler(model.lnprob, model.prior_transform, model.ndim)
+        dsampler.run_nested()
+        h3results = dsampler.results
+        dump_to_h5(h3results, model, "h3_lead_vfit.h5")
 
     # Fit leading mock ---
     # select stars
     msel = ((lm["Lmflag"] == 1) & (lm["Pcol"] < 6) &
-            (lm["lambda"] > 200) & lmhsel)  # (lm["lambda"] > 25) )
+            (lm["lambda"] > 220) & lmhsel)  # (lm["lambda"] > 25) )
     lmlam = lm["lambda"][msel]
     lmvgsr = lm["V_gsr"][msel]
+    idx_lml = np.arange(len(lm))[msel]
 
-    model.set_data(lmlam, lmvgsr)
-    dsampler = Sampler(model.lnprob, model.prior_transform, model.ndim)
-    dsampler.run_nested()
-    lmresults = dsampler.results
-    dump_to_h5(lmresults, model, "lm_lead_vfit.h5")
+    if True:
+        model.set_data(lmlam, lmvgsr, idx=idx_lml)
+        dsampler = Sampler(model.lnprob, model.prior_transform, model.ndim)
+        dsampler.run_nested()
+        lmresults = dsampler.results
+        dump_to_h5(lmresults, model, "lm_lead_vfit.h5")
 
-
+    # -- Misc
     sys.exit()
     mfig, mlax = pl.subplots()
     mlax.plot(lmlam, lmvgsr, "o")
@@ -168,7 +185,7 @@ if __name__ == "__main__":
     pmax = lmresults["samples"][imax]
     mu, sigma = model.model(ll, pmax)
     mlax.plot(ll, mu)
-    mlax.fill_between(ll, mu-sigma, mu+sigma, alpha=0.5, color="tomato")
+    mlax.fill_between(ll, mu - sigma, mu + sigma, alpha=0.5, color="tomato")
 
     mu_pred, vpred = model.model(lmlam, pmax)
     vemp = ((lmvgsr - mu_pred)).std()

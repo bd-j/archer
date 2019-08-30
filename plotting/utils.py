@@ -5,10 +5,10 @@ from astropy.io import fits
 import astropy.coordinates as coord
 import astropy.units as u
 
-__all__ = ["h3_quiver", "lm_quiver",
+__all__ = ["h3_quiver", "lm_quiver", "hquiver",
            "read_lm", "read_segue",
            "get_values",
-           "get_sgr", "gsr_to_rv",
+           "get_sgr", "gsr_to_rv", "rotation_v1v2",
            "get_Lsgr", "compute_Lstar", "angle_to_sgr",
            "v_sun_law10", "gc_frame_law10", "sgr_law10", "sgr_fritz18"
            ]
@@ -66,6 +66,35 @@ def get_values(cat, sgr=sgr_law10, frame=gc_frame_law10):
     etot = cat["E_tot_pot2"]
 
     return etot, lx, ly, lz, phi_sgr, lsgr
+
+
+def hquiver(cat, zz, vtot=1.0, show="xy", ax=None, scale=20,
+              cmap="viridis", **quiver_kwargs):
+    # --- Get quantitues ---
+    if "xgc" in cat.dtype.names:
+        print("galactic: LM10")
+        x, y = [cat["{}gc".format(s)] for s in show]
+        vx, vy = [cat[vmap[s]] for s in show]
+    elif "X_gal" in cat.dtype.names:
+        print("galactic: data")
+        x, y = [cat["{}_gal".format(s.upper())] for s in show]
+        vx, vy = [cat["V{}_gal".format(s)] for s in show]
+    else:
+        print("Sgr coords")
+        x, y = [cat["{}_sgr".format(s.upper())] for s in show]
+        vx, vy = [cat["V{}_sgr".format(s)] for s in show]
+
+    # --- plot them ---
+    if zz is not None:
+        cb = ax.quiver(x, y, vx / vtot, vy / vtot, zz,
+                       angles="xy", pivot="mid", cmap=cmap,
+                       scale_units="height", scale=scale, **quiver_kwargs)
+    else:
+        cb = ax.quiver(x, y, vx / vtot, vy / vtot,
+                       angles="xy", pivot="mid", cmap=cmap,
+                       scale_units="height", scale=scale, **quiver_kwargs)
+
+    return cb        
 
 
 def h3_quiver(cat, zz, vtot=1.0, show="xy", ax=None, scale=20,
@@ -241,4 +270,30 @@ def gsr_to_rv(vgsr, ra, dec, dist, gc_frame=coord.Galactocentric()):
     return vgsr*u.km/u.s - v_proj
 
 
+def rotation_v1v2(V1, V2=np.array([0., 0., 1.])):
+    """Given a 3 element vector `V1`, find the rotation matrix that rotates
+    that vector into `V2`, by default the positive z-axis.
 
+    V2 = R V1
+    V1 = R^-1 V2
+    """
+
+    v1 = V1 / np.linalg.norm(V1)
+    v2 = V2 / np.linalg.norm(V2)
+    axis = np.cross(v1, v2)
+    rcos = np.dot(v1, v2) # cos(phi)
+    rsin = np.linalg.norm(axis)
+    u, v, w = axis
+
+    matrix = np.zeros([3,3])
+    matrix[0, 0] =      rcos + u*u*(1-rcos)
+    matrix[1, 0] =  w * rsin + v*u*(1-rcos)
+    matrix[2, 0] = -v * rsin + w*u*(1-rcos)
+    matrix[0, 1] = -w * rsin + u*v*(1-rcos)
+    matrix[1, 1] =      rcos + v*v*(1-rcos)
+    matrix[2, 1] =  u * rsin + w*v*(1-rcos)
+    matrix[0, 2] =  v * rsin + u*w*(1-rcos)
+    matrix[1, 2] = -u * rsin + v*w*(1-rcos)
+    matrix[2, 2] =      rcos + w*w*(1-rcos)
+
+    return matrix

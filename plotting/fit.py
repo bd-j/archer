@@ -4,6 +4,12 @@
 import numpy as np
 #import matplotlib.pyplot as pl
 
+try:
+    from scipy.special import logsumexp
+except(ImportError):
+    from scipy.special import logsumexp
+
+
 class Model:
 
     def __init__(self, alpha_range, beta_range, pout_range):
@@ -32,9 +38,11 @@ class Model:
         self.beta = pos[na: (na + nb)]
         self.pout = pos[-1]
 
-    def set_data(self, Lam, vel):
+    def set_data(self, Lam, vel, vel_unc=0, idx=[-1]):
         self.lamb = Lam
         self.vel = vel
+        self.vel_unc = vel_unc
+        self.idx = idx
 
     def model(self, lam, pos=None):
         if pos is not None:
@@ -45,18 +53,30 @@ class Model:
         self.pos_to_params(pos)
         lnlike = model_lnlike(self.lamb, self.vel,
                               self.alpha, self.beta,
-                              pout=self.pout,
+                              vel_unc=self.vel_unc, pout=self.pout,
                               vmu_bad=self.vmu_bad, vsig_bad=self.vsig_bad)
-        assert np.isfinite(lnlike), "{}".format(theta)
+        assert np.isfinite(lnlike), "Infinite lnlike at {}".format(pos)
         return lnlike
 
     def prior_transform(self, u):
         na, nb = self.alpha_order, self.beta_order
         ar, br = self.alpha_range, self.beta_range
         a = ar[0] + u[:na] * np.diff(ar, axis=0)[0]
-        b = br[0] + u[na:(na+nb)] * np.diff(br, axis=0)[0]
+        b = br[0] + u[na:(na + nb)] * np.diff(br, axis=0)[0]
         pout = self.pout_range[0] + u[-1] * np.diff(self.pout_range)
         return np.hstack([a, b, pout])
+
+    def outlier_odds(self, pos):
+        """Compute the odds ratio of any given data point being an outlier for
+        a particular model parameter position.
+        """
+        self.pos_to_params(pos)
+        lnodds = outlier_oddsratio(self.lamb, self.vel,
+                                   self.alpha, self.beta,
+                                   vel_unc=self.vel_unc, pout=self.pout,
+                                   vmu_bad=self.vmu_bad,
+                                   vsig_bad=self.vsig_bad)
+        return lnodds
 
     @property
     def alpha_order(self):
@@ -74,23 +94,44 @@ class Model:
 def musig(lam, alpha, beta):
     vmu = np.dot(alpha[::-1], np.vander(lam, len(alpha)).T)
     vsig = np.dot(beta[::-1], np.vander(lam, len(beta)).T)
-    return vmu, vsig    
+    return vmu, vsig
 
 
-def model_lnlike(lam, vel, alpha, beta, pout=0.0, 
+def model_lnlike(lam, vel, alpha, beta, vel_unc=0, pout=0.0,
                  vmu_bad=-100, vsig_bad=200):
 
     vmu, vsig = musig(lam, alpha, beta)
-    norm = -np.log(np.sqrt(2 * np.pi * vsig**2))
-    lnlike_good = norm - 0.5 * ((vel - vmu) / vsig)**2
+    vvar = vsig**2 + vel_unc**2
+    lnnorm = -np.log(np.sqrt(2 * np.pi * vvar))
+    lnlike_good = lnnorm - 0.5 * ((vel - vmu)**2 / vvar)
 
     if pout > 0:
-        bnorm = -np.log(np.sqrt(2 * np.pi * vsig_bad**2))
-        lnlike_bad = bnorm - 0.5 * ((vel - vmu_bad) / vsig_bad)**2
-        like = (1 - pout) * np.exp(lnlike_good) + pout * np.exp(lnlike_bad)
-        return np.sum(np.log(like))
+        vvar_bad = (np.zeros_like(vsig) + vsig_bad**2) + vel_unc**2
+        bnorm = -np.log(np.sqrt(2 * np.pi * vvar_bad))
+        lnlike_bad = bnorm - 0.5 * ((vel - vmu_bad)**2 / vvar_bad)
+        a = np.log(1 - pout) + lnlike_good
+        b = np.log(pout) + lnlike_bad
+        lnlike = logsumexp(np.array([a, b]), axis=0)
+        return lnlike.sum()
     else:
         return lnlike_good.sum()
+
+
+def outlier_oddsratio(lam, vel, alpha, beta, vel_unc=0, pout=0.0,
+                      vmu_bad=-100, vsig_bad=200):
+
+    vmu, vsig = musig(lam, alpha, beta)
+    vvar = vsig**2 + vel_unc**2
+    lnnorm = -np.log(np.sqrt(2 * np.pi * vvar))
+    lnlike_good = lnnorm - 0.5 * ((vel - vmu)**2 / vvar)
+
+    vvar_bad = (np.zeros_like(vsig) + vsig_bad**2) + vel_unc**2
+    bnorm = -np.log(np.sqrt(2 * np.pi * vvar_bad))
+    lnlike_bad = bnorm - 0.5 * ((vel - vmu_bad)**2 / vvar_bad)
+
+    lnodds = np.log(pout) + lnlike_bad - np.log(1 - pout) - lnlike_good
+
+    return lnodds
 
 
 if __name__ == "__main__":
@@ -103,7 +144,7 @@ if __name__ == "__main__":
     pout_range = np.array([0, 0.1])
 
     # --- Instantiate model ---
-    model = Model(alpha_range=alpha_range, beta_range=beta_range, 
+    model = Model(alpha_range=alpha_range, beta_range=beta_range,
                   pout_range=pout_range)
     model.set_data(lam, vel)
 
