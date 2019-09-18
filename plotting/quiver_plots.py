@@ -18,6 +18,7 @@ from utils import hquiver
 from utils import read_lm, read_segue
 from utils import gc_frame_law10, sgr_law10, sgr_fritz18
 from utils import get_values
+from outlier import get_rcat_selections, delta_v, vel_outliers
 
 from matplotlib.pyplot import rcParams
 rcParams["font.family"] = "serif"
@@ -36,69 +37,48 @@ if __name__ == "__main__":
     savefigs = True
     segue_cat = False
     noisiness = "noisy"  # "noisy" | "noiseless"
-
-    seguefile = "../data/catalogs/ksegue_gaia_v5.fits"
     rcat_vers = "1_4"
-    rcatfile = "../data/catalogs/rcat_V{}_MSG.fits".format(rcat_vers.replace("_", "."))
-    lmockfile = "../data/mocks/LM10/LM10_15deg_{}_v5.fits".format(noisiness)
 
-    # --- L & M 2010 model ---
-    lm = read_lm(lmockfile)
-
-    # --- H3 ----
-    rcat = fits.getdata(rcatfile)
-    data_name = "H3v{}".format(rcat_vers)
     if segue_cat:
-        rcat = read_segue(seguefile, rcat.dtype)
         data_name = "KSEG"
+    else:
+        data_name = "H3v{}".format(rcat_vers)
 
-    # --- Quantity shortcuts ---
+    # --- H3 cat and selections ----
+    philim, lslim = 0.75, 1500
+    x, y = [(-3500, -500), (4000, -6000)]
+    blob = get_rcat_selections(segue_cat=segue_cat,
+                               rcat_vers=rcat_vers,
+                               sgr=sgr_law10,
+                               philim=philim, lslim=lslim,
+                               lcut=[x, y])
+    rcat, basic, giant, extra, lsel, phisel, esel = blob
+    
     etot, lx, ly, lz, phisgr, lsgr = get_values(rcat, sgr=sgr_law10)
     feh = np.clip(rcat["FeH"], -2.5, 0.0)
     vtot = np.sqrt(rcat["Vx_gal"]**2 + rcat["Vy_gal"]**2 + rcat["Vz_gal"]**2)
+
+    good = basic & extra & giant
+    sel, selname = lsel & phisel & esel, "allsel"
+    chiv = delta_v(rcat)
+    intail, inlead, outtail, outlead = vel_outliers(rcat, good & sel)
+
+    lead = rcat["Sgr_l"] < 150
+    trail = rcat["Sgr_l"] > 200
+
+    # --- L & M 2010 model ---
+    lmockfile = "../data/mocks/LM10/LM10_15deg_{}_v5.fits".format(noisiness)
+    lm = read_lm(lmockfile)
     lmq = get_values(lm, sgr=sgr_law10)
     etot_lm, lx_lm, ly_lm, lz_lm, phisgr_lm, lsgr_lm = lmq
     vtot_lm = np.sqrt(lm["u"]**2 + lm["v"]**2 + lm["w"]**2)
 
-    # --- Basic selections ---
-    # selections
-    basic = ((rcat["FLAG"] == 0) & np.isfinite(rcat["Z_gal"]))
-    giant = (rcat["logg"] < 3.5)
-    extra = ((rcat["Vrot"] < 5) & (rcat["SNR"] > 3) &
-             (rcat["BHB"] == 0) & (rcat["Teff"] < 7000) &
-             (rcat["V_tan"] < 600))
-    good = basic & giant & extra
-
     # Lm10 selections
-    lmhsel = (lm["in_h3"] == 1)
+    lmhsel = (lm["in_h3"] == 1) & (np.random.uniform(size=len(lm)) < 0.5)
     lmr = (np.random.uniform(size=len(lm)) < 0.1) & (~lmhsel)
-    lmsel = lmr | lmhsel
     # for random order
     ho = np.random.choice(lmhsel.sum(), size=lmhsel.sum(), replace=False)
     ro = np.random.choice(lmr.sum(), size=lmr.sum(), replace=False)
-
-    # Sgr selections
-    # Ly - Lz
-    x, y = [(-3500, -500), (4000, -6000)]
-    m = np.diff(y) / np.diff(x)
-    b = y[0] - m * x[0]
-    m, b = m[0], b[0]
-    lsel = lz < (m * ly + b)
-
-    # phi - lsgr
-    philim, lslim = 0.75, 1500
-    phisel = (phisgr > philim) & (lsgr > lslim)
-    retro = (phisgr < -0.5) & (lsgr < -5000)
-
-    # etot -lsgr
-    elim = -170000
-    esel = (lsgr > lslim) & (etot < 0) & (etot > elim)
-
-    # --- SET THE SELECTION ----
-    #sel, selname = phisel, "phisel"
-    #sel, selname = lsel, "LzLysel"
-    #sel, selname = esel, "LsEsel"
-    sel, selname = phisel & lsel & esel, "allsel"
 
     # --- Quiver ---
     nrow, ncol = 2, 3

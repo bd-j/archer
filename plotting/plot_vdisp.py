@@ -75,10 +75,10 @@ if __name__ == "__main__":
     savefigs = True
     show_lead = True
 
-    htmodel, htresults = read_from_h5("h3_trail_vfit.h5")
-    ltmodel, ltresults = read_from_h5("lm_trail_vfit.h5")
-    hlmodel, hlresults = read_from_h5("h3_lead_vfit.h5")
-    llmodel, llresults = read_from_h5("lm_lead_vfit.h5")
+    htmodel, htresults = read_from_h5("vfit/h3_trail_vfit.h5")
+    ltmodel, ltresults = read_from_h5("vfit/lm_trail_vfit.h5")
+    hlmodel, hlresults = read_from_h5("vfit/h3_lead_vfit.h5")
+    llmodel, llresults = read_from_h5("vfit/lm_lead_vfit.h5")
 
     # --- super figure ---
     # superfigure
@@ -203,9 +203,9 @@ if __name__ == "__main__":
     sys.exit()
 
     # empirical velocity sidpersion of LM10 from fitted trand
-    mu_pred, vpred = lmodel.model(lmodel.lamb, pmax)
+    mu_pred, vpred = ltmodel.model(ltmodel.lamb, pmax)
     vpred = np.abs(vpred)
-    vemp = ((lmodel.vel - mu_pred)).std()
+    vemp = ((ltmodel.vel - mu_pred)).std()
 
     # --- delta_v vs feh ---
     noisiness = "noisy"
