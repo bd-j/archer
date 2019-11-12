@@ -38,6 +38,7 @@ if __name__ == "__main__":
     segue_cat = False
     noisiness = "noisy"  # "noisy" | "noiseless"
     rcat_vers = "1_4"
+    np.random.seed(101)
 
     if segue_cat:
         data_name = "KSEG"
@@ -53,13 +54,13 @@ if __name__ == "__main__":
                                philim=philim, lslim=lslim,
                                lcut=[x, y])
     rcat, basic, giant, extra, lsel, phisel, esel = blob
-    
+
     etot, lx, ly, lz, phisgr, lsgr = get_values(rcat, sgr=sgr_law10)
     feh = np.clip(rcat["FeH"], -2.5, 0.0)
     vtot = np.sqrt(rcat["Vx_gal"]**2 + rcat["Vy_gal"]**2 + rcat["Vz_gal"]**2)
 
     good = basic & extra & giant
-    sel, selname = lsel & phisel & esel, "allsel"
+    sel, selname = lsel, "lsel"
     chiv = delta_v(rcat)
     intail, inlead, outtail, outlead = vel_outliers(rcat, good & sel)
 
@@ -74,11 +75,15 @@ if __name__ == "__main__":
     vtot_lm = np.sqrt(lm["u"]**2 + lm["v"]**2 + lm["w"]**2)
 
     # Lm10 selections
-    lmhsel = (lm["in_h3"] == 1) & (np.random.uniform(size=len(lm)) < 0.5)
-    lmr = (np.random.uniform(size=len(lm)) < 0.1) & (~lmhsel)
+    lmhsel = (lm["in_h3"] == 1) & (np.random.uniform(size=len(lm)) < 1.0)
+    lmr = (np.random.uniform(size=len(lm)) < 1.0) & (~lmhsel)
     # for random order
-    ho = np.random.choice(lmhsel.sum(), size=lmhsel.sum(), replace=False)
-    ro = np.random.choice(lmr.sum(), size=lmr.sum(), replace=False)
+    ho = np.random.choice(lmhsel.sum(), size=good.sum(), replace=True)
+    if segue_cat:
+        n = good.sum()
+    else:
+        n = int(len(lm) * 1.0 / (lmhsel.sum() * 1.0) * (good & lsel).sum())
+    ro = np.random.choice(lmr.sum(), size=n, replace=True)
 
     # --- Quiver ---
     nrow, ncol = 2, 3
@@ -107,12 +112,13 @@ if __name__ == "__main__":
 
     axes = np.vstack([laxes, haxes])
 
-    cbl = [hquiver(lm[lmr], z[lmr], vtot=vtot_lm[lmr],
+    cbl = [hquiver(lm[lmr][ro], z[lmr][ro], vtot=vtot_lm[lmr][ro],
                    show=s, ax=ax, scale=ascale, alpha=0.3)
            for s, ax, z in zip(projections, laxes, lcatz)]
-    cbl = [hquiver(lm[lmhsel], z[lmhsel], vtot=vtot_lm[lmhsel],
-                   show=s, ax=ax, scale=ascale)
-           for s, ax, z in zip(projections, laxes, lcatz)]
+    if not segue_cat:
+        cbl = [hquiver(lm[lmhsel], z[lmhsel], vtot=vtot_lm[lmhsel],
+                       show=s, ax=ax, scale=ascale)
+               for s, ax, z in zip(projections, laxes, lcatz)]
     cbh = [hquiver(rcat[good], None, vtot=vtot[good],
                    show=s, ax=ax, scale=ascale, alpha=0.3, color="grey")
            for s, ax, z in zip(projections, haxes, rcatz)]
@@ -130,8 +136,12 @@ if __name__ == "__main__":
     [ax.yaxis.set_tick_params(which='both', labelbottom=True)
      for ax in axes[:, 1:].flat]
 
+    if segue_cat:
+        dlabel = "Segue"
+    else:
+        dlabel = "H3"
     axes[0, 0].text(0.1, 0.9, "LM10", transform=axes[0, 0].transAxes, fontsize=14)
-    axes[1, 0].text(0.1, 0.9, "H3 Giants", transform=axes[1, 0].transAxes, fontsize=14)
+    axes[1, 0].text(0.1, 0.9, "{} Giants".format(dlabel), transform=axes[1, 0].transAxes, fontsize=14)
     for i in range(ncol - 1):
         xl, yl = projections[i]
         for j in range(nrow):
@@ -144,7 +154,8 @@ if __name__ == "__main__":
     cax2 = fig.add_subplot(gsc[1, -1])
     pl.colorbar(cbh[-1], cax=cax2, label=r"[Fe/H]")
 
-    fig.savefig("figures/quiver_placeholder.png", dpi=300)
+    names = data_name, noisiness, selname, ext
+    fig.savefig("figures/quiver_{}_{}_{}.{}".format(*names), dpi=300)
     #for i in range(2):
     #    c = fig.colorbar(cbh[i], ax=axes[i,:])
     #    c.set_label("yz"[i].upper())

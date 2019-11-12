@@ -41,9 +41,12 @@ lmcols = {"ra": "ra", "dec": "dec",
           "pmra": "mua", "pmdec": "mud",
           "dist": "dist"}
 rcatcols = {"ra": "RA", "dec": "DEC",
-            "pmra": "GaiaDR2_pmra", "pmdec": "GaiaDR2_pmdec",
+            "pmra": "GAIADR2_PMRA", "pmdec": "GAIADR2_PMDEC",
             "dist": "dist_adpt"}
 
+scatcols = {"ra": "ra", "dec": "dec",
+            "pmra": "pm_ra", "pmdec": "pm_dec",
+            "dist": "dist"}
 
 def get_values(cat, sgr=sgr_law10, frame=gc_frame_law10):
     if "mua" in cat.dtype.names:
@@ -52,8 +55,11 @@ def get_values(cat, sgr=sgr_law10, frame=gc_frame_law10):
         vlos = gsr_to_rv(cat["v"], cat["ra"], cat["dec"], cat["dist"],
                          gc_frame=frame)
         vlos = vlos.value
-    else:
+    elif "GAIADR2_PMRA" in cat.dtype.names:
         cols = rcatcols
+        vlos = cat["Vrad"]
+    else:
+        cols = scatcols
         vlos = cat["Vrad"]
 
     Lsgr = get_Lsgr(sgr, gc_frame=frame)
@@ -62,7 +68,12 @@ def get_values(cat, sgr=sgr_law10, frame=gc_frame_law10):
                           gc_frame=frame)
     phi_sgr, lsgr = angle_to_sgr(Lsgr, lstar)
     lx, ly, lz = cat["Lx"], cat["Ly"], cat["Lz"]
-    etot = cat["E_tot_pot2"]
+
+    # HACK
+    try:
+        etot = cat["E_tot_pot1"]
+    except(KeyError, ValueError):
+        etot = cat["E_tot_pot2"]
 
     return etot, lx, ly, lz, phi_sgr, lsgr
 
@@ -158,8 +169,8 @@ def read_segue(seguefile, dtype):
                 "RA": "ra",
                 "DEC": "dec",
                 "dist_adpt": "Dist",
-                "GaiaDR2_pmra": "gaia.pmra",
-                "GaiaDR2_pmdec": "gaia.pmdec",
+                "GAIADR2_PMRA": "gaia.pmra",
+                "GAIADR2_PMDEC": "gaia.pmdec",
                 "Vrad": "HRV",
                 "std_Vrad": "e_HRV",
                 "feh": "FeH",
@@ -184,14 +195,24 @@ def read_segue(seguefile, dtype):
     return segout
 
 
+def read_r18(rfile):
+    from numpy.lib.recfunctions import append_fields
+    r18 = np.array(fits.getdata(rfile))
+    data = r18["radial_velocity"]
+    r18 = append_fields(r18, "Vrad", data=data, usemask=False)
+    data = 1/r18["parallax"]
+    r18 = append_fields(r18, "dist", data=data, usemask=False)
+    return r18
+
+
 def get_sgr(cat):
     import astropy.units as u
     import astropy.coordinates as coord
     import gala.coordinates as gc
     ceq = coord.ICRS(ra=cat['RA'] * u.deg, dec=cat['DEC'] * u.deg,
                      distance=cat["dist_adpt"] * u.kpc,
-                     pm_ra_cosdec=cat['GaiaDR2_pmra'] * u.mas / u.yr,
-                     pm_dec=cat['GaiaDR2_pmdec'] * u.mas / u.yr,
+                     pm_ra_cosdec=cat['GAIADR2_PMRA'] * u.mas / u.yr,
+                     pm_dec=cat['GAIADR2_PMDEC'] * u.mas / u.yr,
                      radial_velocity=cat['Vrad'] * u.km / u.s)
     sgr = ceq.transform_to(gc.Sagittarius)
     return sgr

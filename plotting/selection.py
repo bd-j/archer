@@ -16,7 +16,7 @@ import gala.coordinates as gc
 
 from cornerplot import _hist2d as hist2d
 
-from utils import read_lm, read_segue
+from utils import read_lm, read_segue, read_r18
 from utils import gc_frame_law10, sgr_law10, sgr_fritz18
 from utils import get_values
 from outlier import get_rcat_selections, delta_v, vel_outliers
@@ -36,6 +36,7 @@ if __name__ == "__main__":
     segue_cat = False
     noisiness = "noisy"  # "noisy" | "noiseless"
     rcat_vers = "1_4"
+    np.random.seed(101)
 
     if segue_cat:
         data_name = "KSEG"
@@ -56,7 +57,7 @@ if __name__ == "__main__":
     feh = np.clip(rcat["FeH"], -2.5, 0.0)
 
     good = basic & extra & giant
-    sel, selname = lsel & phisel & esel, "allsel"
+    sel, selname = lsel & esel & phisel, "allsel"
     chiv = delta_v(rcat)
     intail, inlead, outtail, outlead = vel_outliers(rcat, good & sel)
     out = outtail | outlead
@@ -71,11 +72,24 @@ if __name__ == "__main__":
     etot_lm, lx_lm, ly_lm, lz_lm, phisgr_lm, lsgr_lm = lmq
 
     # Lm10 selections
-    lmhsel = (lm["in_h3"] == 1) & (np.random.uniform(size=len(lm)) < 0.5)
-    lmr = (np.random.uniform(size=len(lm)) < 0.1) & (~lmhsel)
+    lmhsel = (lm["in_h3"] == 1) & (np.random.uniform(size=len(lm)) < 1.0)
+    lmr = (np.random.uniform(size=len(lm)) < 1.0) & (~lmhsel)
     # for random order
-    ho = np.random.choice(lmhsel.sum(), size=lmhsel.sum(), replace=False)
-    ro = np.random.choice(lmr.sum(), size=lmr.sum(), replace=False)
+    ho = np.random.choice(lmhsel.sum(), size=good.sum(), replace=True)
+    if segue_cat:
+        n = good.sum()
+    else:
+        n = int(len(lm) * 1.0 / (lmhsel.sum() * 1.0) * (lsel & good).sum())
+    ro = np.random.choice(lmr.sum(), size=n, replace=True)
+
+    # --- Rybizki18 smooth model ---
+    rfile = "../data/mocks/R18/R18_{}_v5.fits".format(noisiness)
+    r18 = read_r18(rfile)
+    sq = get_values(r18, sgr=sgr_law10)
+    etot_r, lx_r, ly_r, lz_r, phisgr_r, lsgr_r = sq
+    selr18 = ((r18["logg"] < 3.5) & (r18["parallax"] < 0.5) &
+              (r18["ps_r"] > 15) & (r18["ps_r"] < 18))
+    r18o = np.random.choice(selr18.sum(), size=good.sum(), replace=False)
 
     # --- make a superplot ---
     nsel = 2
@@ -89,7 +103,8 @@ if __name__ == "__main__":
                   left=0.1, right=0.87, wspace=0.28)
     gsc = GridSpec(2, 1, left=0.9, right=0.93)
 
-    zorder = np.argsort(feh[good & sel])[::-1]
+    #zorder = np.argsort(feh[good & sel])[::-1]
+    zorder = slice(None)
 
     # -----------------------
     # --- L_sgr vs Phi ---
@@ -98,14 +113,17 @@ if __name__ == "__main__":
     cb = ax.scatter(phisgr_lm[lmr][ro], lsgr_lm[lmr][ro],
                     c=lm["Lmflag"][lmr][ro], vmin=-2, vmax=3,
                     marker='+', alpha=0.2, s=16)
-    cb = ax.scatter(phisgr_lm[lmhsel][ho], lsgr_lm[lmhsel][ho],
-                    c=lm["Lmflag"][lmhsel][ho], vmin=-2, vmax=3,
-                    marker='*', alpha=0.5, s=16, linewidth=0)
+    if not segue_cat:
+        cb = ax.scatter(phisgr_lm[lmhsel][ho], lsgr_lm[lmhsel][ho],
+                        c=lm["Lmflag"][lmhsel][ho], vmin=-2, vmax=3,
+                        marker='*', alpha=0.5, s=16, linewidth=0)
+    #ax.plot(phisgr_r[selr18][r18o], lsgr_r[selr18][r18o],'o', markersize=ms, mew=0,
+    #        alpha=0.8, color="grey")
 
     p = lm["Pcol"] - lm["Pcol"].min() + 1.0
     p = None
-    hist2d(phisgr_lm, lsgr_lm, ax=ax,
-           span=[(0, 1), (-10000, 15000)], weights=p)
+    hist2d(phisgr_lm[lmhsel], lsgr_lm[lmhsel], ax=ax,
+           span=[(0, 1), (-1000, 15000)], weights=p)
 
     paxes.append(fig.add_subplot(gs[1, 0], sharey=paxes[0], sharex=paxes[0]))
     ax = paxes[1]
@@ -115,15 +133,15 @@ if __name__ == "__main__":
                      c=feh[good & sel][zorder], vmin=-2.5, vmax=0,
                      marker='o', s=16, alpha=0.6, cmap=hcmap, linewidth=0)
     _ = ax.scatter(phisgr[good & sel & out], lsgr[good & sel & out],
-                     c=feh[good & sel & out], vmin=-2.5, vmax=0,
-                     marker='*', s=25, alpha=1.0, linewidth=0, cmap=hcmap)
+                   c=feh[good & sel & out], vmin=-2.5, vmax=0,
+                   marker='*', s=25, alpha=1.0, linewidth=0, cmap=hcmap)
 
     # prettify
     ax.set_ylim(-1000, 15000)
     [ax.set_ylabel(r"L$_{\rm Sgr}$") for ax in paxes]
     paxes[1].set_xlabel(r"$\cos \, \phi_{\rm Sgr}$")  # for ax in paxes]
-    [ax.axhline(lslim, linestyle=":", color="tomato") for ax in paxes]
-    [ax.axvline(philim, linestyle=":", color="tomato") for ax in paxes]
+    #[ax.axhline(lslim, linestyle=":", color="tomato") for ax in paxes]
+    #[ax.axvline(philim, linestyle=":", color="tomato") for ax in paxes]
     paxes[0].text(0.1, 0.9, r"LM10", transform=paxes[0].transAxes, fontsize=14)
     paxes[1].text(0.1, 0.9, r"H3 Giants", transform=paxes[1].transAxes, fontsize=14)
 
@@ -133,9 +151,18 @@ if __name__ == "__main__":
     ax = laxes[0]
     lc = ax.scatter(lz_lm[lmr][ro], ly_lm[lmr][ro], c=lm["Lmflag"][lmr][ro],
                     marker="+", alpha=0.2, vmin=-2, vmax=3)
-    lc = ax.scatter(lz_lm[lmhsel][ho], ly_lm[lmhsel][ho],
-                    c=lm["Lmflag"][lmhsel][ho], vmin=-2, vmax=3,
-                    marker="o", alpha=0.5, s=14, linewidth=0)
+    if not segue_cat:
+        lc = ax.scatter(lz_lm[lmhsel][ho], ly_lm[lmhsel][ho],
+                        c=lm["Lmflag"][lmhsel][ho], vmin=-2, vmax=3,
+                        marker="o", alpha=0.5, s=14, linewidth=0)
+    #ax.plot(lz_r[selr18][r18o], ly_r[selr18][r18o],'o', markersize=ms, mew=0,
+    #        alpha=0.8, color="grey")
+
+
+    hist2d(lz_lm[lmhsel], ly_lm[lmhsel], ax=ax,
+           span=[(-10000, 10000), (-14000, 10000)], weights=p)
+
+
     laxes.append(fig.add_subplot(gs[1, 1], sharey=laxes[0], sharex=laxes[0]))
     ax = laxes[1]
     ax.plot(lz[good & ~sel], ly[good & ~sel], 'o', markersize=ms, mew=0,

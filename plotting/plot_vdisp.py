@@ -12,6 +12,7 @@ from astropy.io import fits
 from utils import get_values, sgr_law10
 from utils import read_lm, read_segue
 from fit import Model
+from outlier import read_from_h5
 
 from matplotlib.pyplot import rcParams
 rcParams["font.family"] = "serif"
@@ -22,6 +23,7 @@ rcParams["mathtext.sf"] = "serif"
 rcParams['mathtext.it'] = 'serif:italic'
 
 
+# --- Literature traces ---
 g17trail = [(240, 250, 260, 270),
             (15.7, 13.5, 12.5, 12.6), (1.5, 1.1, 1.1, 1.5),
             (14.0, 8.5, 7.1, 6.4), (2.6, 1.3, 1.4, 3.0),
@@ -48,24 +50,6 @@ belokurov14 = [(217.5, 227.5, 232.5, 237.5, 242.5, 247.5, 252.5, 257.5, 262.5,
                 267.5, 272.5, 277.5, 285.0, 292.5),
                (-127.2, -141.1, -150.8, -141.9, -135.1, -129.5, -120.0, -108.8,
                 -98.6, -87.2, -71.8, -58.8, -35.4, -7.8)]
-
-
-def read_from_h5(iname):
-    rcols = ["logl", "samples", "logz", "logwt"]
-    import h5py
-    with h5py.File(iname, "r") as f:
-        model = Model(f["alpha_range"][:], f["beta_range"][:],
-                      f["pout_range"][:])
-        try:
-            idx = f["idx"][:]
-        except:
-            idx = [-1]
-        model.set_data(f["lamb"][:], f["vel"][:], idx=idx)
-        results = {}
-        for c in rcols:
-            results[c] = f[c][:]
-
-    return model, results
 
 
 if __name__ == "__main__":
@@ -196,7 +180,8 @@ if __name__ == "__main__":
 
     stax.legend(fontsize=8)
     if savefigs:
-        fig.savefig("figures/vfit_placeholder.png", dpi=300)
+        names = data_name, noisiness, selname, ext
+        fig.savefig("figures/vfit_{}_{}_{}.{}".format(*names), dpi=300)
         pl.close(fig)
     else:
         pl.show(fig)

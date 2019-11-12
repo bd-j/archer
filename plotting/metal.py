@@ -41,7 +41,7 @@ if __name__ == "__main__":
     feh = rcat["FeH"]
 
     good = basic & extra & giant
-    sel, selname = lsel & phisel & esel, "allsel"
+    sel, selname = lsel, "lsel"
     chiv = delta_v(rcat)
     intail, inlead, outtail, outlead = vel_outliers(rcat, good & sel)
 
@@ -171,7 +171,8 @@ if __name__ == "__main__":
 
     [ax.set_yticklabels([]) for ax in zaxes]
     [ax.set_ylabel("N([Fe/H]) (Normalized)") for ax in zaxes]
-    zfig.savefig("figures/sgr_feh_{}_streams.{}".format(data_name, ext))
+    names = data_name, selname, ext
+    zfig.savefig("figures/feh_streams_{}_{}.{}".format(*names), dpi=300)
 
     pl.close(zfig)
 
