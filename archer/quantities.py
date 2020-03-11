@@ -7,7 +7,7 @@
 import numpy as np
 import astropy.units as u
 import astropy.coordinates as coord
-from gala.coordinates import Sagittarius
+from gala.coordinates import Sagittarius, reflex_correct
 
 
 def sgr_coords(cat, sgr_frame=Sagittarius):
@@ -38,6 +38,106 @@ def compute_lstar(cat, gc_frame=coord.Galactocentric()):
     Lstar = np.cross(xx, p)
 
     return Lstar, gc
+
+
+def ref_corr(cat, gc_frame=coord.Galactocentric()):
+    
+    ceq = coord.ICRS(ra=cat['ra'] * u.deg, dec=cat['dec'] * u.deg,
+                     distance=cat["dist"] * u.kpc,
+                     pm_ra_cosdec=cat['pmra'] * u.mas / u.yr,
+                     pm_dec=cat['pmdec'] * u.mas / u.yr,
+                     radial_velocity=cat['vrad'] * u.km / u.s)
+    reflex_correct(ceq)
+    cat["pmra"] = ceq.pm_ra_cosdec
+    cat["pmdec"] = ceq.pm_dec
+    cat["vrad"] = ceq.radial_velocity
+    return cat
+
+
+
+def my_reflex_correct(coords, galactocentric_frame=None):
+    """Correct the input Astropy coordinate object for solar reflex motion.
+
+    The input coordinate instance must have distance and radial velocity information. If the radial velocity is not known, fill the
+
+    Parameters
+    ----------
+    coords : `~astropy.coordinates.SkyCoord`
+        The Astropy coordinate object with position and velocity information.
+    galactocentric_frame : `~astropy.coordinates.Galactocentric` (optional)
+        To change properties of the Galactocentric frame, like the height of the
+        sun above the midplane, or the velocity of the sun in a Galactocentric
+        intertial frame, set arguments of the
+        `~astropy.coordinates.Galactocentric` object and pass in to this
+        function with your coordinates.
+
+    Returns
+    -------
+    coords : `~astropy.coordinates.SkyCoord`
+        The coordinates in the same frame as input, but with solar motion
+        removed.
+
+    """
+    c = coord.SkyCoord(coords)
+
+    # If not specified, use the Astropy default Galactocentric frame
+    if galactocentric_frame is None:
+        galactocentric_frame = coord.Galactocentric()
+
+    v_sun = galactocentric_frame.galcen_v_sun
+
+    observed = c.transform_to(galactocentric_frame)
+    rep = observed.cartesian.without_differentials()
+    rep = rep.with_differentials(observed.cartesian.differentials['s'] + v_sun)
+    fr = galactocentric_frame.realize_frame(rep).transform_to(c.frame)
+    return coord.SkyCoord(fr)
+
+
+
+def reflex_uncorrect(cat, gc_frame=coord.Galactocentric()):
+    """The DL17 proper motions are reflex corrected (i.e GSR).
+    This function will put them back into the LSR.
+
+    Parameters
+    ----------
+    cat : numpy structured array
+        
+    gc_frame : `~astropy.coordinates.Galactocentric` (optional)
+        To change properties of the Galactocentric frame, like the height of the
+        sun above the midplane, or the velocity of the sun in a Galactocentric
+        intertial frame, set arguments of the
+        `~astropy.coordinates.Galactocentric` object and pass in to this
+        function with your coordinates.
+
+    Returns
+    -------
+    coords : `~astropy.coordinates.SkyCoord`
+        The coordinates in the same frame as input, but with solar motion
+        included (i.e., if the input is ICRS or FK5 or so, the resulting
+        coordinates would have pm and velocity as would be observed)
+
+    """
+    
+    ceq = coord.ICRS(ra=cat['ra'] * u.deg, dec=cat['dec'] * u.deg,
+                     distance=cat["dist"] * u.kpc,
+                     pm_ra_cosdec=cat['pmra'] * u.mas / u.yr,
+                     pm_dec=cat['pmdec'] * u.mas / u.yr,
+                     radial_velocity=cat['vrad'] * u.km / u.s)
+
+
+    c = coord.SkyCoord(ceq)
+    # Transform to galctocentric
+    corr = c.transform_to(gc_frame)
+    # subtract solar velocity
+    v_sun = gc_frame.galcen_v_sun
+    rep = corr.cartesian.without_differentials()
+    rep = rep.with_differentials(corr.cartesian.differentials['s'] - v_sun)
+    fr = gc_frame.realize_frame(rep).transform_to(c.frame)
+    uncorr = coord.SkyCoord(fr)
+    cat["pmra"] = uncorr.pm_ra_cosdec.value
+    cat["pmdec"] = uncorr.pm_dec.value
+    cat["vrad"] = uncorr.radial_velocity.value
+    return cat
 
 
 def rv_to_gsr(cat, gc_frame=coord.Galactocentric()):

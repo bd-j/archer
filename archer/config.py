@@ -32,3 +32,13 @@ config.rcat_file = pjoin(config.data, "catalogs", "rcat_V{}_MSG.fits".format(con
 
 # --- kinematics ---
 config.gc_frame = astropy.coordinates.Galactocentric()
+
+
+def plot_defaults(rcParams):
+    rcParams["font.family"] = "serif"
+    rcParams["font.serif"] = ["STIXGeneral"]
+    rcParams["mathtext.fontset"] = "custom"
+    rcParams["mathtext.rm"] = "serif"
+    rcParams["mathtext.sf"] = "serif"
+    rcParams['mathtext.it'] = 'serif:italic'
+    return rcParams

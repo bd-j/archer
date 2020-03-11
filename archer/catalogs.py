@@ -5,7 +5,8 @@ import numpy as np
 import matplotlib.pyplot as pl
 from astropy import units as u
 
-from .quantities import gsr_to_rv, rv_to_gsr, compute_lstar, sgr_coords
+from .quantities import compute_lstar, sgr_coords, reflex_uncorrect
+from .frames import gc_frame_dl17
 
 
 required_columns = [("ra", u.deg),
@@ -37,9 +38,11 @@ lm10_cols = {"ra": "ra", "dec": "dec",
              "vgsr": "vgsr"}
 
 dl17_cols = {"ra": "ra", "dec": "dec",
-             "pmra": "pm_ra", "pmdec": "pm_dec",
+             # Note the pms are solar reflex corrected
+             "pmra": "pmRA", "pmdec": "pmdec",
              "dist": "dist",
-             "vgsr": "vlos"}
+             # this is solar reflex corrected (i.e. is vgsr)
+             "vrad": "vlos"}
 
 r18_cols = {"ra": "ra", "dec": "dec",
             "pmra": "pm_ra", "pmdec": "pm_dec",
@@ -69,8 +72,18 @@ COLMAPS = {"LM10": lm10_cols,
 def homogenize(cat, catname=""):
     """Construct an auxiliary, row matched, catalog that has a standardized
     set of column nmes for phase spece infomation.
+    
+    Parameters
+    ----------
+    cat : numpy structured array
+
+    catname : str
+        One of     
     """
-    cmap = COLMAPS[catname]
+    try:
+        cmap = COLMAPS[catname]
+    except(KeyError):
+        raise(KeyError, "`catname` must be one of {}".format(COLMAPS.keys()))
     #cols = list(cat.dtype.names)
     newcols = [r[0] for r in required_columns + derived_columns]
     dtype = np.dtype([(c, np.float32) for c in newcols])
@@ -81,16 +94,25 @@ def homogenize(cat, catname=""):
             ncat[c] = mapping[1](cat[mapping[0]])
         else:
             ncat[c] = cat[mapping]
+
+    # reflex uncorrect the DL17 values
+    if catname == "DL17":
+        ncat = reflex_uncorrect(cat, gc_frame=gc_frame_dl17)    
+    
     return ncat
 
 
 def rectify(ncat, gc_frame):
-    
-    # convert LOS velocities
-    if ncat["vrad"].max() == 0:
-        ncat["vrad"] = gsr_to_rv(ncat, gc_frame=gc_frame).value
-    else:
-        ncat["vgsr"] = rv_to_gsr(ncat, gc_frame=gc_frame)
+    """Make sure all columns in auxialieary catalog are correct.
+
+    Parameters
+    ----------
+    ncat : numpy structured array
+        The auxialiary catalog
+        
+    gc_frame : astropy.coordinates.Frame
+        The galactocentric frame used to convert between GSR and Heliocentric velocities.
+    """
     
     # kinematic data
     lstar, gc = compute_lstar(ncat, gc_frame)
