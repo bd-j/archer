@@ -1,31 +1,31 @@
-- *Fig 1*: `selection_lylz.py` X
+- X *Fig 1*: `selection_lylz.py` 
    
-   Sgr selection using Ly-Lz and comparing to LM10 (current Fig 1 in overleaf).
+   Sgr selection using Ly-Lz and comparing to LM10 (current Fig 1 in overleaf).  Add DL17?
 
-- *Fig 2*: `metallicities.py`
+- X *Fig 2*: `metallicities.py`
    
    [a/Fe] vs. [Fe/H] and [Fe/H] histogram
 
-- *Fig 3*: `ely.py`
+- X *Fig 3*: `ely.py`
    
    2-panel E-Ly.  left All, right: low metallicity.  Sgr members maybe black and background in grey (background would be all giants above the SNR cut).  Show LM10 also?
 
-- *Fig 4*: `vgsr_lambda_feh.py`
+- X *Fig 4*: `vgsr_lambda_feh.py`
    
    3-panel V_GSR vs. Lambda in three metallicity slices.  Show Fig 5 selections.
 
-- *Fig 5*: `mdf_byfeh.py`
+- X *Fig 5*: `mdf_by_vlam.py`
    
-   [Fe/H] histogram for several selections in V-Lam space.
+   [Fe/H] histogram for several selections in V-Lam space. Lead/Trail x Cold/Diffuse
 
-- *Fig 6*: `vgsr_lambda_mocks.py`
+- X *Fig 6*: `vgsr_lambda_mocks.py`
    
    V_GSR vs. Lambda H3 vs. LM10 vs. DL17 
 
-- *Fig 7*: `sigma_v.py`
+- O *Fig 7*: `sigma_v.py`
    
    sigma-arm vs. lambda plot, with comparison to models and the literature.
 
-- *Fig 8*: `quiver.py`
+- O *Fig 8*: `quiver.py`
    
    quiver plot

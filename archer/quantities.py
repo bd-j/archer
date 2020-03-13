@@ -40,9 +40,9 @@ def compute_lstar(cat, gc_frame=coord.Galactocentric()):
     return Lstar, gc
 
 
-def compute_energy(cat, potential)
+def compute_energy(cat, potential):
     pos = np.array([cat['X_gal'], cat['Y_gal'], cat['Z_gal']]) * u.kpc
-    vel = np.array([cat['Vx_gal'], cat['Vy_gal'], cat['Vz_gal']]) * u.km / u.s)
+    vel = np.array([cat['Vx_gal'], cat['Vy_gal'], cat['Vz_gal']]) * u.km / u.s
     w = gd.PhaseSpacePosition(pos=pos, vel = vel.to(u.kpc/u.Myr))
     orbit = compute_orbit(w, potential)
     cat["ekin"] = w.kinetic_energy()

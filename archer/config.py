@@ -3,35 +3,52 @@
 
 import os
 import numpy as np
-from argparse import Namespace
+from argparse import Namespace, ArgumentParser
 import astropy.coordinates
 
 epath = os.path.expandvars
 pjoin = os.path.join
 
-config = Namespace()
+parser = ArgumentParser()
 
 # --- Figures ---
-config.figure_extension = "png"
-config.dpi = 450
-config.savefigs = False
+parser.add_argument("--figure_extension", type=str,
+                    default="png")
+parser.add_argument("--figure_dpi", type=int, default=450)
+parser.add_argument("--savefig", action="store_true")
 
 
 # --- catalog versions ---
-config.add_noise = False
-config.segue_cat = False
-config.data = epath("$HOME/Projects/archer/data/")
+parser.add_argument("--add_noise", action="store_true")
+parser.add_argument("--segue_cat", action="store_true")
+parser.add_argument("--data_dir", type=str,
+                    default=epath("$HOME/Projects/archer/data/"))
 
-config.lm10_file = pjoin(config.data, "mocks", "LM10", "SgrTriax.fits")
-config.dl17_file = pjoin(config.data, "mocks", "DL17", "DL17_all_orig.fits")
-config.r18_file = pjoin(config.data, "mocks", "R18", "R18_noiseless_v5.fits")
+parser.add_argument("--lm10_file", type=str,
+                    default="SgrTriax.fits")
+parser.add_argument("--dl17_file", type=str,
+                    default="DL17_all_orig.fits")
+parser.add_argument("--r18_file", type=str,
+                    default="R18_noiseless_v5.fits")
+parser.add_argument("--segue_file", type=str,
+                    default="ksegue_gaia_v5.fits")
 
-config.segue_file = pjoin(config.data, "catalogs", "ksegue_gaia_v5.fits")
-config.rcat_vers = "2_0"
-config.rcat_file = pjoin(config.data, "catalogs", "rcat_V{}_MSG.fits".format(config.rcat_vers.replace("_", ".")))
+parser.add_argument("--rcat_vers", type=str, default="2_0")
 
-# --- kinematics ---
-config.gc_frame = astropy.coordinates.Galactocentric()
+
+def rectify_config(config):
+    
+    config.lm10_file = pjoin(config.data_dir, "mocks", "LM10", config.lm10_file)
+    config.dl17_file = pjoin(config.data_dir, "mocks", "DL17", config.dl17_file)
+    config.r18_file = pjoin(config.data_dir, "mocks", "R18", config.r18_file)
+    config.segue_file = pjoin(config.data_dir, "catalogs", config.segue_file)
+
+    fn = "rcat_V{}_MSG.fits".format(config.rcat_vers.replace("_", "."))
+    config.rcat_file = pjoin(config.data_dir, "catalogs", fn)
+
+    config.gc_frame = astropy.coordinates.Galactocentric()
+
+    return config
 
 
 def plot_defaults(rcParams):
