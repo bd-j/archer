@@ -5,7 +5,8 @@ import numpy as np
 import matplotlib.pyplot as pl
 from astropy import units as u
 
-from .quantities import compute_lstar, sgr_coords, reflex_uncorrect
+from .quantities import compute_lstar, sgr_coords
+from .quantities import rv_to_gsr, gsr_to_rv, reflex_uncorrect
 from .frames import gc_frame_dl17
 
 
@@ -71,7 +72,7 @@ COLMAPS = {"LM10": lm10_cols,
 
 def homogenize(cat, catname=""):
     """Construct an auxiliary, row matched, catalog that has a standardized
-    set of column nmes for phase spece infomation.
+    set of column names for phase spece infomation.
     
     Parameters
     ----------
@@ -95,15 +96,16 @@ def homogenize(cat, catname=""):
         else:
             ncat[c] = cat[mapping]
 
-    # reflex uncorrect the DL17 values
     if catname == "DL17":
-        ncat = reflex_uncorrect(cat, gc_frame=gc_frame_dl17)    
+        # reflex uncorrect the DL17 values
+        ncat = reflex_uncorrect(ncat, gc_frame=gc_frame_dl17)
+        # id stars in the progenitor?
     
     return ncat
 
 
 def rectify(ncat, gc_frame):
-    """Make sure all columns in auxialieary catalog are correct.
+    """Make sure all columns in auxiliary catalog are correct.
 
     Parameters
     ----------
@@ -113,6 +115,11 @@ def rectify(ncat, gc_frame):
     gc_frame : astropy.coordinates.Frame
         The galactocentric frame used to convert between GSR and Heliocentric velocities.
     """
+    # convert LOS velocities
+    if ncat["vrad"].max() == 0:
+        ncat["vrad"] = gsr_to_rv(ncat, gc_frame=gc_frame).value
+    else:
+        ncat["vgsr"] = rv_to_gsr(ncat, gc_frame=gc_frame)
     
     # kinematic data
     lstar, gc = compute_lstar(ncat, gc_frame)
