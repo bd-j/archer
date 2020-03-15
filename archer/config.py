@@ -14,11 +14,15 @@ parser = ArgumentParser()
 # --- Figures ---
 parser.add_argument("--figure_extension", type=str,
                     default="png")
+parser.add_argument("--figure_dir", type=str,
+                    default="figures/")
 parser.add_argument("--figure_dpi", type=int, default=450)
 parser.add_argument("--savefig", action="store_true")
 
 
 # --- catalog versions ---
+parser.add_argument("--rcat_vers", type=str, default="2_0")
+
 parser.add_argument("--add_noise", action="store_true")
 parser.add_argument("--segue_cat", action="store_true")
 parser.add_argument("--data_dir", type=str,
@@ -32,8 +36,6 @@ parser.add_argument("--r18_file", type=str,
                     default="R18_noiseless_v5.fits")
 parser.add_argument("--segue_file", type=str,
                     default="ksegue_gaia_v5.fits")
-
-parser.add_argument("--rcat_vers", type=str, default="2_0")
 
 
 def rectify_config(config):
@@ -54,6 +56,7 @@ def rectify_config(config):
 def plot_defaults(rcParams):
     rcParams["font.family"] = "serif"
     rcParams["font.serif"] = ["STIXGeneral"]
+    rcParams["font.size"] = 12
     rcParams["mathtext.fontset"] = "custom"
     rcParams["mathtext.rm"] = "serif"
     rcParams["mathtext.sf"] = "serif"
