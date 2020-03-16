@@ -71,7 +71,7 @@ if __name__ == "__main__":
         ax.hist(rcat[good & sgr]["FeH"], bins=zbins, weights=np.ones(n_tot) * n_this/n_tot,
                 color="black", histtype="step", linestyle=":")
 
-    [ax.set_xlabel("[Fe/H] (dex)") for ax in axes.flat]
+    [ax.set_xlabel("[Fe/H]") for ax in axes.flat]
     [ax.set_ylabel("N") for ax in axes.flat]
     
     if config.savefig:

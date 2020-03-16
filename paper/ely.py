@@ -60,7 +60,7 @@ if __name__ == "__main__":
                    marker="o", markersize=ms, mew=0, color='black', alpha=1.0,
                    label="Sgr Selected Giants")
     ax.set_title("All metallicities")
-    ax.legend()
+    ax.legend(loc="lower left", fontsize=10)
     
     #plot h3 low FeH
     lowz = rcat["FeH"] < zsplit
@@ -73,13 +73,13 @@ if __name__ == "__main__":
 
 
     # prettify
-    lunit = r" ($\times \, 10^4 \, {\rm kpc} \cdot {\rm km} \cdot {\rm s}^{-1}$)"
-    [ax.set_ylabel(r"E$_{\rm tot} ()$")
+    lunit = r" ($10^4 \, {\rm kpc} \, {\rm km} \, {\rm s}^{-1}$)"
+    [ax.set_ylabel(r"E$_{\rm tot}$ ($10^4 \, {\rm km}^2 \, {\rm s}^{-2}$)")
      for ax in laxes]
     [ax.set_xlabel(r"L$_{\rm y}$" + lunit)
      for ax in laxes]
-    [ax.set_ylim(-17.5, 8) for ax in laxes]
-    [ax.set_xlim(-1.4, 1.1) for ax in laxes]
+    [ax.set_ylim(-17.5, 5) for ax in laxes]
+    [ax.set_xlim(-1.4, 1.4) for ax in laxes]
     [ax.axvline(0, linestyle=":", color="k", alpha=0.8) for ax in laxes]
     #[ax.axhline(0, linestyle=":", color="k", alpha=0.8) for ax in laxes]
 

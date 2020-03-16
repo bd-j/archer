@@ -69,11 +69,11 @@ if __name__ == "__main__":
     ax.text(0.1, 0.85, "LM10", transform=ax.transAxes)
 
     # plot selection line
-    zz =  np.linspace(-1, 1, 100)
-    [ax.plot(zz, -0.3 * zz - 0.25, linestyle="--", color="royalblue", linewidth=3) for ax in laxes]
+    zz =  np.linspace(-0.9, 1, 100)
+    [ax.plot(zz, -0.3 * zz - 0.25, linestyle="--", color="royalblue", linewidth=2) for ax in laxes]
 
     # prettify
-    lunit = r" ($\times \, 10^4 \, {\rm kpc} \cdot {\rm km} \cdot {\rm s}^{-1}$)"
+    lunit = r" ($10^4 \, {\rm kpc} \, {\rm km} \, {\rm s}^{-1}$)"
     [ax.set_ylabel(r"L$_{\rm y}$" + lunit) for ax in laxes]
     [ax.set_xlabel(r"L$_{\rm z}$" + lunit) for ax in laxes]
     [ax.set_ylim(-1.4, 1.2) for ax in laxes]

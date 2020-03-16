@@ -44,7 +44,7 @@ if __name__ == "__main__":
     # Plot histogram of feh values
     hax.hist(rcat[sel]["feh"], bins=zbins, histtype="step",
              density=False, color="black")
-    hax.set_xlabel("[Fe/H] (dex)")
+    hax.set_xlabel("[Fe/H]")
     hax.set_ylabel("N")
     hax.set_xlim(zmin, zmax)
 
@@ -53,8 +53,8 @@ if __name__ == "__main__":
     zax.plot(rcat[sel]["feh"], rcat[sel]["afe"],
              marker="o", mew=0, linewidth=0, markersize=2,
              color="black", linestyle="")
-    zax.set_xlabel("[Fe/H] (dex)")
-    zax.set_ylabel(r"[$\alpha$/Fe] (dex)")
+    zax.set_xlabel("[Fe/H]")
+    zax.set_ylabel(r"[$\alpha$/Fe]")
     zax.set_xlim(zmin, zmax)
     zax.set_ylim(-0.3, 0.7)
 
