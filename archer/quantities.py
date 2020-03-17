@@ -59,7 +59,7 @@ def compute_orbit(w, potential):
     raise(NotImplementedError)
 
 
-def reflex_uncorrect(cat, gc_frame=coord.Galactocentric()):
+def reflex_uncorrect(cat=None, ceq=None, gc_frame=coord.Galactocentric()):
     """The DL17 proper motions are reflex corrected (i.e GSR). This function
     will put them back into the LSR.
 
@@ -82,12 +82,12 @@ def reflex_uncorrect(cat, gc_frame=coord.Galactocentric()):
         (i.e., having pm and velocity as would be observed)
 
     """
-    
-    ceq = coord.ICRS(ra=cat['ra'] * u.deg, dec=cat['dec'] * u.deg,
-                     distance=cat["dist"] * u.kpc,
-                     pm_ra_cosdec=cat['pmra'] * u.mas / u.yr,
-                     pm_dec=cat['pmdec'] * u.mas / u.yr,
-                     radial_velocity=cat['vrad'] * u.km / u.s)
+    if cat is not None:
+        ceq = coord.ICRS(ra=cat['ra'] * u.deg, dec=cat['dec'] * u.deg,
+                         distance=cat["dist"] * u.kpc,
+                         pm_ra_cosdec=cat['pmra'] * u.mas / u.yr,
+                         pm_dec=cat['pmdec'] * u.mas / u.yr,
+                         radial_velocity=cat['vrad'] * u.km / u.s)
 
     c = coord.SkyCoord(ceq)
     # Transform to galctocentric
@@ -98,10 +98,13 @@ def reflex_uncorrect(cat, gc_frame=coord.Galactocentric()):
     rep = rep.with_differentials(corr.cartesian.differentials['s'] - v_sun)
     fr = gc_frame.realize_frame(rep).transform_to(c.frame)
     uncorr = coord.SkyCoord(fr)
-    cat["pmra"] = uncorr.pm_ra_cosdec.value
-    cat["pmdec"] = uncorr.pm_dec.value
-    cat["vrad"] = uncorr.radial_velocity.value
-    return cat
+    if cat is not None:
+        cat["pmra"] = uncorr.pm_ra_cosdec.value
+        cat["pmdec"] = uncorr.pm_dec.value
+        cat["vrad"] = uncorr.radial_velocity.value
+        return cat
+    else:
+        return uncorr
 
 
 def rv_to_gsr(cat, gc_frame=coord.Galactocentric()):

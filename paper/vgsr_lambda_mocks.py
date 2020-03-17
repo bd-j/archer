@@ -34,7 +34,8 @@ if __name__ == "__main__":
     dl17_r = rectify(homogenize(dl17, "DL17"), gc_frame_dl17)
 
     # selections
-    good = (rcat["FLAG"] == 0) & (rcat["SNR"] > 3) & (rcat["logg"] < 3.5)
+    good = ((rcat["FLAG"] == 0) & (rcat["SNR"] > 3) &
+            (rcat["logg"] < 3.5) & (rcat["FeH"] >= -3))
     sgr = rcat_r["ly"] < (-0.3 * rcat_r["lz"] - 0.25)
     unbound = lm10["tub"] > 0
 

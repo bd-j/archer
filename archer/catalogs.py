@@ -104,7 +104,7 @@ def homogenize(cat, catname="", pcat=None,
 
     if catname == "DL17":
         # reflex uncorrect the DL17 values
-        ncat = reflex_uncorrect(ncat, gc_frame=gc_frame_dl17)
+        ncat = reflex_uncorrect(cat=ncat, gc_frame=gc_frame_dl17)
         # id stars in the progenitor?
     
     if fractional_distance_error > 0.0:
