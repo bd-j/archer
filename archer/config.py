@@ -36,7 +36,8 @@ parser.add_argument("--r18_file", type=str,
                     default="R18_noiseless_v5.fits")
 parser.add_argument("--segue_file", type=str,
                     default="ksegue_gaia_v5.fits")
-
+parser.add_argument("-pcat_file", type=str,
+                    default="pcat.fits")
 
 def rectify_config(config):
     
@@ -47,6 +48,7 @@ def rectify_config(config):
 
     fn = "rcat_V{}_MSG.fits".format(config.rcat_vers.replace("_", "."))
     config.rcat_file = pjoin(config.data_dir, "catalogs", fn)
+    config.pcat_file = pjoin(config.data_dir, "catalogs", config.pcat_file)
 
     config.gc_frame = astropy.coordinates.Galactocentric()
 

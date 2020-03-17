@@ -13,10 +13,10 @@ from archer.catalogs import rectify, homogenize
 from archer.frames import gc_frame_law10, gc_frame_dl17
 
 
-def show_vlam(cat, show, ax=None, rcat=None, colorby=None, **plot_kwargs):
-    if colorby:
+def show_vlam(cat, show, ax=None, colorby=None, **plot_kwargs):
+    if colorby is not None:
         cbh = ax.scatter(cat[show]["lambda"], cat[show]["vgsr"],
-                         c=rcat[show][colorby], **plot_kwargs)
+                         c=colorby[show], **plot_kwargs)
     else:
         cbh = ax.plot(cat[show]["lambda"], cat[show]["vgsr"],
                       **plot_kwargs)
@@ -30,7 +30,7 @@ if __name__ == "__main__":
              (-1.9, -0.8),
              (-3, -1.9)]
     colorby = None
-    #colorby = "FeH"
+    #colorby = rcat["FeH"]
     config = rectify_config(parser.parse_args())
 
     # rcat
@@ -69,8 +69,8 @@ if __name__ == "__main__":
             ax = vlaxes[-1]
             inz = (rcat["FeH"] < zrange[1]) & (rcat["FeH"] >= zrange[0])
             show = good & sgr & inz & inarm
-            if colorby:
-                ax, cbh = show_vlam(rcat_r, show, ax=ax, rcat=rcat, colorby=colorby,
+            if colorby is not None:
+                ax, cbh = show_vlam(rcat_r, show, ax=ax, colorby=colorby,
                                     vmin=zrange[0], vmax=zrange[1], cmap="magma",
                                     marker='o', s=4, alpha=0.8, zorder=2, linewidth=0)
             else:
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     vlaxes[0, 1].set_title("Leading")
 
     # ---- Colorbars ----
-    if colorby:
+    if colorby is not None:
         for iz, cb in enumerate(cbars[:, 1]):
             cax = fig.add_subplot(gsc[iz, -1])
             pl.colorbar(cb, cax=cax, label=r"[Fe/H]")

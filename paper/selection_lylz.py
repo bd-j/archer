@@ -13,8 +13,8 @@ from archer.frames import gc_frame_law10, gc_frame_dl17
 
 
 def show_lzly(cat, show, ax, colorby=None, **plot_kwargs):
-    if colorby:
-        cb = ax.scatter(cat["lz"][show], cat["ly"][show], c=cat[colorby][show],
+    if colorby is not None:
+        cb = ax.scatter(cat["lz"][show], cat["ly"][show], c=colorby[show],
                        **plot_kwargs)
         return ax, cb
     else:
@@ -25,6 +25,7 @@ def show_lzly(cat, show, ax, colorby=None, **plot_kwargs):
 
 if __name__ == "__main__":
 
+    ncol = 3
     config = rectify_config(parser.parse_args())
 
     # rcat
@@ -47,10 +48,10 @@ if __name__ == "__main__":
     # plot setup
     rcParams = plot_defaults(rcParams)
     ms = 2
-    figsize = (10, 4.5)
+    figsize = (4 * ncol + 2, 4.5)
     fig = pl.figure(figsize=figsize)
     from matplotlib.gridspec import GridSpec
-    gs = GridSpec(1, 2, width_ratios=[10, 10],
+    gs = GridSpec(1, ncol, width_ratios=ncol * [10],
                   left=0.1, right=0.95, wspace=0.25, top=0.93)
     #gsc = GridSpec(1, 2, left=0.1, right=0.95, wspace=0.3,
     #               bottom=0.89, top=0.95)
@@ -60,14 +61,23 @@ if __name__ == "__main__":
     laxes.append(fig.add_subplot(gs[0, 0]))
     ax = show_lzly(rcat_r, good, laxes[0], linestyle="",
                    marker="o", markersize=ms, mew=0, color='grey', alpha=0.5)
-    ax.text(0.1, 0.85, "All H3 Giants", transform=ax.transAxes)
+    ax.set_title("All H3 Giants")
     
     #plot LM10
     laxes.append(fig.add_subplot(gs[0, 1], sharey=laxes[0], sharex=laxes[0]))
     ax = show_lzly(lm10_r, unbound, laxes[-1], linestyle="",
                    marker="o", markersize=ms, mew=0, color='grey', alpha=0.5)
-    ax.text(0.1, 0.85, "LM10", transform=ax.transAxes)
+    ax.set_title("LM10")
 
+    #plot DL17
+    if ncol > 2:
+        laxes.append(fig.add_subplot(gs[0, 2], sharey=laxes[0], sharex=laxes[0]))
+        ax = show_lzly(dl17_r, dl17["id"]==0, laxes[-1], linestyle="",
+                       marker="o", markersize=ms, mew=0, color='tomato', alpha=0.5, label="Stars")
+        #ax = show_lzly(dl17_r, dl17["id"]==1, laxes[-1], linestyle="",
+        #               marker="o", markersize=ms, mew=0, color='royalblue', alpha=0.5, label="DM")
+        ax.set_title("DL17")
+        ax.legend()
     # plot selection line
     zz =  np.linspace(-0.9, 1, 100)
     [ax.plot(zz, -0.3 * zz - 0.25, linestyle="--", color="royalblue", linewidth=2) for ax in laxes]

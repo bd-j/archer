@@ -17,7 +17,7 @@ from archer.fitting import best_model, sample_posterior
 if __name__ == "__main__":
     
     nsigma = 2
-    zmin, zmax = -2.8, 0.05
+    zmin, zmax = -3.0, 0.05
     zbins = np.arange(zmin, zmax, 0.1)
     config = rectify_config(parser.parse_args())
 

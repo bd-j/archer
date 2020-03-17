@@ -27,11 +27,12 @@ derived_columns = [("x_gal", u.kpc, "galactocentric"),
                    ("vz_gal", u.km / u.s, "galactocentric"),
                    ("lambda", u.deg, "LM10 system"),
                    ("beta", u.deg, "LM10 system"),
-                   ("lx",),
-                   ("ly",),
-                   ("lz",),
-                   ("vgsr",),
-                   ("etot",)]
+                   ("lx", u.kpc * u.km / u.s),
+                   ("ly", u.kpc * u.km / u.s),
+                   ("lz", u.kpc * u.km / u.s),
+                   ("vgsr", u.km / u.s, "Galactic standard of rest"),
+                   ("etot", (u.km / u.s)**2),
+                   ("in_h3", bool)]
 
 lm10_cols = {"ra": "ra", "dec": "dec",
              "pmra": "mua", "pmdec": "mud",
@@ -70,7 +71,8 @@ COLMAPS = {"LM10": lm10_cols,
            "RCAT": rcat_cols}
 
 
-def homogenize(cat, catname=""):
+def homogenize(cat, catname="", pcat=None,
+               fractional_distance_error=0.0):
     """Construct an auxiliary, row matched, catalog that has a standardized
     set of column names for phase spece infomation.
     
@@ -79,16 +81,20 @@ def homogenize(cat, catname=""):
     cat : numpy structured array
 
     catname : str
-        One of     
+        One of "RCAT", "DL17", "LM10", "KSEGUE", or "R18"
+
+    fractional_distance_error: float, optional (default 0.0)
+        Fractional distance error to add to heliocentric distances 
     """
     try:
         cmap = COLMAPS[catname]
     except(KeyError):
-        raise(KeyError, "`catname` must be one of {}".format(COLMAPS.keys()))
+        raise KeyError("`catname` must be one of {}".format(COLMAPS.keys()))
     #cols = list(cat.dtype.names)
     newcols = [r[0] for r in required_columns + derived_columns]
     dtype = np.dtype([(c, np.float32) for c in newcols])
 
+    # Copy columns over
     ncat = np.zeros(len(cat), dtype=dtype)
     for c, mapping in cmap.items():
         if type(mapping) is tuple:
@@ -101,6 +107,14 @@ def homogenize(cat, catname=""):
         ncat = reflex_uncorrect(ncat, gc_frame=gc_frame_dl17)
         # id stars in the progenitor?
     
+    if fractional_distance_error > 0.0:
+        # Noise up the mocks
+        ncat["dist"] *= np.random.normal(0.0, fractional_distance_error,
+                                         size=len(ncat))
+
+    if pcat is not None:
+        ncat["in_h3"][:] = in_h3(ncat, pcat)
+
     return ncat
 
 
@@ -137,3 +151,24 @@ def rectify(ncat, gc_frame):
     ncat["beta"] = sgr.Beta.value
 
     return ncat
+
+
+def in_h3(hcat, pcat, radius=3.0):
+    """
+    Parameters
+    ----------
+    hcat : structured ndarray
+        homogenized (and possibly rectified) catalog
+    
+    pcat : structured ndarray
+        pointing catalog
+    
+    expand : float
+        radius to use around the pcat centers, degrees
+    """
+    from astropy.coordinates import SkyCoord
+    pcoord = SkyCoord(pcat['ra_obs']*u.degree, pcat['dec_obs']*u.degree)
+    hcoord = SkyCoord(hcat['ra']*u.degree, hcat['dec']*u.degree)
+    _, sep2d, _ = hcoord.match_to_catalog_sky(pcoord)
+    sep_mask = (sep2d.degree < radius)
+    return sep_mask

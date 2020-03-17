@@ -41,7 +41,7 @@ if __name__ == "__main__":
     # plot setup
     rcParams = plot_defaults(rcParams)
     ncol = 3
-    figsize = (11, 6.5)
+    figsize = (11, 8.5)
     fig = pl.figure(figsize=figsize)
     from matplotlib.gridspec import GridSpec
     gs = GridSpec(ncol, 1, height_ratios=ncol * [10],

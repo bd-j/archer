@@ -29,3 +29,5 @@
 - O *Fig 8*: `quiver.py`
    
    quiver plot
+
+- *Fig ?*: `dist_lambda_mocks.py`

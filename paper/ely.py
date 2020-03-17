@@ -13,13 +13,12 @@ from archer.frames import gc_frame_law10, gc_frame_dl17
 
 
 def show_ely(cat_r, cat, show, ax, colorby=None, **plot_kwargs):
-    if colorby:
-        cb = ax.scatter(cat_r["ly"][show], cat["E_tot_pot1"][show]/1e4,
-                        c=cat[colorby][show],
-                       **plot_kwargs)
+    if colorby is not None:
+        cb = ax.scatter(cat_r["ly"][show], cat["E_tot_pot1"][show]/1e6,
+                        c=colorby[show], **plot_kwargs)
         return ax, cb
     else:
-        ax.plot(cat_r["ly"][show], cat["E_tot_pot1"][show]/1e4,
+        ax.plot(cat_r["ly"][show], cat["E_tot_pot1"][show]/1e6,
                 **plot_kwargs)
         return ax
 
@@ -74,11 +73,11 @@ if __name__ == "__main__":
 
     # prettify
     lunit = r" ($10^4 \, {\rm kpc} \, {\rm km} \, {\rm s}^{-1}$)"
-    [ax.set_ylabel(r"E$_{\rm tot}$ ($10^4 \, {\rm km}^2 \, {\rm s}^{-2}$)")
+    [ax.set_ylabel(r"E$_{\rm tot}$ ($10^6 \, {\rm km}^2 \, {\rm s}^{-2}$)")
      for ax in laxes]
     [ax.set_xlabel(r"L$_{\rm y}$" + lunit)
      for ax in laxes]
-    [ax.set_ylim(-17.5, 5) for ax in laxes]
+    [ax.set_ylim(-0.175, 0.05) for ax in laxes]
     [ax.set_xlim(-1.4, 1.4) for ax in laxes]
     [ax.axvline(0, linestyle=":", color="k", alpha=0.8) for ax in laxes]
     #[ax.axhline(0, linestyle=":", color="k", alpha=0.8) for ax in laxes]
