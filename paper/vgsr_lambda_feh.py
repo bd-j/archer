@@ -53,10 +53,9 @@ if __name__ == "__main__":
     rcat_r = rectify(homogenize(rcat, "RCAT"), config.gc_frame)
 
     # selections
-    good = ((rcat["FLAG"] == 0) & (rcat["SNR"] > 3) &
-            (rcat["logg"] < 3.5) & (rcat["FeH"] >= -3))
-    sgr = rcat_r["ly"] < (-0.3 * rcat_r["lz"] - 0.25)
-    
+    from make_selection import rcat_select
+    good, sgr = rcat_select(rcat, rcat_r)
+   
     trail = rcat_r["lambda"] < 175
     lead = rcat_r["lambda"] > 175
     arms = [trail, lead]

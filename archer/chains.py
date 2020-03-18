@@ -5,6 +5,8 @@ import numpy as np
 import matplotlib.pyplot as pl
 
 from .cornerplot import get_cmap, twodhist
+from .quantities import compute_lstar
+from .catalogs import required_columns, derived_columns
 
 
 def samples_struct(starname, msID="V2.4", nsamples=1000):
@@ -26,24 +28,29 @@ def get_Lstar_samples(samples, rcat_row, gc_frame=None, seed=None):
     rcat = rcat_row
     n = len(samples)
 
-    # ra and dec are basically noiseless
-    ra = np.ones(n) * rcat["RA"]
-    dec = np.ones(n) * rcat["DEC"]
-    # add pm uncertainties as gaussians
-    pmra = np.random.normal(rcat["GAIADR2_PMRA"], 
-                            rcat["GAIADR2_PMRA_ERROR"], 
-                            size=n)
-    pmdec = np.random.normal(rcat["GAIADR2_PMDEC"], 
-                             rcat["GAIADR2_PMDEC_ERROR"], 
-                             size=n)
-    # use the MS samples for dist, vrad
-    distance = samples["Dist"] / 1e3
-    vlos = samples["Vrad"]
+    # make homogenized catalog of the samples
+    newcols = [r[0] for r in required_columns + derived_columns]
+    dtype = np.dtype([(c, np.float32) for c in newcols])
+    scat = np.zeros(n, dtype=dtype)
 
-    L = compute_Lstar(ra, dec, distance, pmra, pmdec, vlos,
-                      gc_frame=gc_frame)
+    # ra and dec are basically noiseless
+    scat["ra"] = np.ones(n) * rcat["RA"]
+    scat["dec"] = np.ones(n) * rcat["DEC"]
+    # add pm uncertainties as gaussians
+    scat["pmra"] = np.random.normal(rcat["GAIADR2_PMRA"], 
+                                    rcat["GAIADR2_PMRA_ERROR"], 
+                                    size=n)
+    scat["pmdec"] = np.random.normal(rcat["GAIADR2_PMDEC"], 
+                                     rcat["GAIADR2_PMDEC_ERROR"], 
+                                     size=n)
+    # use the minesweeper samples for dist, vrad
+    scat["dist"] = samples["Dist"] / 1e3
+    scat["vrad"] = samples["Vrad"]
+
+    L = compute_lstar(scat, gc_frame=gc_frame)
 
     return L
+
 
 def Lhist(L, ax=None, color="black",
           levels=np.array([1.0 - np.exp(-0.5 * 1**2)])):

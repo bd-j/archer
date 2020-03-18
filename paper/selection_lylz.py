@@ -10,6 +10,7 @@ from astropy.io import fits
 from archer.config import parser, rectify_config, plot_defaults
 from archer.catalogs import rectify, homogenize
 from archer.frames import gc_frame_law10, gc_frame_dl17
+from archer.cornerplot import twodhist
 
 
 def show_lzly(cat, show, ax, colorby=None, **plot_kwargs):
@@ -27,6 +28,8 @@ if __name__ == "__main__":
 
     ncol = 2
     config = rectify_config(parser.parse_args())
+    frac_err = config.fractional_distance_error
+    pcat = fits.getdata(config.pcat_file)
 
     # rcat
     rcat = fits.getdata(config.rcat_file)
@@ -36,18 +39,23 @@ if __name__ == "__main__":
     lm10 = fits.getdata(config.lm10_file)
     lm10_r = rectify(homogenize(lm10, "LM10"), gc_frame_law10)
 
+    # noisy lm10
+    lm10_rn = rectify(homogenize(lm10, "LM10", pcat=pcat, 
+                                 fractional_distance_error=frac_err), 
+                      gc_frame_law10)
+
     # dl17
     dl17 = fits.getdata(config.dl17_file)
     dl17_r = rectify(homogenize(dl17, "DL17"), gc_frame_dl17)
 
     # selections
-    good = ((rcat["FLAG"] == 0) & (rcat["SNR"] > 3) &
-            (rcat["logg"] < 3.5) & (rcat["FeH"] >= -3))
-    sgr = rcat_r["ly"] < (-0.3 * rcat_r["lz"] - 0.25)
+    from make_selection import rcat_select
+    good, sgr = rcat_select(rcat, rcat_r)
     unbound = lm10["tub"] > 0
 
     # plot setup
     rcParams = plot_defaults(rcParams)
+    span = [(-0.99, 1.15), (-1.4, 1.2)]
     ms = 2
     figsize = (4 * ncol + 2, 4.5)
     fig = pl.figure(figsize=figsize)
@@ -66,8 +74,14 @@ if __name__ == "__main__":
     
     #plot LM10
     laxes.append(fig.add_subplot(gs[0, 1], sharey=laxes[0], sharex=laxes[0]))
-    ax = show_lzly(lm10_r, unbound, laxes[-1], linestyle="",
-                   marker="o", markersize=ms, mew=0, color='grey', alpha=0.5)
+    show = unbound & (lm10_rn["in_h3"] == 1)
+    ax = show_lzly(lm10_rn, show, laxes[-1], linestyle="",
+                   marker="o", markersize=ms, mew=0, color='grey',
+                   alpha=0.5, zorder=0)
+    show = unbound
+    _ = twodhist(lm10_r["lz"][show], lm10_r["ly"][show], ax=laxes[-1],
+                  span=span, fill_contours=False, color="black",
+                  contour_kwargs={"linewidths": 0.75})
     ax.set_title("LM10")
 
     #plot DL17
