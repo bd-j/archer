@@ -23,7 +23,8 @@ parser.add_argument("--savefig", action="store_true")
 # --- catalog versions ---
 parser.add_argument("--rcat_vers", type=str, default="2_0")
 
-parser.add_argument("--add_noise", action="store_true")
+parser.add_argument("--fractional_distance_error", type=float,
+                    default=0.0)
 parser.add_argument("--segue_cat", action="store_true")
 parser.add_argument("--data_dir", type=str,
                     default=epath("$HOME/Projects/archer/data/"))

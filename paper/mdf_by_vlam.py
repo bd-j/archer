@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     # plot setup
     rcParams = plot_defaults(rcParams)
-    figsize = (9.5, 7)
+    figsize = (8.5, 8.5)
     fig = pl.figure(figsize=figsize)
     from matplotlib.gridspec import GridSpec
     gs = GridSpec(2, 2,

@@ -13,8 +13,17 @@ from archer.catalogs import rectify, homogenize
 from archer.frames import gc_frame_law10, gc_frame_dl17
 
 
-def show_vlam():
-    pass
+def show_dlam(cat_r, show, ax=None, colorby=None, randomize=True,
+              **scatter_kwargs):
+    if randomize:
+        rand = np.random.choice(show.sum(), size=show.sum(), replace=False)
+    else:
+        rand = slice(None)
+    rgal = np.sqrt(cat_r["x_gal"]**2 + cat_r["y_gal"]**2 + cat_r["z_gal"]**2)
+    #rgal = cat_r["dist"]
+    cb = ax.scatter(cat_r[show][rand]["lambda"], rgal[show][rand],
+                    c=colorby[show][rand], **scatter_kwargs)
+    return ax, cb
 
 
 if __name__ == "__main__":
@@ -44,7 +53,7 @@ if __name__ == "__main__":
     text = [0.9, 0.1]
     bbox = dict(facecolor='white')
     ncol = 3
-    figsize = (11, 8.5)
+    figsize = (11, 9.5)
     fig = pl.figure(figsize=figsize)
     from matplotlib.gridspec import GridSpec
     gs = GridSpec(ncol, 1, height_ratios=ncol * [10],
@@ -56,44 +65,36 @@ if __name__ == "__main__":
     # --- plot H3 ----
     vlaxes.append(fig.add_subplot(gs[0, 0]))
     ax = vlaxes[-1]
-    #ax.plot(rcat_r[good & ~sgr]["lambda"], rcat[good & ~sgr]["vgsr"],
-    #        'o', markersize=ms, alpha=0.2, color="grey", zorder=1, mew=0)
     show = good & sgr
-    cbh = ax.scatter(rcat_r[show]["lambda"], rcat_r[show]["vgsr"],
-                     c=rcat[show]["feh"], vmin=-2.5, vmax=0, cmap="magma",
-                     marker='o', s=4, alpha=0.8, zorder=2, linewidth=0)
+    ax, cbh = show_dlam(rcat_r, show, ax=ax, colorby=rcat["feh"],
+                        vmin=-2.5, vmax=0, cmap="magma",
+                        marker='o', s=4, alpha=0.8, zorder=2, linewidth=0)
     ax.text(text[0], text[1], "H3 Giants", transform=ax.transAxes, bbox=bbox)
 
     # --- LM10 Mocks ---
     ax = fig.add_subplot(gs[1, 0], sharey=vlaxes[0], sharex=vlaxes[0])
     vlaxes.append(ax)
     show = unbound
-    rand = np.random.choice(show.sum(), size=show.sum(), replace=False)
-    cbl = ax.scatter(lm10_r[show][rand]["lambda"], lm10_r[unbound][rand]["vgsr"],
-                     c=lm10[unbound][rand]["Estar"], cmap="rainbow_r",
-                     #marker='+', linewidth=1, alpha=0.5, vmin=tmin, vmax=8., s=9,
-                     marker='o', linewidth=0, alpha=0.5, vmin=0, vmax=1., s=2)
-    ax.text(text[0], text[1], "LM10", transform=ax.transAxes,
-            bbox=bbox)
+    ax, cbl = show_dlam(lm10_r, show, ax=ax, colorby=lm10["Estar"],
+                        vmin=0, vmax=1., cmap="rainbow_r",
+                        marker='o', linewidth=0, alpha=0.5, s=2)
+    ax.text(text[0], text[1], "LM10", transform=ax.transAxes, bbox=bbox)
 
     # --- DL17 Mock ---
     ax = fig.add_subplot(gs[2, 0], sharey=vlaxes[0], sharex=vlaxes[0])
     vlaxes.append(ax)
     cm = ListedColormap(["tomato", "royalblue"])
     show = dl17["id"] >= 0
-    rand = np.random.choice(show.sum(), size=show.sum(), replace=False)
-    #norm = BoundaryNorm([-1, 0.5, 5], cm.N)
-    cbd = ax.scatter(dl17_r[show][rand]["lambda"], dl17_r[show][rand]["vgsr"],
-                     c=dl17[show][rand]["id"], cmap=cm, #norm=norm,
-                     marker='o', linewidth=0, alpha=1.0, vmin=0, vmax=1, s=4)
+    ax, cbd = show_dlam(dl17_r, show, ax=ax, colorby=dl17["id"],
+                        vmin=0, vmax=1, cmap=cm, #norm=norm,
+                        marker='o', linewidth=0, alpha=1.0,  s=4)
  
-    ax.text(text[0], text[1], "DL17", transform=ax.transAxes,
-            bbox=bbox)
+    ax.text(text[0], text[1], "DL17", transform=ax.transAxes, bbox=bbox)
 
     # prettify
     [ax.set_xlim(-5, 365) for ax in vlaxes]
-    [ax.set_ylim(-330, 330) for ax in vlaxes]
-    [ax.set_ylabel(r"V$_{\rm GSR}$ (${\rm km} \,\, {\rm s}^{-1}$)") for ax in vlaxes]
+    [ax.set_ylim(0, 80) for ax in vlaxes]
+    [ax.set_ylabel(r"$R_{\rm GC}$ (kpc)" ) for ax in vlaxes]
     [ax.set_xlabel(r"$\Lambda_{\rm Sgr}$ (deg)") for ax in vlaxes[-1:]]
 
     # ---- Colorbars ----
@@ -107,5 +108,5 @@ if __name__ == "__main__":
     cax3.set_yticklabels(["Stars", "DM"])
 
     if config.savefig:
-        fig.savefig("{}/vgsr_lambda_mocks.{}".format(config.figure_dir, config.figure_extension),
+        fig.savefig("{}/dist_lambda_mocks.{}".format(config.figure_dir, config.figure_extension),
                     dpi=config.figure_dpi)

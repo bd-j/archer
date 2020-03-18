@@ -25,7 +25,7 @@ def show_lzly(cat, show, ax, colorby=None, **plot_kwargs):
 
 if __name__ == "__main__":
 
-    ncol = 3
+    ncol = 2
     config = rectify_config(parser.parse_args())
 
     # rcat
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     [ax.plot(zz, -0.3 * zz - 0.25, linestyle="--", color="royalblue", linewidth=2) for ax in laxes]
 
     # prettify
-    lunit = r" ($10^4 \, {\rm kpc} \, {\rm km} \, {\rm s}^{-1}$)"
+    lunit = r" ($10^4 \,\, {\rm kpc} \,\, {\rm km} \,\, {\rm s}^{-1}$)"
     [ax.set_ylabel(r"L$_{\rm y}$" + lunit) for ax in laxes]
     [ax.set_xlabel(r"L$_{\rm z}$" + lunit) for ax in laxes]
     [ax.set_ylim(-1.4, 1.2) for ax in laxes]

@@ -20,7 +20,7 @@
 
 - X *Fig 6*: `vgsr_lambda_mocks.py`
    
-   V_GSR vs. Lambda H3 vs. LM10 vs. DL17 
+   V_GSR vs. Lambda H3 vs. LM10 vs. DL17
 
 - O *Fig 7*: `sigma_v.py`
    

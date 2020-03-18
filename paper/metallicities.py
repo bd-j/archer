@@ -33,11 +33,11 @@ if __name__ == "__main__":
     # plot setup
     rcParams = plot_defaults(rcParams)
     ms = 2
-    figsize = (8, 6)
+    figsize = (6, 8)
     fig = pl.figure(figsize=figsize)
     from matplotlib.gridspec import GridSpec
-    gs = GridSpec(2, 1, height_ratios=[7, 10],
-                  left=0.1, right=0.95, wspace=0.25, hspace=0.2, top=0.95)
+    gs = GridSpec(2, 1, height_ratios=[10, 10],
+                  left=0.13, right=0.95, wspace=0.25, hspace=0.2, top=0.95)
     
     hax = fig.add_subplot(gs[0, 0])
     zax = fig.add_subplot(gs[1, 0])
@@ -51,7 +51,8 @@ if __name__ == "__main__":
 
     # Plot afe vs feh
     # zax.errorbar()
-    zax.plot(rcat[sel]["feh"], rcat[sel]["afe"],
+    show = sel & (rcat["SNR"] > 5)
+    zax.plot(rcat[show]["feh"], rcat[show]["afe"],
              marker="o", mew=0, linewidth=0, markersize=2,
              color="black", linestyle="")
     zax.set_xlabel("[Fe/H]")

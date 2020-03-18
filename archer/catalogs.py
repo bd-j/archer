@@ -109,7 +109,7 @@ def homogenize(cat, catname="", pcat=None,
     
     if fractional_distance_error > 0.0:
         # Noise up the mocks
-        ncat["dist"] *= np.random.normal(0.0, fractional_distance_error,
+        ncat["dist"] *= np.random.normal(1.0, fractional_distance_error,
                                          size=len(ncat))
 
     if pcat is not None:

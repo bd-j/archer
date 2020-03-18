@@ -73,8 +73,8 @@ if __name__ == "__main__":
 
 
     # prettify
-    lunit = r" ($10^4 \, {\rm kpc} \, {\rm km} \, {\rm s}^{-1}$)"
-    [ax.set_ylabel(r"E$_{\rm tot}$ ($10^6 \, {\rm km}^2 \, {\rm s}^{-2}$)")
+    lunit = r" ($10^4 \,\, {\rm kpc} \,\, {\rm km} \,\, {\rm s}^{-1}$)"
+    [ax.set_ylabel(r"E$_{\rm tot}$ ($10^6 \,\, {\rm km}^2 \,\, {\rm s}^{-2}$)")
      for ax in laxes]
     [ax.set_xlabel(r"L$_{\rm y}$" + lunit)
      for ax in laxes]

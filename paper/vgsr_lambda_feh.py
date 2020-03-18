@@ -23,6 +23,21 @@ def show_vlam(cat, show, ax=None, colorby=None, **plot_kwargs):
     
     return ax, cbh
 
+def make_cuts(ax, delt=0.015, angle=1.0, right=True):
+    # how big to make the diagonal lines in axes coordinates
+    # angle = 1.0 # increase to get steeper lines
+    # arguments to pass plot, just so we don't keep repeating them
+    kwargs = dict(transform=ax.transAxes, color='k', clip_on=False)
+    
+    d = np.array([-delt, delt])
+    
+    if right:
+        ax.plot(1 + d/angle, d, **kwargs)
+        ax.plot(1 + d/angle, 1+d, **kwargs)
+    else:
+        ax.plot(d/angle, 1+d, **kwargs)
+        ax.plot(d/angle, d, **kwargs)
+    return ax
 
 if __name__ == "__main__":
 
@@ -57,7 +72,7 @@ if __name__ == "__main__":
         right = 0.85
         gsc = GridSpec(nrow, 1, left=right, right=0.86, hspace=0.2)
     gs = GridSpec(nrow, ncol, height_ratios=nrow * [10],
-                  width_ratios=ncol * [10],
+                  width_ratios=ncol * [10], wspace=0.05,
                   left=0.1, right=right, hspace=0.2, top=0.93)
                    #bottom=0.89, top=0.95)
     vlaxes = []
@@ -83,13 +98,23 @@ if __name__ == "__main__":
     cbars = np.array(cbars).reshape(nrow, ncol)
 
     # prettify
-    [ax.set_xlim(40, 140) for ax in vlaxes[:, 0]]
-    [ax.set_xlim(200, 300) for ax in vlaxes[:, 1]]
+    [ax.set_xlim(40, 145) for ax in vlaxes[:, 0]]
+    [ax.set_xlim(195, 300) for ax in vlaxes[:, 1]]
     [ax.set_ylim(-330, 340) for ax in vlaxes.flat]
-    [ax.set_ylabel(r"V$_{\rm GSR}$ (${\rm km} \cdot {\rm s}^{-1}$)") for ax in vlaxes[:, 0]]
+    [ax.set_ylabel(r"V$_{\rm GSR}$ (${\rm km} \,\, {\rm s}^{-1}$)") for ax in vlaxes[:, 0]]
     [ax.set_xlabel(r"$\Lambda_{\rm Sgr}$ (deg)") for ax in vlaxes[-1, :]]
     vlaxes[0, 0].set_title("Trailing")
     vlaxes[0, 1].set_title("Leading")
+    
+    # break axes
+    [ax.spines['right'].set_visible(False) for ax in vlaxes[:, 0]]
+    [ax.spines['left'].set_visible(False) for ax in vlaxes[:, 1]]
+    [ax.yaxis.set_ticklabels([]) for ax in vlaxes[:, 1]]
+    [ax.yaxis.tick_left() for ax in vlaxes[:, 0]]
+    #[ax.tick_params(labelright='off') for ax in vlaxes[:, 0]]
+    [ax.yaxis.tick_right() for ax in vlaxes[:, 1]]
+    _ = [make_cuts(ax, right=True, angle=2.0) for ax in vlaxes[:, 0]]
+    _ = [make_cuts(ax, right=False, angle=2.0) for ax in vlaxes[:, 1]]
 
     # ---- Colorbars ----
     if colorby is not None:

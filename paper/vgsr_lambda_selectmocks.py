@@ -20,18 +20,24 @@ def show_vlam():
 if __name__ == "__main__":
 
     config = rectify_config(parser.parse_args())
-
+    frac_err = config.fractional_distance_error
+    
     # rcat
     rcat = fits.getdata(config.rcat_file)
     rcat_r = rectify(homogenize(rcat, "RCAT"), config.gc_frame)
+    pcat = fits.getdata(config.pcat_file)
 
     # lm10
     lm10 = fits.getdata(config.lm10_file)
-    lm10_r = rectify(homogenize(lm10, "LM10"), gc_frame_law10)
+    lm10_r = rectify(homogenize(lm10, "LM10", pcat=pcat, 
+                                fractional_distance_error=frac_err), 
+                     gc_frame_law10)
 
     # dl17
     dl17 = fits.getdata(config.dl17_file)
-    dl17_r = rectify(homogenize(dl17, "DL17"), gc_frame_dl17)
+    dl17_r = rectify(homogenize(dl17, "DL17", pcat=pcat, 
+                                fractional_distance_error=frac_err),
+                     gc_frame_dl17)
 
     # selections
     good = ((rcat["FLAG"] == 0) & (rcat["SNR"] > 3) &
@@ -59,6 +65,7 @@ if __name__ == "__main__":
     #ax.plot(rcat_r[good & ~sgr]["lambda"], rcat[good & ~sgr]["vgsr"],
     #        'o', markersize=ms, alpha=0.2, color="grey", zorder=1, mew=0)
     show = good & sgr
+    nshow = show.sum()
     cbh = ax.scatter(rcat_r[show]["lambda"], rcat_r[show]["vgsr"],
                      c=rcat[show]["feh"], vmin=-2.5, vmax=0, cmap="magma",
                      marker='o', s=4, alpha=0.8, zorder=2, linewidth=0)
@@ -67,33 +74,31 @@ if __name__ == "__main__":
     # --- LM10 Mocks ---
     ax = fig.add_subplot(gs[1, 0], sharey=vlaxes[0], sharex=vlaxes[0])
     vlaxes.append(ax)
-    show = unbound
-    rand = np.random.choice(show.sum(), size=show.sum(), replace=False)
-    cbl = ax.scatter(lm10_r[show][rand]["lambda"], lm10_r[unbound][rand]["vgsr"],
-                     c=lm10[unbound][rand]["Estar"], cmap="rainbow_r",
+    show = unbound & (lm10_r["in_h3"] == 1)
+    rand = np.random.choice(show.sum(), size=nshow, replace=False)
+    cbl = ax.scatter(lm10_r[show][rand]["lambda"], lm10_r[show][rand]["vgsr"],
+                     c=lm10[show][rand]["Estar"], cmap="rainbow_r",
                      #marker='+', linewidth=1, alpha=0.5, vmin=tmin, vmax=8., s=9,
-                     marker='o', linewidth=0, alpha=0.5, vmin=0, vmax=1., s=2)
-    ax.text(text[0], text[1], "LM10", transform=ax.transAxes,
-            bbox=bbox)
+                     marker='o', linewidth=0, alpha=1.0, vmin=0, vmax=1., s=4)
+    ax.text(text[0], text[1], "LM10", transform=ax.transAxes, bbox=bbox)
 
     # --- DL17 Mock ---
     ax = fig.add_subplot(gs[2, 0], sharey=vlaxes[0], sharex=vlaxes[0])
     vlaxes.append(ax)
     cm = ListedColormap(["tomato", "royalblue"])
-    show = dl17["id"] >= 0
-    rand = np.random.choice(show.sum(), size=show.sum(), replace=False)
+    show = (dl17["id"] >= 0) & (dl17_r["in_h3"] == 1)
+    rand = np.random.choice(show.sum(), size=nshow, replace=False)
     #norm = BoundaryNorm([-1, 0.5, 5], cm.N)
     cbd = ax.scatter(dl17_r[show][rand]["lambda"], dl17_r[show][rand]["vgsr"],
                      c=dl17[show][rand]["id"], cmap=cm, #norm=norm,
                      marker='o', linewidth=0, alpha=1.0, vmin=0, vmax=1, s=4)
  
-    ax.text(text[0], text[1], "DL17", transform=ax.transAxes,
-            bbox=bbox)
+    ax.text(text[0], text[1], "DL17", transform=ax.transAxes, bbox=bbox)
 
     # prettify
     [ax.set_xlim(-5, 365) for ax in vlaxes]
     [ax.set_ylim(-330, 330) for ax in vlaxes]
-    [ax.set_ylabel(r"V$_{\rm GSR}$ (${\rm km} \,\, {\rm s}^{-1}$)") for ax in vlaxes]
+    [ax.set_ylabel(r"V$_{\rm GSR}$ (${\rm km} \cdot {\rm s}^{-1}$)") for ax in vlaxes]
     [ax.set_xlabel(r"$\Lambda_{\rm Sgr}$ (deg)") for ax in vlaxes[-1:]]
 
     # ---- Colorbars ----
@@ -107,5 +112,5 @@ if __name__ == "__main__":
     cax3.set_yticklabels(["Stars", "DM"])
 
     if config.savefig:
-        fig.savefig("{}/vgsr_lambda_mocks.{}".format(config.figure_dir, config.figure_extension),
+        fig.savefig("{}/vgsr_lambda_mocksXh3.{}".format(config.figure_dir, config.figure_extension),
                     dpi=config.figure_dpi)
