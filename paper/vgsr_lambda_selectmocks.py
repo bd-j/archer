@@ -66,7 +66,7 @@ if __name__ == "__main__":
     show = good & sgr
     nshow = show.sum()
     cbh = ax.scatter(rcat_r[show]["lambda"], rcat_r[show]["vgsr"],
-                     c=rcat[show]["feh"], vmin=-2.5, vmax=0, cmap="magma",
+                     c=rcat[show]["feh"], vmin=-2.5, vmax=-0.5, cmap="rainbow",
                      marker='o', s=4, alpha=0.8, zorder=2, linewidth=0)
     ax.text(text[0], text[1], "H3 Giants", transform=ax.transAxes, bbox=bbox)
 

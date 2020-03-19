@@ -75,8 +75,8 @@ if __name__ == "__main__":
     show = good & sgr
     nshow = show.sum()
     ax, cbh = show_dlam(rcat_r, show, ax=ax, colorby=rcat["feh"],
-                        vmin=-2.5, vmax=0, cmap="magma",
-                        marker='o', s=4, alpha=0.8, zorder=2, linewidth=0)
+                        vmin=-2.5, vmax=-0.5, cmap="rainbow",
+                        marker='o', s=4, alpha=1.0, zorder=2, linewidth=0)
     ax.text(text[0], text[1], "H3 Giants", transform=ax.transAxes, bbox=bbox)
 
     # --- LM10 Mocks ---
@@ -101,7 +101,7 @@ if __name__ == "__main__":
 
     # prettify
     [ax.set_xlim(-5, 365) for ax in vlaxes]
-    [ax.set_ylim(0, 80) for ax in vlaxes]
+    [ax.set_ylim(0, 90) for ax in vlaxes]
     [ax.set_ylabel(r"$R_{\rm GC}$ (kpc)" ) for ax in vlaxes]
     [ax.set_xlabel(r"$\Lambda_{\rm Sgr}$ (deg)") for ax in vlaxes[-1:]]
 

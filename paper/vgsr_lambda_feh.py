@@ -11,6 +11,8 @@ from astropy.io import fits
 from archer.config import parser, rectify_config, plot_defaults
 from archer.catalogs import rectify, homogenize
 from archer.frames import gc_frame_law10, gc_frame_dl17
+from archer.plotting import make_cuts
+from archer.fitting import best_model, sample_posterior
 
 
 def show_vlam(cat, show, ax=None, colorby=None, **plot_kwargs):
@@ -23,24 +25,10 @@ def show_vlam(cat, show, ax=None, colorby=None, **plot_kwargs):
     
     return ax, cbh
 
-def make_cuts(ax, delt=0.015, angle=1.0, right=True):
-    # how big to make the diagonal lines in axes coordinates
-    # angle = 1.0 # increase to get steeper lines
-    # arguments to pass plot, just so we don't keep repeating them
-    kwargs = dict(transform=ax.transAxes, color='k', clip_on=False)
-    
-    d = np.array([-delt, delt])
-    
-    if right:
-        ax.plot(1 + d/angle, d, **kwargs)
-        ax.plot(1 + d/angle, 1+d, **kwargs)
-    else:
-        ax.plot(d/angle, 1+d, **kwargs)
-        ax.plot(d/angle, d, **kwargs)
-    return ax
 
 if __name__ == "__main__":
 
+    nsigma = 2
     zbins = [(-0.8, -0.1),
              (-1.9, -0.8),
              (-3, -1.9)]
@@ -59,6 +47,25 @@ if __name__ == "__main__":
     trail = rcat_r["lambda"] < 175
     lead = rcat_r["lambda"] > 175
     arms = [trail, lead]
+
+
+    # trailing
+    tsel = good & sgr & trail
+    tmu, tsig, _ = best_model("fits/h3_trailing_fit.h5", rcat_r["lambda"])
+    cold_trail = np.abs(rcat_r["vgsr"] - tmu) < (nsigma * tsig)
+    
+    # leading
+    lsel = good & sgr & lead
+    lmu, lsig, _ = best_model("fits/h3_leading_fit.h5", rcat_r["lambda"])
+    cold_lead =  np.abs(rcat_r["vgsr"] - lmu) < (nsigma * lsig)
+
+    cold = (lead & cold_lead) | (trail & cold_trail)
+
+    # velocity fits
+    tlam = np.sort(rcat_r[good & sgr & trail]["lambda"])
+    llam = np.sort(rcat_r[good & sgr & lead]["lambda"])
+    tmu, tsig, _ = best_model("fits/h3_trailing_fit.h5", tlam)
+    lmu, lsig, _ = best_model("fits/h3_leading_fit.h5", llam)
 
     # plot setup
     rcParams = plot_defaults(rcParams)
@@ -83,18 +90,30 @@ if __name__ == "__main__":
             vlaxes.append(fig.add_subplot(gs[iz, iarm]))
             ax = vlaxes[-1]
             inz = (rcat["FeH"] < zrange[1]) & (rcat["FeH"] >= zrange[0])
-            show = good & sgr & inz & inarm
-            if colorby is not None:
-                ax, cbh = show_vlam(rcat_r, show, ax=ax, colorby=colorby,
-                                    vmin=zrange[0], vmax=zrange[1], cmap="magma",
-                                    marker='o', s=4, alpha=0.8, zorder=2, linewidth=0)
-            else:
-                ax, cbh = show_vlam(rcat_r, show, ax=ax, color="black", linestyle="", mew=0,
-                                    marker='o', ms=2, alpha=0.9, zorder=2, linewidth=0)
-            
+            show = good & sgr & inz & inarm & cold
+            #if colorby is not None:
+            #    ax, cbh = show_vlam(rcat_r, show, ax=ax, colorby=colorby,
+            #                        vmin=zrange[0], vmax=zrange[1], cmap="magma",
+            #                        marker='o', s=4, alpha=0.8, zorder=2, linewidth=0)
+            ax, cbh = show_vlam(rcat_r, show, ax=ax, color="black", linestyle="", mew=0,
+                                marker='o', ms=2, alpha=0.9, zorder=2, linewidth=0, label="Cold")
+            show = good & sgr & inz & inarm & (~cold)
+            ax, _ = show_vlam(rcat_r, show, ax=ax, color="black", linestyle="", mew=1,
+                              marker='o', ms=2, alpha=1.0, zorder=2, linewidth=1, label="Diffuse",
+                              fillstyle="none")
             cbars.append(cbh)
+
     vlaxes = np.array(vlaxes).reshape(nrow, ncol)
     cbars = np.array(cbars).reshape(nrow, ncol)
+
+
+    # plot models
+    if False:
+        mkwargs = {"linestyle": "-", "color": "darkgrey", "linewidth": 1.0}
+        [ax.plot(tlam, tmu + nsigma * tsig, **mkwargs) for ax in vlaxes[:, 0]]
+        [ax.plot(tlam, tmu - nsigma * tsig, **mkwargs) for ax in vlaxes[:, 0]]
+        [ax.plot(llam, lmu + nsigma * lsig, **mkwargs) for ax in vlaxes[:, 1]]
+        [ax.plot(llam, lmu - nsigma * lsig, **mkwargs) for ax in vlaxes[:, 1]]
 
     # prettify
     [ax.set_xlim(40, 145) for ax in vlaxes[:, 0]]

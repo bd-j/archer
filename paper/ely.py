@@ -78,7 +78,7 @@ if __name__ == "__main__":
     [ax.set_xlabel(r"L$_{\rm y}$" + lunit)
      for ax in laxes]
     [ax.set_ylim(-0.175, 0.05) for ax in laxes]
-    [ax.set_xlim(-1.4, 1.4) for ax in laxes]
+    [ax.set_xlim(-2.4, 1.7) for ax in laxes]
     #[ax.axvline(0, linestyle=":", color="k", alpha=0.8) for ax in laxes]
     #[ax.axhline(0, linestyle=":", color="k", alpha=0.8) for ax in laxes]
 
