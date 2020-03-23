@@ -33,10 +33,12 @@ def show_allx(cat_r, selection, colorby=None, nshow=None,
 
     axes, cbars = [], []
     for iy, ycol in enumerate(ycols):
+        gs = gridspec[iy]
+
         for iarm, arm in enumerate(arms):
 
-            j = iy * 2 + iarm
-            ax = figure.add_subplot(gridspec[icat, j])        
+            #j = iy * 2 + iarm
+            ax = figure.add_subplot(gs[icat, iarm])        
     
             xx = cat_r["lambda"][sel][rand]
             yy = ycol[sel][rand]
@@ -45,13 +47,15 @@ def show_allx(cat_r, selection, colorby=None, nshow=None,
 
             cb = ax.scatter(xx[inarm], yy[inarm], c=zz[inarm], **pkwargs)
 
-            axes.append(ax)
-            cbars.append(cb)
+            axes += [ax]
+            cbars += [cb]
 
     return axes, cbars
 
 
 if __name__ == "__main__":
+
+    np.random.seed(101)
 
     config = rectify_config(parser.parse_args())
     frac_err = config.fractional_distance_error
@@ -80,22 +84,27 @@ if __name__ == "__main__":
 
     # plot setup
     rcParams = plot_defaults(rcParams)
-    text = [0.9, 0.1]
+    text = [0.1, 0.1]
     bbox = dict(facecolor='white')
     nrow = 3
-    figsize = (13, 8.5)
+    figsize = (14, 8.5)
     fig = pl.figure(figsize=figsize)
     from matplotlib.gridspec import GridSpec
-    gs = GridSpec(nrow, 4, height_ratios=nrow * [10],
-                  left=0.1, right=0.87, hspace=0.2, top=0.93)
-    gsc = GridSpec(nrow, 1, left=0.93, right=0.94, hspace=0.2, top=0.93)
+    gsv = GridSpec(nrow, 2, height_ratios=nrow * [10],
+                   hspace=0.2, wspace=0.08,
+                   left=0.08, right=0.46, top=0.93, bottom=0.08)
+    gsd = GridSpec(nrow, 2, height_ratios=nrow * [10],
+                   hspace=0.2, wspace=0.08,
+                   left=0.48, right=0.86, top=0.93, bottom=0.08)
+    gsc = GridSpec(nrow, 1, hspace=0.2,
+                   left=0.92, right=0.93, top=0.93, bottom=0.08)
                    #bottom=0.89, top=0.95)
     vlaxes, vcb = [], []
 
     # --- plot H3 ----
     axes, cbs = show_allx(rcat_r, good & sgr, colorby=rcat["FeH"],
-                          icat=0, nshow=None, figure=fig, gridspec=gs,
-                          vmin=-2.5, vmax=-0.0, cmap="magma",
+                          icat=0, nshow=None, figure=fig, gridspec=(gsv, gsd),
+                          vmin=-2.0, vmax=-0.1, cmap="magma",
                           marker='o', s=4, alpha=0.8, zorder=2, linewidth=0)
     nshow = (good & sgr).sum()
     vlaxes.append(axes)
@@ -104,17 +113,17 @@ if __name__ == "__main__":
     # --- LM10 Mocks ---
     sel = unbound & (lm10_r["in_h3"] == 1)
     axes, cbs = show_allx(lm10_r, sel, colorby=lm10["Estar"],
-                          icat=1, nshow=nshow, figure=fig, gridspec=gs,
-                          vmin=0, vmax=1., cmap="magma_r",
+                          icat=1, nshow=nshow, figure=fig, gridspec=(gsv, gsd),
+                          vmin=0, vmax=1.0, cmap="magma_r",
                           marker='o', linewidth=0, alpha=1.0,  s=4)
     vlaxes.append(axes)
     vcb.append(cbs[0])
 
     # --- DL17 Mock ---
-    cm = ListedColormap(["tomato", "royalblue"])
+    cm = ListedColormap(["tomato", "black"])
     sel = (dl17["id"] >= 0) & (dl17_r["in_h3"] == 1)
     axes, cbs = show_allx(dl17_r, sel, colorby=dl17["id"],
-                          icat=2, nshow=nshow, figure=fig, gridspec=gs,
+                          icat=2, nshow=nshow, figure=fig, gridspec=(gsv, gsd),
                           vmin=0, vmax=1, cmap=cm,
                           marker='o', linewidth=0, alpha=1.0, s=4)
     vlaxes.append(axes)
@@ -127,7 +136,7 @@ if __name__ == "__main__":
     [ax.set_xlim(195, 300) for ax in vlaxes[:, 1::2].flat]
     [ax.set_ylim(-330, 330) for ax in vlaxes[:, :2].flat]
     [ax.set_ylim(0, 90) for ax in vlaxes[:, 2:].flat]
-    [ax.set_ylabel(r"V$_{\rm GSR}$ (${\rm km} \cdot {\rm s}^{-1}$)") for ax in vlaxes[:, 0]]
+    [ax.set_ylabel(r"V$_{\rm GSR}$ (${\rm km} \,\, {\rm s}^{-1}$)") for ax in vlaxes[:, 0]]
     [ax.set_ylabel(r"$R_{\rm GC}$ (kpc)" ) for ax in vlaxes[:, -1]]
     #[ax.set_xlabel(r"$\Lambda_{\rm Sgr}$ (deg)") for ax in vlaxes[-1,:]]
 
@@ -143,11 +152,23 @@ if __name__ == "__main__":
     _ = [make_cuts(ax, right=True, angle=2.0) for ax in vlaxes[:, 0::2].flat]
     _ = [make_cuts(ax, right=False, angle=2.0) for ax in vlaxes[:, 1::2].flat]
 
+    # Labels
+    [ax.text(text[0], text[1], "H3", transform=ax.transAxes, bbox=bbox)
+     for ax in vlaxes[0, 0:1]]
+    [ax.text(text[0], text[1], "LM10", transform=ax.transAxes, bbox=bbox)
+     for ax in vlaxes[1, 0:1]]
+    [ax.text(text[0], text[1], "DL17", transform=ax.transAxes, bbox=bbox)
+     for ax in vlaxes[2, 0:1]]
+    
+    s1 = 0.25
+    fig.text(s1, 0.03, r"$\Lambda_{\rm Sgr}$ (deg)")
+    fig.text(s1 + 0.4, 0.03, r"$\Lambda_{\rm Sgr}$ (deg)")
 
     # ---- Colorbars ----
     cax1 = fig.add_subplot(gsc[1, -1])
     #pl.colorbar(cb, cax=cax, label=r"$t_{unbound}$ (Gyr)")
-    pl.colorbar(vcb[1], cax=cax1, label=r"$E_*$")
+    cb1 = pl.colorbar(vcb[1], cax=cax1,)
+    cb1.ax.set_ylabel(r"E", rotation=90, clip_on=False)
     cax2 = fig.add_subplot(gsc[0, -1])
     pl.colorbar(vcb[0], cax=cax2, label=r"[Fe/H]")
     cax3 = fig.add_subplot(gsc[2, -1])

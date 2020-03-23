@@ -23,7 +23,8 @@ def show_dlam(cat_r, show, nshow=None, ax=None, colorby=None, randomize=True,
         rand = slice(None)
     rgal = np.sqrt(cat_r["x_gal"]**2 + cat_r["y_gal"]**2 + cat_r["z_gal"]**2)
     #rgal = cat_r["dist"]
-    cb = ax.scatter(cat_r[show][rand]["lambda"], rgal[show][rand],
+    y = cat_r[show][rand]["beta"] + np.random.uniform(-2, 2, size=rand.shape)
+    cb = ax.scatter(cat_r[show][rand]["lambda"], y,#rgal[show][rand],
                     c=colorby[show][rand], **scatter_kwargs)
     return ax, cb
 
@@ -73,18 +74,18 @@ if __name__ == "__main__":
     vlaxes.append(fig.add_subplot(gs[0, 0]))
     ax = vlaxes[-1]
     show = good & sgr
-    nshow = show.sum()
+    nshow = None
     ax, cbh = show_dlam(rcat_r, show, ax=ax, colorby=rcat["feh"],
-                        vmin=-2.5, vmax=-0.5, cmap="rainbow",
-                        marker='o', s=4, alpha=1.0, zorder=2, linewidth=0)
+                        vmin=-2.5, vmax=-0.2, cmap="magma",
+                        marker='o', s=4, alpha=0.5, zorder=2, linewidth=0)
     ax.text(text[0], text[1], "H3 Giants", transform=ax.transAxes, bbox=bbox)
 
     # --- LM10 Mocks ---
     ax = fig.add_subplot(gs[1, 0], sharey=vlaxes[0], sharex=vlaxes[0])
     vlaxes.append(ax)
-    show = unbound & (lm10_r["in_h3"] == 1)
+    show = unbound #& (lm10_r["in_h3"] == 1)
     ax, cbl = show_dlam(lm10_r, show, nshow=nshow, ax=ax, colorby=lm10["Estar"],
-                        vmin=0, vmax=1., cmap="rainbow_r",
+                        vmin=0, vmax=1., cmap="magma",
                         marker='o', linewidth=0, alpha=1.0, s=4)
     ax.text(text[0], text[1], "LM10", transform=ax.transAxes, bbox=bbox)
 
@@ -92,7 +93,7 @@ if __name__ == "__main__":
     ax = fig.add_subplot(gs[2, 0], sharey=vlaxes[0], sharex=vlaxes[0])
     vlaxes.append(ax)
     cm = ListedColormap(["tomato", "royalblue"])
-    show = (dl17["id"] >= 0) & (dl17_r["in_h3"] == 1)
+    show = (dl17["id"] >= 0) #& (dl17_r["in_h3"] == 1)
     ax, cbd = show_dlam(dl17_r, show, nshow=nshow, ax=ax, colorby=dl17["id"],
                         vmin=0, vmax=1, cmap=cm, #norm=norm,
                         marker='o', linewidth=0, alpha=1.0,  s=4)
@@ -101,8 +102,8 @@ if __name__ == "__main__":
 
     # prettify
     [ax.set_xlim(-5, 365) for ax in vlaxes]
-    [ax.set_ylim(0, 90) for ax in vlaxes]
-    [ax.set_ylabel(r"$R_{\rm GC}$ (kpc)" ) for ax in vlaxes]
+    [ax.set_ylim(-90, 90) for ax in vlaxes]
+    [ax.set_ylabel(r"$B_{\rm Sgr}$ (deg)" ) for ax in vlaxes]
     [ax.set_xlabel(r"$\Lambda_{\rm Sgr}$ (deg)") for ax in vlaxes[-1:]]
 
     # ---- Colorbars ----
@@ -116,5 +117,5 @@ if __name__ == "__main__":
     cax3.set_yticklabels(["Stars", "DM"])
 
     if config.savefig:
-        fig.savefig("{}/dist_lambda_mocksXh3.{}".format(config.figure_dir, config.figure_extension),
+        fig.savefig("{}/beta_lambda_mocks.{}".format(config.figure_dir, config.figure_extension),
                     dpi=config.figure_dpi)
