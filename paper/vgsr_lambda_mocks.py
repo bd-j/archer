@@ -42,6 +42,7 @@ if __name__ == "__main__":
     rcParams = plot_defaults(rcParams)
     text = [0.9, 0.1]
     bbox = dict(facecolor='white')
+    zmin, zmax = -2, -0.1
     ncol = 3
     figsize = (11, 8.5)
     fig = pl.figure(figsize=figsize)
@@ -59,9 +60,16 @@ if __name__ == "__main__":
     #        'o', markersize=ms, alpha=0.2, color="grey", zorder=1, mew=0)
     show = good & sgr
     cbh = ax.scatter(rcat_r[show]["lambda"], rcat_r[show]["vgsr"],
-                     c=rcat[show]["feh"], vmin=-2.5, vmax=-0.5, cmap="rainbow",
+                     c=rcat[show]["feh"], vmin=zmin, vmax=zmax, cmap="magma",
                      marker='o', s=4, alpha=0.8, zorder=2, linewidth=0)
     ax.text(text[0], text[1], "H3 Giants", transform=ax.transAxes, bbox=bbox)
+    # highlight low feh
+    show = good & sgr & (rcat["FeH"] < -1.9)
+    cbh = ax.scatter(rcat_r[show]["lambda"], rcat_r[show]["vgsr"],
+                     c=rcat[show]["feh"], vmin=zmin, vmax=zmax, cmap="magma",
+                     marker='o', s=9, alpha=0.8, zorder=3, linewidth=0)
+    
+
 
     # --- LM10 Mocks ---
     ax = fig.add_subplot(gs[1, 0], sharey=vlaxes[0], sharex=vlaxes[0])
@@ -69,7 +77,7 @@ if __name__ == "__main__":
     show = unbound
     rand = np.random.choice(show.sum(), size=show.sum(), replace=False)
     cbl = ax.scatter(lm10_r[show][rand]["lambda"], lm10_r[unbound][rand]["vgsr"],
-                     c=lm10[unbound][rand]["Estar"], cmap="rainbow_r",
+                     c=lm10[unbound][rand]["Estar"], cmap="magma_r",
                      #marker='+', linewidth=1, alpha=0.5, vmin=tmin, vmax=8., s=9,
                      marker='o', linewidth=0, alpha=0.5, vmin=0, vmax=1., s=2)
     ax.text(text[0], text[1], "LM10", transform=ax.transAxes,
@@ -78,7 +86,7 @@ if __name__ == "__main__":
     # --- DL17 Mock ---
     ax = fig.add_subplot(gs[2, 0], sharey=vlaxes[0], sharex=vlaxes[0])
     vlaxes.append(ax)
-    cm = ListedColormap(["tomato", "royalblue"])
+    cm = ListedColormap(["tomato", "black"])
     show = dl17["id"] >= 0
     rand = np.random.choice(show.sum(), size=show.sum(), replace=False)
     #norm = BoundaryNorm([-1, 0.5, 5], cm.N)
@@ -98,7 +106,7 @@ if __name__ == "__main__":
     # ---- Colorbars ----
     cax1 = fig.add_subplot(gsc[1, -1])
     #pl.colorbar(cb, cax=cax, label=r"$t_{unbound}$ (Gyr)")
-    pl.colorbar(cbl, cax=cax1, label=r"$E_*$")
+    pl.colorbar(cbl, cax=cax1, label=r"E$_\ast$")
     cax2 = fig.add_subplot(gsc[0, -1])
     pl.colorbar(cbh, cax=cax2, label=r"[Fe/H]")
     cax3 = fig.add_subplot(gsc[2, -1])

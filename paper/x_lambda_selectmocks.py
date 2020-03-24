@@ -95,7 +95,7 @@ if __name__ == "__main__":
                    left=0.08, right=0.46, top=0.93, bottom=0.08)
     gsd = GridSpec(nrow, 2, height_ratios=nrow * [10],
                    hspace=0.2, wspace=0.08,
-                   left=0.48, right=0.86, top=0.93, bottom=0.08)
+                   left=0.52, right=0.90, top=0.93, bottom=0.08)
     gsc = GridSpec(nrow, 1, hspace=0.2,
                    left=0.92, right=0.93, top=0.93, bottom=0.08)
     vlaxes, vcb = [], []
@@ -136,17 +136,17 @@ if __name__ == "__main__":
     [ax.set_ylim(-330, 330) for ax in vlaxes[:, :2].flat]
     [ax.set_ylim(0, 90) for ax in vlaxes[:, 2:].flat]
     [ax.set_ylabel(r"V$_{\rm GSR}$ (${\rm km} \,\, {\rm s}^{-1}$)")
-     for ax in vlaxes[:, 0]]
-    [ax.set_ylabel(r"$R_{\rm GC}$ (kpc)") for ax in vlaxes[:, -1]]
+     for ax in vlaxes[:, 0].flat]
+    [ax.set_ylabel(r"$R_{\rm GC}$ (kpc)") for ax in vlaxes[:, 2].flat]
     #[ax.set_xlabel(r"$\Lambda_{\rm Sgr}$ (deg)") for ax in vlaxes[-1,:]]
 
     # break axes
     [ax.spines['right'].set_visible(False) for ax in vlaxes[:, 0::2].flat]
     [ax.spines['left'].set_visible(False) for ax in vlaxes[:, 1::2].flat]
-    [ax.yaxis.set_ticklabels([]) for ax in vlaxes[:, 1:3].flat]
-    [ax.yaxis.tick_left() for ax in vlaxes[:, 0].flat]
+    [ax.yaxis.set_ticklabels([]) for ax in vlaxes[:, 1::2].flat]
+    [ax.yaxis.tick_left() for ax in vlaxes[:, 0::2].flat]
     #[ax.tick_params(labelright='off') for ax in vlaxes[:, 0]]
-    [ax.yaxis.set_label_position("right") for ax in vlaxes[:, -1]]
+    #[ax.yaxis.set_label_position("right") for ax in vlaxes[:, -1]]
     [ax.yaxis.tick_right() for ax in vlaxes[:, 1::2].flat]
     _ = [make_cuts(ax, right=True, angle=2.0) for ax in vlaxes[:, 0::2].flat]
     _ = [make_cuts(ax, right=False, angle=2.0) for ax in vlaxes[:, 1::2].flat]
@@ -161,13 +161,13 @@ if __name__ == "__main__":
 
     s1 = 0.25
     fig.text(s1, 0.03, r"$\Lambda_{\rm Sgr}$ (deg)")
-    fig.text(s1 + 0.4, 0.03, r"$\Lambda_{\rm Sgr}$ (deg)")
+    fig.text(s1 + 0.4 + 0.04, 0.03, r"$\Lambda_{\rm Sgr}$ (deg)")
 
     # ---- Colorbars ----
     cax1 = fig.add_subplot(gsc[1, -1])
     #pl.colorbar(cb, cax=cax, label=r"$t_{unbound}$ (Gyr)")
     cb1 = pl.colorbar(vcb[1], cax=cax1,)
-    cb1.ax.set_ylabel(r"E", rotation=90, clip_on=False)
+    cb1.ax.set_ylabel(r"E$_\ast$", rotation=90, clip_on=False)
     cax2 = fig.add_subplot(gsc[0, -1])
     pl.colorbar(vcb[0], cax=cax2, label=r"[Fe/H]")
     cax3 = fig.add_subplot(gsc[2, -1])

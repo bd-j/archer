@@ -51,6 +51,7 @@ if __name__ == "__main__":
     rcParams = plot_defaults(rcParams)
     text = [0.9, 0.1]
     bbox = dict(facecolor='white')
+    zmin, zmax = -2, -0.1
     ncol = 3
     figsize = (11, 9.5)
     fig = pl.figure(figsize=figsize)
@@ -66,23 +67,29 @@ if __name__ == "__main__":
     ax = vlaxes[-1]
     show = good & sgr
     ax, cbh = show_dlam(rcat_r, show, ax=ax, colorby=rcat["feh"],
-                        vmin=-2.5, vmax=-0.5, cmap="rainbow",
+                        vmin=zmin, vmax=zmax, cmap="magma",
                         marker='o', s=4, alpha=1.0, zorder=2, linewidth=0)
     ax.text(text[0], text[1], "H3 Giants", transform=ax.transAxes, bbox=bbox)
+    # highlight low feh
+    show = good & sgr & (rcat["FeH"] < -1.9)
+    ax, cbh = show_dlam(rcat_r, show, ax=ax, colorby=rcat["feh"],
+                        vmin=zmin, vmax=zmax, cmap="magma",
+                        marker='o', s=9, alpha=1.0, zorder=3, linewidth=0)
+    
 
     # --- LM10 Mocks ---
     ax = fig.add_subplot(gs[1, 0], sharey=vlaxes[0], sharex=vlaxes[0])
     vlaxes.append(ax)
     show = unbound
     ax, cbl = show_dlam(lm10_r, show, ax=ax, colorby=lm10["Estar"],
-                        vmin=0, vmax=1., cmap="rainbow_r",
+                        vmin=0, vmax=1., cmap="magma_r",
                         marker='o', linewidth=0, alpha=0.5, s=2)
     ax.text(text[0], text[1], "LM10", transform=ax.transAxes, bbox=bbox)
 
     # --- DL17 Mock ---
     ax = fig.add_subplot(gs[2, 0], sharey=vlaxes[0], sharex=vlaxes[0])
     vlaxes.append(ax)
-    cm = ListedColormap(["tomato", "royalblue"])
+    cm = ListedColormap(["tomato", "black"])
     show = dl17["id"] >= 0
     ax, cbd = show_dlam(dl17_r, show, ax=ax, colorby=dl17["id"],
                         vmin=0, vmax=1, cmap=cm, #norm=norm,
@@ -99,7 +106,7 @@ if __name__ == "__main__":
     # ---- Colorbars ----
     cax1 = fig.add_subplot(gsc[1, -1])
     #pl.colorbar(cb, cax=cax, label=r"$t_{unbound}$ (Gyr)")
-    pl.colorbar(cbl, cax=cax1, label=r"$E_*$")
+    pl.colorbar(cbl, cax=cax1, label=r"E$_\ast$")
     cax2 = fig.add_subplot(gsc[0, -1])
     pl.colorbar(cbh, cax=cax2, label=r"[Fe/H]")
     cax3 = fig.add_subplot(gsc[2, -1])
