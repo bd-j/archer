@@ -9,17 +9,18 @@ class VelocityModel:
 
     def __init__(self, alpha_range, beta_range, pout_range):
         """
-        :param alpha_range:
-            min and max for alpha, array_like, shape (2, alpha_order)
+        Parameters
+        ----------
+        alpha_range : array_like, shape (2, alpha_order)
+            min and max for alpha, 
             :math:`vmu = \sum_i \alpha_i \Lambda^i`
 
-        :param beta_range:
-            min and max for beta, array_like, shape (2, alpha_order)
+        beta_range : array_like, shape (2, neta_order)
+            min and max for beta, 
             :math:`vsig = \sum_i \beta_i \Lambda^i`
 
-        :param pout_range:
-            min and max for pout, array_like, shape (2,)
-
+        pout_range : sequence of length 2
+            min and max for pout
         """
         self.alpha_range = alpha_range
         self.beta_range = beta_range
@@ -161,24 +162,23 @@ def read_from_h5(iname):
 
 
 def best_model(filename, lam):
-   model, r = read_from_h5(filename)
-   pmax = r["samples"][r["logl"].argmax()]
-   mu, sig = model.model(lam, pmax)
-   return mu, np.abs(sig), pmax
+    model, r = read_from_h5(filename)
+    pmax = r["samples"][r["logl"].argmax()]
+    mu, sig = model.model(lam, pmax)
+    return mu, np.abs(sig), pmax
 
 
 def sample_posterior(filename, lam, n_sample=100):
-   model, r = read_from_h5(filename)
-   p = np.exp(r["logwt"] - r["logwt"].max())
-   p /= p.sum()
-   inds = np.random.choice(len(p), p=p, size=(n_sample,))
-   pars = r["samples"][inds, :]
-   
-   mu = np.zeros([n_sample, len(lam)])
-   sig = np.zeros([n_sample, len(lam)])
-   for i, pos in enumerate(pars):
-       m, s = model.model(lam, pos)
-       mu[i, :] = m
-       sig[i, :] = s
-   return mu, np.abs(sig), pars
-    
+    model, r = read_from_h5(filename)
+    p = np.exp(r["logwt"] - r["logwt"].max())
+    p /= p.sum()
+    inds = np.random.choice(len(p), p=p, size=(n_sample,))
+    pars = r["samples"][inds, :]
+
+    mu = np.zeros([n_sample, len(lam)])
+    sig = np.zeros([n_sample, len(lam)])
+    for i, pos in enumerate(pars):
+        m, s = model.model(lam, pos)
+        mu[i, :] = m
+        sig[i, :] = s
+    return mu, np.abs(sig), pars

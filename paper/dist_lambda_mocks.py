@@ -86,14 +86,14 @@ if __name__ == "__main__":
     show = dl17["id"] >= 0
     ax, cbd = show_dlam(dl17_r, show, ax=ax, colorby=dl17["id"],
                         vmin=0, vmax=1, cmap=cm, #norm=norm,
-                        marker='o', linewidth=0, alpha=1.0,  s=4)
- 
+                        marker='o', linewidth=0, alpha=1.0, s=4)
+
     ax.text(text[0], text[1], "DL17", transform=ax.transAxes, bbox=bbox)
 
     # prettify
     [ax.set_xlim(-5, 365) for ax in vlaxes]
     [ax.set_ylim(0, 90) for ax in vlaxes]
-    [ax.set_ylabel(r"$R_{\rm GC}$ (kpc)" ) for ax in vlaxes]
+    [ax.set_ylabel(r"$R_{\rm GC}$ (kpc)") for ax in vlaxes]
     [ax.set_xlabel(r"$\Lambda_{\rm Sgr}$ (deg)") for ax in vlaxes[-1:]]
 
     # ---- Colorbars ----

@@ -13,7 +13,7 @@ from .frames import gc_frame_dl17
 required_columns = [("ra", u.deg),
                     ("dec", u.deg),
                     ("pmra", u.mas / u.yr),
-                    ("pmdec", u.mas / u.yr), 
+                    ("pmdec", u.mas / u.yr),
                     ("dist", u.kpc, "heliocentric"),
                     ("vrad", u.km / u.s, "heliocentric"),
                     ("flag", int)
@@ -48,7 +48,7 @@ dl17_cols = {"ra": "ra", "dec": "dec",
 
 r18_cols = {"ra": "ra", "dec": "dec",
             "pmra": "pm_ra", "pmdec": "pm_dec",
-            "dist": ("parallax", lambda x: 1/x),
+            "dist": ("parallax", lambda x: 1 / x),
             "vrad": "radial_velocity"}
 
 kcat_cols = {"ra": "ra", "dec": "dec",
@@ -75,7 +75,7 @@ def homogenize(cat, catname="", pcat=None,
                fractional_distance_error=0.0):
     """Construct an auxiliary, row matched, catalog that has a standardized
     set of column names for phase spece infomation.
-    
+
     Parameters
     ----------
     cat : numpy structured array
@@ -84,7 +84,7 @@ def homogenize(cat, catname="", pcat=None,
         One of "RCAT", "DL17", "LM10", "KSEGUE", or "R18"
 
     fractional_distance_error: float, optional (default 0.0)
-        Fractional distance error to add to heliocentric distances 
+        Fractional distance error to add to heliocentric distances
     """
     try:
         cmap = COLMAPS[catname]
@@ -106,7 +106,7 @@ def homogenize(cat, catname="", pcat=None,
         # reflex uncorrect the DL17 values
         ncat = reflex_uncorrect(cat=ncat, gc_frame=gc_frame_dl17)
         # id stars in the progenitor?
-    
+
     if fractional_distance_error > 0.0:
         # Noise up the mocks
         ncat["dist"] *= np.random.normal(1.0, fractional_distance_error,
@@ -125,28 +125,30 @@ def rectify(ncat, gc_frame):
     ----------
     ncat : numpy structured array
         The auxialiary catalog
-        
+
     gc_frame : astropy.coordinates.Frame
-        The galactocentric frame used to convert between GSR and Heliocentric velocities.
+        The galactocentric frame used to convert between GSR and Heliocentric
+        velocities.
     """
     # convert LOS velocities
     if ncat["vrad"].max() == 0:
         ncat["vrad"] = gsr_to_rv(ncat, gc_frame=gc_frame).value
     else:
         ncat["vgsr"] = rv_to_gsr(ncat, gc_frame=gc_frame)
-    
+
     # kinematic data
     lstar, gc = compute_lstar(ncat, gc_frame)
     for i, a in enumerate("xyz"):
         ncat["{}_gal".format(a)] = getattr(gc, a).to("kpc").value
-        ncat["v{}_gal".format(a)] = getattr(gc, "v_{}".format(a)).to("km/s").value
+        va = getattr(gc, "v_{}".format(a)).to("km/s").value
+        ncat["v{}_gal".format(a)] = va
         ncat["l{}".format(a)] = lstar[:, i] / 1e4
-        
+
     # Sgr coordinates
     sgr = sgr_coords(ncat)
     # wrap the negative coords
     lam = sgr.Lambda.value
-    lam[lam < 0] +=360 
+    lam[lam < 0] += 360
     ncat["lambda"] = lam
     ncat["beta"] = sgr.Beta.value
 
@@ -159,16 +161,16 @@ def in_h3(hcat, pcat, radius=3.0):
     ----------
     hcat : structured ndarray
         homogenized (and possibly rectified) catalog
-    
+
     pcat : structured ndarray
         pointing catalog
-    
+
     expand : float
         radius to use around the pcat centers, degrees
     """
     from astropy.coordinates import SkyCoord
-    pcoord = SkyCoord(pcat['ra_obs']*u.degree, pcat['dec_obs']*u.degree)
-    hcoord = SkyCoord(hcat['ra']*u.degree, hcat['dec']*u.degree)
+    pcoord = SkyCoord(pcat['ra_obs'] * u.degree, pcat['dec_obs'] * u.degree)
+    hcoord = SkyCoord(hcat['ra'] * u.degree, hcat['dec'] * u.degree)
     _, sep2d, _ = hcoord.match_to_catalog_sky(pcoord)
     sep_mask = (sep2d.degree < radius)
     return sep_mask

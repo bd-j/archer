@@ -43,14 +43,14 @@ def compute_lstar(cat, gc_frame=coord.Galactocentric()):
 def compute_energy(cat, potential):
     pos = np.array([cat['X_gal'], cat['Y_gal'], cat['Z_gal']]) * u.kpc
     vel = np.array([cat['Vx_gal'], cat['Vy_gal'], cat['Vz_gal']]) * u.km / u.s
-    w = gd.PhaseSpacePosition(pos=pos, vel = vel.to(u.kpc/u.Myr))
+    w = gd.PhaseSpacePosition(pos=pos, vel=vel.to(u.kpc/u.Myr))
     orbit = compute_orbit(w, potential)
     cat["ekin"] = w.kinetic_energy()
     cat["etot"] = orbit.energy()[0]
     cat["eccen"] = orbit.eccentricity()
-    cat["zmax"] =  orbit.zmax(func=np.max)
-    cat["rapo"] =  orbit.apocenter(func=np.max)
-    cat["rperi"] =  orbit.pericenter(func=np.min)
+    cat["zmax"] = orbit.zmax(func=np.max)
+    cat["rapo"] = orbit.apocenter(func=np.max)
+    cat["rperi"] = orbit.pericenter(func=np.min)
     cat["period"] = orbit.estimate_period()
     return cat
 
@@ -65,9 +65,9 @@ def reflex_uncorrect(cat=None, ceq=None, gc_frame=coord.Galactocentric()):
 
     Parameters
     ----------
-    cat : numpy structured array 
+    cat : numpy structured array
         With reflex corrected quantities in the pmra, pmdec, and vrad fields
-        
+
     gc_frame : `~astropy.coordinates.Galactocentric` (optional)
         To change properties of the Galactocentric frame, like the height of the
         sun above the midplane, or the velocity of the sun in a Galactocentric
@@ -173,5 +173,3 @@ def gsr_to_rv(cat, gc_frame=coord.Galactocentric()):
     v_proj = v_sun.dot(unit_vector)
 
     return cat["vgsr"] * u.km / u.s - v_proj
-
-

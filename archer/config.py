@@ -40,8 +40,9 @@ parser.add_argument("--segue_file", type=str,
 parser.add_argument("-pcat_file", type=str,
                     default="pcat.fits")
 
+
 def rectify_config(config):
-    
+
     config.lm10_file = pjoin(config.data_dir, "mocks", "LM10", config.lm10_file)
     config.dl17_file = pjoin(config.data_dir, "mocks", "DL17", config.dl17_file)
     config.r18_file = pjoin(config.data_dir, "mocks", "R18", config.r18_file)

@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as pl
 from matplotlib.colors import Normalize
 
+
 def make_cuts(ax, delt=0.015, angle=1.0, right=True):
     """Put diagonal lines on the ends of a set of axes to indicate a break
 
@@ -12,16 +13,16 @@ def make_cuts(ax, delt=0.015, angle=1.0, right=True):
     ----------
     delt: float
         how big to make the diagonal lines in axes coordinates
-    
-    angle : float, optional (default: 1.0) 
+
+    angle : float, optional (default: 1.0)
         increase to get steeper lines
     """
 
     # arguments to pass plot, just so we don't keep repeating them
     kwargs = dict(transform=ax.transAxes, color='k', clip_on=False)
-    
+
     d = np.array([-delt, delt])
-    
+
     if right:
         ax.plot(1 + d/angle, d, **kwargs)
         ax.plot(1 + d/angle, 1+d, **kwargs)
@@ -46,12 +47,11 @@ def hquiver(cat_r, sel, colorby=None, nshow=None, randomize=True,
     else:
         norm = None
 
-
     # --- Get quantities ---
     x, y = [cat_r["{}_gal".format(s)] for s in axes]
     vx, vy = [cat_r["v{}_gal".format(s)] for s in axes]
     vsq = np.array([cat_r["v{}_gal".format(s)]**2 for s in "xyz"])
-    vtot = np.sqrt(vsq.sum(axis=0))    
+    vtot = np.sqrt(vsq.sum(axis=0))
 
     # --- plot them ---
     if colorby is not None:
@@ -82,12 +82,8 @@ def hnoquiver(cat_r, sel, colorby=None, nshow=None, randomize=True,
     else:
         rand = slice(None)
 
-
     # --- Get quantities ---
     x, y = [cat_r["{}_gal".format(s)] for s in axes]
-    #vx, vy = [cat_r["v{}_gal".format(s)] for s in axes]
-    #vsq = np.array([cat_r["v{}_gal".format(s)]**2 for s in "xyz"])
-    #vtot = np.sqrt(vsq.sum(axis=-1))    
 
     # --- plot them ---
     if colorby is not None:
@@ -98,5 +94,3 @@ def hnoquiver(cat_r, sel, colorby=None, nshow=None, randomize=True,
                      s=scale, **plot_kwargs)
 
     return ax, cb
-
-

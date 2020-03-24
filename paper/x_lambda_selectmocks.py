@@ -38,8 +38,8 @@ def show_allx(cat_r, selection, colorby=None, nshow=None,
         for iarm, arm in enumerate(arms):
 
             #j = iy * 2 + iarm
-            ax = figure.add_subplot(gs[icat, iarm])        
-    
+            ax = figure.add_subplot(gs[icat, iarm])
+
             xx = cat_r["lambda"][sel][rand]
             yy = ycol[sel][rand]
             zz = colorby[sel][rand]
@@ -67,13 +67,13 @@ if __name__ == "__main__":
 
     # lm10
     lm10 = fits.getdata(config.lm10_file)
-    lm10_r = rectify(homogenize(lm10, "LM10", pcat=pcat, 
-                                fractional_distance_error=frac_err), 
+    lm10_r = rectify(homogenize(lm10, "LM10", pcat=pcat,
+                                fractional_distance_error=frac_err),
                      gc_frame_law10)
 
     # dl17
     dl17 = fits.getdata(config.dl17_file)
-    dl17_r = rectify(homogenize(dl17, "DL17", pcat=pcat, 
+    dl17_r = rectify(homogenize(dl17, "DL17", pcat=pcat,
                                 fractional_distance_error=frac_err),
                      gc_frame_dl17)
 
@@ -98,7 +98,6 @@ if __name__ == "__main__":
                    left=0.48, right=0.86, top=0.93, bottom=0.08)
     gsc = GridSpec(nrow, 1, hspace=0.2,
                    left=0.92, right=0.93, top=0.93, bottom=0.08)
-                   #bottom=0.89, top=0.95)
     vlaxes, vcb = [], []
 
     # --- plot H3 ----
@@ -115,7 +114,7 @@ if __name__ == "__main__":
     axes, cbs = show_allx(lm10_r, sel, colorby=lm10["Estar"],
                           icat=1, nshow=nshow, figure=fig, gridspec=(gsv, gsd),
                           vmin=0, vmax=1.0, cmap="magma_r",
-                          marker='o', linewidth=0, alpha=1.0,  s=4)
+                          marker='o', linewidth=0, alpha=1.0, s=4)
     vlaxes.append(axes)
     vcb.append(cbs[0])
 
@@ -136,10 +135,10 @@ if __name__ == "__main__":
     [ax.set_xlim(195, 300) for ax in vlaxes[:, 1::2].flat]
     [ax.set_ylim(-330, 330) for ax in vlaxes[:, :2].flat]
     [ax.set_ylim(0, 90) for ax in vlaxes[:, 2:].flat]
-    [ax.set_ylabel(r"V$_{\rm GSR}$ (${\rm km} \,\, {\rm s}^{-1}$)") for ax in vlaxes[:, 0]]
-    [ax.set_ylabel(r"$R_{\rm GC}$ (kpc)" ) for ax in vlaxes[:, -1]]
+    [ax.set_ylabel(r"V$_{\rm GSR}$ (${\rm km} \,\, {\rm s}^{-1}$)")
+     for ax in vlaxes[:, 0]]
+    [ax.set_ylabel(r"$R_{\rm GC}$ (kpc)") for ax in vlaxes[:, -1]]
     #[ax.set_xlabel(r"$\Lambda_{\rm Sgr}$ (deg)") for ax in vlaxes[-1,:]]
-
 
     # break axes
     [ax.spines['right'].set_visible(False) for ax in vlaxes[:, 0::2].flat]
@@ -159,7 +158,7 @@ if __name__ == "__main__":
      for ax in vlaxes[1, 0:1]]
     [ax.text(text[0], text[1], "DL17", transform=ax.transAxes, bbox=bbox)
      for ax in vlaxes[2, 0:1]]
-    
+
     s1 = 0.25
     fig.text(s1, 0.03, r"$\Lambda_{\rm Sgr}$ (deg)")
     fig.text(s1 + 0.4, 0.03, r"$\Lambda_{\rm Sgr}$ (deg)")
