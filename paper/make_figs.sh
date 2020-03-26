@@ -14,3 +14,4 @@ python dist_lambda_mocks.py --savefig --rcat_vers $rcat_vers --figure_dir $fdir
 python beta_lambda_mocks.py --savefig --rcat_vers $rcat_vers --figure_dir $fdir --fractional_distance_error $dist_err
 python x_lambda_selectmocks.py --savefig --rcat_vers $rcat_vers --figure_dir $fdir --fractional_distance_error $dist_err
 python quiver.py --savefig --rcat_vers $rcat_vers --figure_dir $fdir --fractional_distance_error $dist_err
+python quiver.py --savefig --rcat_vers $rcat_vers --figure_dir $fdir --fractional_distance_error $dist_err --split

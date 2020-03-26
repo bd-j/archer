@@ -32,6 +32,7 @@ def show_dlam(cat_r, show, nshow=None, ax=None, colorby=None, randomize=True,
 
 if __name__ == "__main__":
 
+    zcut = -1.9
     config = rectify_config(parser.parse_args())
     frac_err = config.fractional_distance_error
 
@@ -82,10 +83,11 @@ if __name__ == "__main__":
                         marker='o', s=4, alpha=0.5, zorder=2, linewidth=0)
     ax.text(text[0], text[1], "H3 Giants", transform=ax.transAxes, bbox=bbox)
     # highlight low feh
-    show = good & sgr & (rcat["FeH"] < -1.9)
+    show = good & sgr & (rcat["FeH"] < zcut)
     ax, cbh = show_dlam(rcat_r, show, ax=ax, colorby=rcat["feh"],
                         vmin=zmin, vmax=zmax, cmap="magma",
                         marker='o', s=9, alpha=1.0, zorder=3, linewidth=0)
+                        #label="[Fe/H] < {}".format(zcut))
 
     # --- LM10 Mocks ---
     ax = fig.add_subplot(gs[1, 0], sharey=vlaxes[0], sharex=vlaxes[0])
@@ -103,8 +105,7 @@ if __name__ == "__main__":
     show = (dl17["id"] >= 0) #& (dl17_r["in_h3"] == 1)
     ax, cbd = show_dlam(dl17_r, show, nshow=nshow, ax=ax, colorby=dl17["id"],
                         vmin=0, vmax=1, cmap=cm, #norm=norm,
-                        marker='o', linewidth=0, alpha=1.0,  s=4)
- 
+                        marker='o', linewidth=0, alpha=1.0, s=4)
     ax.text(text[0], text[1], "DL17", transform=ax.transAxes, bbox=bbox)
 
     # prettify
@@ -112,6 +113,10 @@ if __name__ == "__main__":
     [ax.set_ylim(-90, 90) for ax in vlaxes]
     [ax.set_ylabel(r"$B_{\rm Sgr}$ (deg)" ) for ax in vlaxes]
     [ax.set_xlabel(r"$\Lambda_{\rm Sgr}$ (deg)") for ax in vlaxes[-1:]]
+    from matplotlib.lines import Line2D
+    points = Line2D([], [], linestyle="", color="black",
+                    marker="o", markersize=3)
+    vlaxes[0].legend([points], ["[Fe/H] < {}".format(zcut)], loc="upper right")
 
     # ---- Colorbars ----
     cax1 = fig.add_subplot(gsc[1, -1])

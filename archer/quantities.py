@@ -173,3 +173,16 @@ def gsr_to_rv(cat, gc_frame=coord.Galactocentric()):
     v_proj = v_sun.dot(unit_vector)
 
     return cat["vgsr"] * u.km / u.s - v_proj
+
+
+def estar_to_e(estar):
+    """Convert from a uniform distribution (estar, effectively the value of the
+    CDF) to actual energies assuming the DF of a Plummer sphere: p(E)~E^{5-3/2}
+    
+    Also, get s_max, where E = psi + v^2/2; v = 0, psi = 1/sqrt(1 + s^2)
+    """
+    # CDF is ~ E^{9/2}, so E ~ CDF^{2/9}
+    e = (1-estar)**(2./9.)
+    ssq = 1/e*2 - 1
+    s = np.sqrt(ssq)
+    return e, s

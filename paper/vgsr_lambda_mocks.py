@@ -19,6 +19,7 @@ def show_vlam():
 
 if __name__ == "__main__":
 
+    zcut = -1.9
     config = rectify_config(parser.parse_args())
 
     # rcat
@@ -64,12 +65,11 @@ if __name__ == "__main__":
                      marker='o', s=4, alpha=0.8, zorder=2, linewidth=0)
     ax.text(text[0], text[1], "H3 Giants", transform=ax.transAxes, bbox=bbox)
     # highlight low feh
-    show = good & sgr & (rcat["FeH"] < -1.9)
+    show = good & sgr & (rcat["FeH"] < zcut)
     cbh = ax.scatter(rcat_r[show]["lambda"], rcat_r[show]["vgsr"],
                      c=rcat[show]["feh"], vmin=zmin, vmax=zmax, cmap="magma",
-                     marker='o', s=9, alpha=0.8, zorder=3, linewidth=0)
-    
-
+                     marker='o', s=9, alpha=0.8, zorder=3, linewidth=0,)
+                     #label="[Fe/H] < {}".format(zcut))
 
     # --- LM10 Mocks ---
     ax = fig.add_subplot(gs[1, 0], sharey=vlaxes[0], sharex=vlaxes[0])
@@ -102,6 +102,10 @@ if __name__ == "__main__":
     [ax.set_ylim(-330, 330) for ax in vlaxes]
     [ax.set_ylabel(r"V$_{\rm GSR}$ (${\rm km} \,\, {\rm s}^{-1}$)") for ax in vlaxes]
     [ax.set_xlabel(r"$\Lambda_{\rm Sgr}$ (deg)") for ax in vlaxes[-1:]]
+    from matplotlib.lines import Line2D
+    points = Line2D([], [], linestyle="", color="black",
+                    marker="o", markersize=3)
+    vlaxes[0].legend([points], ["[Fe/H] < {}".format(zcut)], loc="upper right")
 
     # ---- Colorbars ----
     cax1 = fig.add_subplot(gsc[1, -1])
