@@ -12,6 +12,7 @@ from archer.config import parser, rectify_config, plot_defaults
 from archer.catalogs import rectify, homogenize
 from archer.frames import gc_frame_law10, gc_frame_dl17
 from archer.plotting import make_cuts
+from archer.plummer import convert_estar_rmax
 
 
 def show_allx(cat_r, selection, colorby=None, nshow=None,
@@ -70,6 +71,7 @@ if __name__ == "__main__":
     lm10_r = rectify(homogenize(lm10, "LM10", pcat=pcat,
                                 fractional_distance_error=frac_err),
                      gc_frame_law10)
+    rmax, energy = convert_estar_rmax(lm10["estar"])
 
     # dl17
     dl17 = fits.getdata(config.dl17_file)
@@ -110,10 +112,14 @@ if __name__ == "__main__":
     vcb.append(cbs[0])
 
     # --- LM10 Mocks ---
+    colorby, cname = 0.66*rmax, r"R$_{\rm prog}$" #r"typical radius ($\sim 0.66 \, r_{\rm max}/r_0$)"
+    vmin, vmax = 0.3, 3
+    #colorby, cname = lm10["Estar"], r"E$_\ast$"
+    #vmin, vmax = 0, 1
     sel = unbound & (lm10_r["in_h3"] == 1)
-    axes, cbs = show_allx(lm10_r, sel, colorby=lm10["Estar"],
+    axes, cbs = show_allx(lm10_r, sel, colorby=colorby,
                           icat=1, nshow=nshow, figure=fig, gridspec=(gsv, gsd),
-                          vmin=0, vmax=1.0, cmap="magma_r",
+                          vmin=vmin, vmax=vmax, cmap="magma_r",
                           marker='o', linewidth=0, alpha=1.0, s=4)
     vlaxes.append(axes)
     vcb.append(cbs[0])
@@ -167,7 +173,7 @@ if __name__ == "__main__":
     cax1 = fig.add_subplot(gsc[1, -1])
     #pl.colorbar(cb, cax=cax, label=r"$t_{unbound}$ (Gyr)")
     cb1 = pl.colorbar(vcb[1], cax=cax1,)
-    cb1.ax.set_ylabel(r"E$_\ast$", rotation=90, clip_on=False)
+    cb1.ax.set_ylabel(cname, rotation=90, clip_on=False)
     cax2 = fig.add_subplot(gsc[0, -1])
     pl.colorbar(vcb[0], cax=cax2, label=r"[Fe/H]")
     cax3 = fig.add_subplot(gsc[2, -1])

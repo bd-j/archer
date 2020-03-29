@@ -42,10 +42,7 @@ def hquiver(cat_r, sel, colorby=None, nshow=None, randomize=True,
     else:
         rand = slice(None)
 
-    if vmin is not None:
-        norm = Normalize(vmin=vmin, vmax=vmax)
-    else:
-        norm = None
+    norm = Normalize(vmin=vmin, vmax=vmax)
 
     # --- Get quantities ---
     x, y = [cat_r["{}_gal".format(s)] for s in axes]

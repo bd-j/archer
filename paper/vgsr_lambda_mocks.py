@@ -11,6 +11,7 @@ from astropy.io import fits
 from archer.config import parser, rectify_config, plot_defaults
 from archer.catalogs import rectify, homogenize
 from archer.frames import gc_frame_law10, gc_frame_dl17
+from archer.plummer import convert_estar_rmax
 
 
 def show_vlam():
@@ -29,6 +30,7 @@ if __name__ == "__main__":
     # lm10
     lm10 = fits.getdata(config.lm10_file)
     lm10_r = rectify(homogenize(lm10, "LM10"), gc_frame_law10)
+    rmax, energy = convert_estar_rmax(lm10["Estar"])
 
     # dl17
     dl17 = fits.getdata(config.dl17_file)
@@ -74,12 +76,18 @@ if __name__ == "__main__":
     # --- LM10 Mocks ---
     ax = fig.add_subplot(gs[1, 0], sharey=vlaxes[0], sharex=vlaxes[0])
     vlaxes.append(ax)
+    colorby, cname = 0.66*rmax, r"R$_{\rm prog}$" #r"typical radius ($\sim 0.66 \, r_{\rm max}/r_0$)"
+    vmin, vmax = 0.3, 3
+    #colorby, cname = lm10["Estar"], r"E$_\ast$"
+    #vmin, vmax = 0, 1
+    #colorby, cname = lm10["tub"], r"t$_{\rm unbound}$"
+    #vmin, vmax = 0, 5
     show = unbound
     rand = np.random.choice(show.sum(), size=show.sum(), replace=False)
-    cbl = ax.scatter(lm10_r[show][rand]["lambda"], lm10_r[unbound][rand]["vgsr"],
-                     c=lm10[unbound][rand]["Estar"], cmap="magma_r",
+    cbl = ax.scatter(lm10_r[show][rand]["lambda"], lm10_r[show][rand]["vgsr"],
+                     c=colorby[show][rand], cmap="magma_r",
                      #marker='+', linewidth=1, alpha=0.5, vmin=tmin, vmax=8., s=9,
-                     marker='o', linewidth=0, alpha=0.5, vmin=0, vmax=1., s=2)
+                     marker='o', linewidth=0, alpha=0.5, vmin=vmin, vmax=vmax, s=2)
     ax.text(text[0], text[1], "LM10", transform=ax.transAxes,
             bbox=bbox)
 
@@ -110,7 +118,7 @@ if __name__ == "__main__":
     # ---- Colorbars ----
     cax1 = fig.add_subplot(gsc[1, -1])
     #pl.colorbar(cb, cax=cax, label=r"$t_{unbound}$ (Gyr)")
-    pl.colorbar(cbl, cax=cax1, label=r"E$_\ast$")
+    pl.colorbar(cbl, cax=cax1, label=cname)
     cax2 = fig.add_subplot(gsc[0, -1])
     pl.colorbar(cbh, cax=cax2, label=r"[Fe/H]")
     cax3 = fig.add_subplot(gsc[2, -1])

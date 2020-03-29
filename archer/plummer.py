@@ -34,7 +34,7 @@ def rand(N):
 
 def rank(e):
     estar = np.empty_like(e)
-    estar[np.argsort(e)] = np.linspace(0, 1, len(order))
+    estar[np.argsort(e)] = np.linspace(0, 1, len(estar))
     return estar
 
 
@@ -61,9 +61,10 @@ def convert_estar_rmax(estar):
     """
     s, v, e = make_particles()
     eorder = rank(e)
-    eout = np.interp(estar, eorder, e)
+    o = np.argsort(eorder)
+    eout = np.interp(estar, eorder[o], e[o])
     r = rmax(eout)
-    return r
+    return r, eout
 
 
 if __name__ == "__main__":
@@ -86,7 +87,7 @@ if __name__ == "__main__":
     ax.set_xlabel(r"E$_\ast$")
     ax.set_ylabel(r"E (normalized)")
 
-    ax = axes[1]    
+    ax = axes[1]
     ax.plot(estar[o], rm[o] * pct[1], color="tomato", linewidth=2, marker="")
     ax.fill_between(estar[o], rm[o] * pct[0], rm[o]*pct[2], color="tomato", alpha=0.5)
     ax.set_ylim(1e-2, 20)

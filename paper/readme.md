@@ -20,14 +20,20 @@
 
 - X *Fig 6*: `vgsr_lambda_mocks.py`
    
-   V_GSR vs. Lambda H3 vs. LM10 vs. DL17
+   V_GSR vs. Lambda H3 vs. LM10 vs. DL17, color coded by Fe/H, and some other
 
-- O *Fig 7*: `sigma_v.py`
+- X *Fig 7*: `dist_lambda_mocks.py`
    
-   sigma-arm vs. lambda plot, with comparison to models and the literature.
+    R_GC vs. Lambda H3 vs. LM10 vs. DL17, color coded by Fe/H, and some other
 
-- O *Fig 8*: `quiver.py`
+- X *Fig 8*: `x_lambda_selectmocks.py`
+   
+    Figures 6 and 7 but with a (basic) selection fn applied
+
+- O *Fig 9*: `quiver.py`
    
    quiver plot
 
-- *Fig ?*: `dist_lambda_mocks.py`
+- O *Fig A1*: `sigma_v.py`
+   
+   sigma-arm vs. lambda plot, with comparison to models and the literature.
