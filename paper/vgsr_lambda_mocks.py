@@ -88,7 +88,7 @@ if __name__ == "__main__":
                      c=colorby[show][rand], cmap="magma_r",
                      #marker='+', linewidth=1, alpha=0.5, vmin=tmin, vmax=8., s=9,
                      marker='o', linewidth=0, alpha=0.5, vmin=vmin, vmax=vmax, s=2)
-    ax.text(text[0], text[1], "LM10", transform=ax.transAxes,
+    ax.text(text[0], text[1], "LM10\n(noiseless)", transform=ax.transAxes,
             bbox=bbox)
 
     # --- DL17 Mock ---
@@ -102,7 +102,7 @@ if __name__ == "__main__":
                      c=dl17[show][rand]["id"], cmap=cm, #norm=norm,
                      marker='o', linewidth=0, alpha=1.0, vmin=0, vmax=1, s=4)
  
-    ax.text(text[0], text[1], "DL17", transform=ax.transAxes,
+    ax.text(text[0], text[1], "DL17\n(noiseless)", transform=ax.transAxes,
             bbox=bbox)
 
     # prettify

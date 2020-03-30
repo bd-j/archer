@@ -69,7 +69,7 @@ if __name__ == "__main__":
     # plot H3
     laxes.append(fig.add_subplot(gs[0, 0]))
     ax = show_lzly(rcat_r, good, laxes[0], linestyle="",
-                   marker="o", markersize=ms, mew=0, color='grey', alpha=0.5)
+                   marker="o", markersize=ms, mew=0, color='black', alpha=0.5)
     ax.set_title("All H3 Giants")
     
     #plot LM10
@@ -103,8 +103,8 @@ if __name__ == "__main__":
     [ax.set_xlabel(r"L$_{\rm z}$" + lunit) for ax in laxes]
     [ax.set_ylim(-1.4, 1.2) for ax in laxes]
     [ax.set_xlim(-0.99, 1.15) for ax in laxes]
-    [ax.axvline(0, linestyle=":", color="k", alpha=0.8) for ax in laxes]
-    [ax.axhline(0, linestyle=":", color="k", alpha=0.8) for ax in laxes]
+    [ax.axvline(0, linestyle="--", color="k", alpha=0.8) for ax in laxes]
+    [ax.axhline(0, linestyle="--", color="k", alpha=0.8) for ax in laxes]
 
 
     if config.savefig:

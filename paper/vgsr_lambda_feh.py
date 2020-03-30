@@ -48,7 +48,6 @@ if __name__ == "__main__":
     lead = rcat_r["lambda"] > 175
     arms = [trail, lead]
 
-
     # trailing
     tsel = good & sgr & trail
     tmu, tsig, _ = best_model("fits/h3_trailing_fit.h5", rcat_r["lambda"])
@@ -98,8 +97,8 @@ if __name__ == "__main__":
             ax, cbh = show_vlam(rcat_r, show, ax=ax, color="black", linestyle="", mew=0,
                                 marker='o', ms=2, alpha=0.9, zorder=2, linewidth=0, label="Cold")
             show = good & sgr & inz & inarm & (~cold)
-            ax, _ = show_vlam(rcat_r, show, ax=ax, color="black", linestyle="", mew=1,
-                              marker='o', ms=2, alpha=1.0, zorder=2, linewidth=1, label="Diffuse",
+            ax, _ = show_vlam(rcat_r, show, ax=ax, color="black", linestyle="", mew=0.7,
+                              marker='o', ms=2, alpha=1.0, zorder=2, linewidth=0.7, label="Diffuse",
                               fillstyle="none")
             cbars.append(cbh)
 

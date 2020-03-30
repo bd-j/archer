@@ -108,10 +108,10 @@ if __name__ == "__main__":
     hax, lax = vlaxes
 
     # Plot h3
-    show = sgr & good
+    show = sgr & good #& (rcat["FeH"] < -1.9)
     nshow = show.sum()
     ax, cb = hquiver(rcat_r, show, colorby=rcat["FeH"],
-                     ax=hax, axes=galaxes,
+                     ax=hax, axes=galaxes, scale=20, #width=2e-3, alpha=0.9,
                      vmin=-2.0, vmax=-0.1, cmap="magma")
     ax.text(text[0], text[1], "H3", bbox=bbox, transform=ax.transAxes)
     vlaxes.append(ax)
@@ -142,6 +142,8 @@ if __name__ == "__main__":
     [ax.set_ylim(-80, 80) for ax in vlaxes]
     [ax.set_xlabel(r"{}$_{{\rm Gal}}$ (kpc)".format(galaxes[0].upper())) for ax in vlaxes]
     [ax.set_ylabel(r"{}$_{{\rm Gal}}$ (kpc)".format(galaxes[1].upper())) for ax in vlaxes]
+    [ax.text(-8, 0, r"$\odot$", horizontalalignment='center', verticalalignment='center')
+     for ax in vlaxes]
 
     # colorbars
     labels = [r"[Fe/H]", cname]

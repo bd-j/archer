@@ -91,7 +91,7 @@ if __name__ == "__main__":
     ax, cbl = show_dlam(lm10_r, show, ax=ax, colorby=colorby,
                         vmin=vmin, vmax=vmax, cmap="magma_r",
                         marker='o', linewidth=0, alpha=0.5, s=2)
-    ax.text(text[0], text[1], "LM10", transform=ax.transAxes, bbox=bbox)
+    ax.text(text[0], text[1], "LM10\n(noiseless)", transform=ax.transAxes, bbox=bbox)
 
     # --- DL17 Mock ---
     ax = fig.add_subplot(gs[2, 0], sharey=vlaxes[0], sharex=vlaxes[0])
@@ -102,7 +102,7 @@ if __name__ == "__main__":
                         vmin=0, vmax=1, cmap=cm, #norm=norm,
                         marker='o', linewidth=0, alpha=1.0, s=4)
 
-    ax.text(text[0], text[1], "DL17", transform=ax.transAxes, bbox=bbox)
+    ax.text(text[0], text[1], "DL17\n(noiseless)", transform=ax.transAxes, bbox=bbox)
 
     # prettify
     [ax.set_xlim(-5, 365) for ax in vlaxes]
