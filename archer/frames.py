@@ -30,6 +30,11 @@ gc_frame_dl17 = coord.Galactocentric(galcen_distance=8.0 * u.kpc,
                                      z_sun=0 * u.pc,
                                      galcen_v_sun=v_sun_dl17)
 
+gc_frame_dl17_nbody = coord.Galactocentric(galcen_distance=7.0 * u.kpc,
+                                           z_sun=3 * u.pc,
+                                           galcen_v_sun=v_sun_dl17)
+
+
 # note DL17 give ell, b; these are converted to ra, dec
 from astropy.coordinates import ICRS, Galactic, FK5
 _sgr_dl17_galactic = coord.SkyCoord(5.6 * u.deg, -14.2 * u.deg, frame=Galactic)

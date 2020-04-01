@@ -10,7 +10,8 @@ def rcat_select(rcat, rcat_r, dly=0):
     sgr = rcat_r["ly"] < (-0.3 * rcat_r["lz"] - 0.25 + dly)
 
     try:
-        good_l = (rcat["Lz_err"] < 0.3e4) & (rcat["Ly_err"] < 0.3e4) & (np.abs(rcat_r["lx"]) < 1.0)
+        good_l = (rcat["Lz_err"] < 0.3e4) & (rcat["Ly_err"] < 0.3e4)
+        good_l = good_l & (np.abs(rcat_r["lx"]) < 1.0) & (rcat["afe"] < (-0.3*rcat["FeH"]+0.2))
         good = good & good_l
     except:
         print("No L error cut")

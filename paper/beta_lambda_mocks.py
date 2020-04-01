@@ -10,7 +10,7 @@ from astropy.io import fits
 
 from archer.config import parser, rectify_config, plot_defaults
 from archer.catalogs import rectify, homogenize
-from archer.frames import gc_frame_law10, gc_frame_dl17
+from archer.frames import gc_frame_law10, gc_frame_dl17, gc_frame_dl17_nbody
 from archer.plummer import convert_estar_rmax
 
 
@@ -94,8 +94,8 @@ if __name__ == "__main__":
     # --- LM10 Mocks ---
     ax = fig.add_subplot(gs[1, 0], sharey=vlaxes[0], sharex=vlaxes[0])
     vlaxes.append(ax)
-    colorby, cname = 0.66*rmax, r"R$_{\rm prog}$" #r"typical radius ($\sim 0.66 \, r_{\rm max}/r_0$)"
-    vmin, vmax = 0.3, 3
+    colorby, cname = 0.66*0.85*rmax, r"$\hat{\rm R}_{\rm prog}$ (kpc)" #r"typical radius ($\sim 0.66 \, r_{\rm max}/r_0$)"
+    vmin, vmax = 0.25, 2.5
     #colorby, cname = lm10["Estar"], r"E$_\ast$"
     #vmin, vmax = 0, 1
     show = unbound #& (lm10_r["in_h3"] == 1)

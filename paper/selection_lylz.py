@@ -103,8 +103,8 @@ if __name__ == "__main__":
     [ax.set_xlabel(r"L$_{\rm z}$" + lunit) for ax in laxes]
     [ax.set_ylim(-1.4, 1.2) for ax in laxes]
     [ax.set_xlim(-0.99, 1.15) for ax in laxes]
-    [ax.axvline(0, linestyle="--", color="k", alpha=0.8) for ax in laxes]
-    [ax.axhline(0, linestyle="--", color="k", alpha=0.8) for ax in laxes]
+    [ax.axvline(0, linestyle="-", color="k", linewidth=0.75, alpha=0.8) for ax in laxes]
+    [ax.axhline(0, linestyle="-", color="k", linewidth=0.75, alpha=0.8) for ax in laxes]
 
 
     if config.savefig:
