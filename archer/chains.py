@@ -1,12 +1,57 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import numpy as np
 import matplotlib.pyplot as pl
 
 from .cornerplot import get_cmap, twodhist
 from .quantities import compute_lstar
 from .catalogs import required_columns, derived_columns
+
+
+cdir = os.path.join(os.environ["HOME"], "Dropboxes", "Dropbox (ConroyAstro)", "covar")
+
+
+def ellipse_pars(px="Lz", py="Etot", starname="", covdir=cdir):
+    """Get parameters for a 2-d uncertainty ellipse from the covar files
+    """
+    import glob
+    from astropy.io import fits
+    n = "{}/{}_V2.4_MSG_cov.fits.gz".format(covdir, starname)
+    k = glob.glob(n)
+    if len(k) != 1:
+        raise(IOError)
+    cov = fits.getdata(k[0])
+    cols = cov.dtype.names
+    i = cols.index(px)
+    j = cols.index(py)
+    cxx = cov[px][i]
+    cyy = cov[py][j]
+    cxy = cov[px][j]
+    return cxx, cyy, cxy
+    
+
+def ellipse_artist(x, y, vxx, vyy, vxy):
+    """Get an ellipse artist based on 2-d position and covariance matrix.
+
+    ell = ellipse_artist(*params)
+    ax.add_artist(ell)
+    #e.set_clip_box(ax.bbox)
+    ell.set_alpha(0.3)
+    ell.set_facecolor(cmap(params[i]["amp"]))
+    """    
+    from matplotlib.patches import Ellipse
+
+    mu = np.array([x, y])
+    # construct covar matrix and get eigenvalues
+    S = np.array([[vxx, vxy], [vxy, vyy]])
+    vals, vecs = np.linalg.eig(S)
+    # get ellipse params
+    theta = np.degrees(np.arctan2(*vecs[::-1, 0]))
+    w, h = 2 * np.sqrt(vals)
+    ell = Ellipse(xy=mu, width=w, height=h, angle=theta)
+    return ell
 
 
 def samples_struct(starname, msID="V2.4", nsamples=1000):

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import numpy as np
 import matplotlib.pyplot as pl
 from matplotlib import rcParams
@@ -10,6 +11,32 @@ from astropy.io import fits
 from archer.config import parser, rectify_config, plot_defaults
 from archer.catalogs import rectify, homogenize
 from archer.frames import gc_frame_law10, gc_frame_dl17
+from archer.chains import ellipse_pars, ellipse_artist
+
+
+cdir = os.path.join(os.environ["HOME"], "Dropboxes", "Dropbox (ConroyAstro)", "covar")
+
+
+def show_ellipses(rcat, ax=None,
+                  edgecolor="k", linewidth=0.5,
+                  alpha=1.0, facecolor="none"):
+    px, rpx, xs = "Ly", "Ly", 1e4
+    py, rpy, ys = "Etot", "E_tot_pot1", 1e6
+    
+    for row in rcat:
+        x, y = row[rpx], row[rpy]
+        try:
+            cxx, cyy, cxy = ellipse_pars(px, py, row["starname"],
+                                         covdir=cdir)
+        except(IOError):
+            print("Couldn't find {}".format(row["starname"]))
+            continue
+        ell = ellipse_artist(x/xs, y/ys, cxx/xs**2, cyy/ys**2, cxy/(xs * ys))
+        ell.set_facecolor(facecolor)
+        ell.set_edgecolor(edgecolor)
+        ell.set_linewidth(linewidth)
+        ell.set_alpha(alpha)
+        ax.add_artist(ell)
 
 
 def show_ely(cat_r, cat, show, ax, colorby=None, **plot_kwargs):
@@ -27,6 +54,10 @@ if __name__ == "__main__":
 
     # define low metallicity
     zsplit = -1.9
+    try:
+        parser.add_argument("--show_errors", action="store_true")
+    except:
+        pass
     config = rectify_config(parser.parse_args())
 
     # rcat
@@ -68,6 +99,8 @@ if __name__ == "__main__":
                    marker="o", markersize=ms, mew=0, color='grey', alpha=0.5)
     ax = show_ely(rcat_r, rcat, good & sgr & lowz, ax, linestyle="",
                    marker="o", markersize=ms, mew=0, color='black', alpha=1.0,)
+    if config.show_errors:
+        show_ellipses(rcat[good & sgr & lowz], ax=ax)
     ax.set_title("[Fe/H] < {}".format(zsplit))
 
 

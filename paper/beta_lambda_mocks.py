@@ -22,7 +22,7 @@ def show_dlam(cat_r, show, nshow=None, ax=None, colorby=None, randomize=True,
         rand = np.random.choice(show.sum(), size=nshow, replace=False)
     else:
         rand = slice(None)
-    rgal = np.sqrt(cat_r["x_gal"]**2 + cat_r["y_gal"]**2 + cat_r["z_gal"]**2)
+    #rgal = np.sqrt(cat_r["x_gal"]**2 + cat_r["y_gal"]**2 + cat_r["z_gal"]**2)
     #rgal = cat_r["dist"]
     y = cat_r[show][rand]["beta"] + np.random.uniform(-2, 2, size=rand.shape)
     x = cat_r[show][rand]["lambda"] + np.random.uniform(-2, 2, size=rand.shape)
