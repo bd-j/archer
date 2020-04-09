@@ -17,7 +17,7 @@ from archer.config import parser, rectify_config, plot_defaults
 if __name__ == "__main__":
 
     zmin, zmax = -3.0, 0.05
-    zbins = np.arange(zmin, zmax, 0.05)
+    zbins = np.arange(zmin, zmax, 0.1)
     config = rectify_config(parser.parse_args())
 
     # rcat
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     # plot setup
     rcParams = plot_defaults(rcParams)
     ms = 2
-    figsize = (6, 8)
+    figsize = (5, 6.6)
     fig = pl.figure(figsize=figsize)
     from matplotlib.gridspec import GridSpec
     gs = GridSpec(2, 1, height_ratios=[10, 10],

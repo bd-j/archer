@@ -9,6 +9,9 @@ import astropy.units as u
 import astropy.coordinates as coord
 from gala.coordinates import Sagittarius, reflex_correct
 
+from astropy.coordinates import galactocentric_frame_defaults
+_ = galactocentric_frame_defaults.set('v4.0')
+
 
 def sgr_coords(cat, sgr_frame=Sagittarius):
     ceq = coord.ICRS(ra=cat['ra'] * u.deg, dec=cat['dec'] * u.deg,

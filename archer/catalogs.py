@@ -142,7 +142,7 @@ def rectify(ncat, gc_frame):
         ncat["{}_gal".format(a)] = getattr(gc, a).to("kpc").value
         va = getattr(gc, "v_{}".format(a)).to("km/s").value
         ncat["v{}_gal".format(a)] = va
-        ncat["l{}".format(a)] = lstar[:, i] / 1e4
+        ncat["l{}".format(a)] = lstar[:, i] / 1e3
 
     # Sgr coordinates
     sgr = sgr_coords(ncat)

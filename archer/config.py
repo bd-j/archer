@@ -5,6 +5,8 @@ import os
 import numpy as np
 from argparse import Namespace, ArgumentParser
 import astropy.coordinates
+from astropy.coordinates import galactocentric_frame_defaults
+_ = galactocentric_frame_defaults.set('v4.0')
 
 epath = os.path.expandvars
 pjoin = os.path.join
@@ -28,6 +30,8 @@ parser.add_argument("--fractional_distance_error", type=float,
 parser.add_argument("--segue_cat", action="store_true")
 parser.add_argument("--data_dir", type=str,
                     default=epath("$HOME/Projects/archer/data/"))
+parser.add_argument("--covar_dir", type=str,
+                    default=epath("$HOME/Projects/archer/data/catalogs/covar"))
 
 parser.add_argument("--lm10_file", type=str,
                     default="SgrTriax.fits")

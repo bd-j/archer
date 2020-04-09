@@ -8,6 +8,9 @@ import numpy as np
 import astropy.coordinates as coord
 import astropy.units as u
 
+from astropy.coordinates import galactocentric_frame_defaults
+_ = galactocentric_frame_defaults.set('v4.0')
+
 # --------------
 # Law 10
 v_sun_law10 = coord.CartesianDifferential([11.1, 220, 7.25] * u.km / u.s)

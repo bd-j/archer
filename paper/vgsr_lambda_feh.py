@@ -28,12 +28,16 @@ def show_vlam(cat, show, ax=None, colorby=None, **plot_kwargs):
 
 if __name__ == "__main__":
 
-    nsigma = 2
     zbins = [(-0.8, -0.1),
              (-1.9, -0.8),
              (-3, -1.9)]
     colorby = None
     #colorby = rcat["FeH"]
+
+    try:
+        parser.add_argument("--nsigma", type=float, default=2.)
+    except:
+        pass
     config = rectify_config(parser.parse_args())
 
     # rcat
@@ -51,12 +55,12 @@ if __name__ == "__main__":
     # trailing
     tsel = good & sgr & trail
     tmu, tsig, _ = best_model("fits/h3_trailing_fit.h5", rcat_r["lambda"])
-    cold_trail = np.abs(rcat_r["vgsr"] - tmu) < (nsigma * tsig)
+    cold_trail = np.abs(rcat_r["vgsr"] - tmu) < (config.nsigma * tsig)
     
     # leading
     lsel = good & sgr & lead
     lmu, lsig, _ = best_model("fits/h3_leading_fit.h5", rcat_r["lambda"])
-    cold_lead =  np.abs(rcat_r["vgsr"] - lmu) < (nsigma * lsig)
+    cold_lead =  np.abs(rcat_r["vgsr"] - lmu) < (config.nsigma * lsig)
 
     cold = (lead & cold_lead) | (trail & cold_trail)
 
@@ -109,10 +113,10 @@ if __name__ == "__main__":
     # plot models
     if False:
         mkwargs = {"linestyle": "-", "color": "darkgrey", "linewidth": 1.0}
-        [ax.plot(tlam, tmu + nsigma * tsig, **mkwargs) for ax in vlaxes[:, 0]]
-        [ax.plot(tlam, tmu - nsigma * tsig, **mkwargs) for ax in vlaxes[:, 0]]
-        [ax.plot(llam, lmu + nsigma * lsig, **mkwargs) for ax in vlaxes[:, 1]]
-        [ax.plot(llam, lmu - nsigma * lsig, **mkwargs) for ax in vlaxes[:, 1]]
+        [ax.plot(tlam, tmu + config.nsigma * tsig, **mkwargs) for ax in vlaxes[:, 0]]
+        [ax.plot(tlam, tmu - config.nsigma * tsig, **mkwargs) for ax in vlaxes[:, 0]]
+        [ax.plot(llam, lmu + config.nsigma * lsig, **mkwargs) for ax in vlaxes[:, 1]]
+        [ax.plot(llam, lmu - config.nsigma * lsig, **mkwargs) for ax in vlaxes[:, 1]]
 
     # prettify
     [ax.set_xlim(40, 145) for ax in vlaxes[:, 0]]

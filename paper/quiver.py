@@ -14,7 +14,7 @@ from archer.plotting import hquiver
 from archer.plummer import convert_estar_rmax
 
 
-def get_axes(rcParams, figxper=6.5, figyper=6.5, nrow=1, ncol=1, **extras):
+def get_axes(rcParams, figxper=5, figyper=5, nrow=1, ncol=1, **extras):
     
     cdims = 0.03, 0.04, 0.1, figxper*0.1
     edges = 0.1, 0.95
@@ -24,7 +24,7 @@ def get_axes(rcParams, figxper=6.5, figyper=6.5, nrow=1, ncol=1, **extras):
 
     mdims = dict(left=edges[0], right=edges[1] - cdims[2] * rightbar,
                  bottom=edges[0], top=edges[1] - cdims[2] * topbar,)
-    spacing = dict(hspace=0.15, wspace=0.15,
+    spacing = dict(hspace=0.15, wspace=0.2,
                    height_ratios=nrow*[10], width_ratios=ncol*[10])
     pdict = spacing
     pdict.update(extras)

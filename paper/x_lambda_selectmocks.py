@@ -89,7 +89,7 @@ if __name__ == "__main__":
     text = [0.1, 0.1]
     bbox = dict(facecolor='white')
     nrow = 3
-    figsize = (14, 8.5)
+    figsize = (11, 6.6)
     fig = pl.figure(figsize=figsize)
     from matplotlib.gridspec import GridSpec
     gsv = GridSpec(nrow, 2, height_ratios=nrow * [10],
