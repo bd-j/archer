@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import numpy as np
 import matplotlib.pyplot as pl
 from matplotlib import rcParams
@@ -57,6 +58,11 @@ def show_allx(cat_r, selection, colorby=None, nshow=None,
 if __name__ == "__main__":
 
     np.random.seed(101)
+    try:
+        parser.add_argument("--mag_cut", action="store_true")
+        parser.add_argument("--show_gcs", action="store_true")
+    except:
+        pass
 
     config = rectify_config(parser.parse_args())
     frac_err = config.fractional_distance_error
@@ -66,8 +72,14 @@ if __name__ == "__main__":
     rcat_r = rectify(homogenize(rcat, "RCAT"), config.gc_frame)
     pcat = fits.getdata(config.pcat_file)
 
+    # GCs
+    gcat = fits.getdata(config.b19_file)
+    gcat_r = rectify(homogenize(gcat, "B19"), config.gc_frame)
+
     # lm10
     lm10 = fits.getdata(config.lm10_file)
+    sedfile = os.path.join(os.path.dirname(config.lm10_file), "LM10_seds.fits")
+    lm10_seds = fits.getdata(sedfile)
     lm10_r = rectify(homogenize(lm10, "LM10", pcat=pcat,
                                 fractional_distance_error=frac_err),
                      gc_frame_law10)
@@ -80,9 +92,12 @@ if __name__ == "__main__":
                      gc_frame_dl17)
 
     # selections
-    from make_selection import rcat_select
+    from make_selection import rcat_select, gc_select
     good, sgr = rcat_select(rcat, rcat_r)
+    sgr_gcs, gc_feh = gc_select(gcat)
     unbound = lm10["tub"] > 0
+    mag = lm10_seds["PS_r"] + 5 * np.log10(lm10_r["dist"])
+    bright = (mag > 15) & (mag < 18.5)
 
     # plot setup
     rcParams = plot_defaults(rcParams)
@@ -111,12 +126,22 @@ if __name__ == "__main__":
     vlaxes.append(axes)
     vcb.append(cbs[0])
 
+    # plot GCs
+    if config.show_gcs:
+        axes, _ = show_allx(gcat_r, sgr_gcs, colorby=gc_feh,
+                            icat=0, nshow=None, figure=fig, gridspec=(gsv, gsd),
+                            vmin=-2.0, vmax=-0.1, cmap="magma",
+                            marker='s', s=25, markerfacecolor="none", edgecolor="k", 
+                            alpha=1.0, zorder=2)
+
     # --- LM10 Mocks ---
     colorby, cname = 0.66*0.85*rmax, r"$\hat{\rm R}_{\rm prog}$ (kpc)" #r"typical radius ($\sim 0.66 \, r_{\rm max}/r_0$)"
     vmin, vmax = 0.25, 2.5
     #colorby, cname = lm10["Estar"], r"E$_\ast$"
     #vmin, vmax = 0, 1
     sel = unbound & (lm10_r["in_h3"] == 1)
+    if config.mag_cut:
+        sel = sel & bright
     axes, cbs = show_allx(lm10_r, sel, colorby=colorby,
                           icat=1, nshow=nshow, figure=fig, gridspec=(gsv, gsd),
                           vmin=vmin, vmax=vmax, cmap="magma_r",

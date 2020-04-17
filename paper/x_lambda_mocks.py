@@ -21,25 +21,36 @@ def show_xlam(cat_r, show, dist=False, ax=None, colorby=None, randomize=True,
     else:
         rand = slice(None)
     x = cat_r[show][rand]["lambda"]
-    z = colorby[show][rand]
     if dist:
         rgal = np.sqrt(cat_r["x_gal"]**2 + cat_r["y_gal"]**2 + cat_r["z_gal"]**2)
         y = rgal[show][rand]
     else:
         y = cat_r["vgsr"][show][rand]
-    
-    cb = ax.scatter(x, y, c=z, **scatter_kwargs)
+    if colorby is not None:
+        z = colorby[show][rand]
+        cb = ax.scatter(x, y, c=z, **scatter_kwargs)
+    else:
+        cb = ax.plot(x, y, **scatter_kwargs)
     return cb
 
 
 if __name__ == "__main__":
 
-    zcut = -1.9
+    try:
+        parser.add_argument("--feh_cut", type=float, default=-1.9)
+        parser.add_argument("--show_gcs", action="store_true")
+    except:
+        pass
     config = rectify_config(parser.parse_args())
+    zcut = config.feh_cut
 
     # rcat
     rcat = fits.getdata(config.rcat_file)
     rcat_r = rectify(homogenize(rcat, "RCAT"), config.gc_frame)
+
+    # GCs
+    gcat = fits.getdata(config.b19_file)
+    gcat_r = rectify(homogenize(gcat, "B19"), config.gc_frame)
 
     # lm10
     lm10 = fits.getdata(config.lm10_file)
@@ -51,8 +62,10 @@ if __name__ == "__main__":
     dl17_r = rectify(homogenize(dl17, "DL17"), gc_frame_dl17)
 
     # selections
-    from make_selection import rcat_select
+    from make_selection import rcat_select, gc_select
     good, sgr = rcat_select(rcat, rcat_r)
+    sgr_gcs, gc_feh = gc_select(gcat)
+    #sgr_gcs = (gcat_r["ly"] < -2) & (gcat_r["ly"] > -7)
     unbound = lm10["tub"] > 0
 
     # plot setup
@@ -85,6 +98,13 @@ if __name__ == "__main__":
         cbh = show_xlam(rcat_r, show, dist=bool(i), ax=ax, colorby=rcat["feh"],
                         vmin=zmin, vmax=zmax, cmap="magma",
                         marker='o', s=9, alpha=1.0, zorder=3, linewidth=0,)
+        if config.show_gcs:
+            show = sgr_gcs
+            _ = show_xlam(gcat_r, show, dist=bool(i), ax=ax, colorby=gc_feh,
+                          #color="cyan",
+                          vmin=zmin, vmax=zmax, cmap="magma",
+                          marker='s', s=36, alpha=1.0, zorder=3, linewidth=0.5, edgecolor="k")
+
     ax = axes[0, 0]
     ax.text(text[0], text[1], "H3 Giants",
             transform=ax.transAxes, bbox=bbox)
@@ -102,6 +122,11 @@ if __name__ == "__main__":
         cbl = show_xlam(lm10_r, show, dist=bool(i), ax=ax, colorby=colorby,
                         vmin=vmin, vmax=vmax, cmap="magma_r",
                         marker='o', s=2, alpha=0.5, zorder=2, linewidth=0)
+        # plot GCs
+#        show = sgr_gcs
+#        _ = show_xlam(gcat_r, show, dist=bool(i), ax=ax, colorby=None,
+#                      color="cyan", marker='o', ms=5, alpha=1.0, zorder=3, linewidth=0,)
+
     ax = axes[1, 0]
     ax.text(text[0], text[1], "LM10\n(noiseless)",
             transform=ax.transAxes,bbox=bbox)

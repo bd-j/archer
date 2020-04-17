@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import numpy as np
 import matplotlib.pyplot as pl
 from matplotlib import rcParams
@@ -65,6 +66,7 @@ if __name__ == "__main__":
     try:
         parser.add_argument("--split", action="store_true")
         parser.add_argument("--galaxes", type=str, default="xz")
+        parser.add_argument("--mag_cut", action="store_true")
     except:
         pass
 
@@ -77,17 +79,26 @@ if __name__ == "__main__":
     rcat_r = rectify(homogenize(rcat, "RCAT"), config.gc_frame)
     pcat = fits.getdata(config.pcat_file)
 
+    # GCs
+    gcat = fits.getdata(config.b19_file)
+    gcat_r = rectify(homogenize(gcat, "B19"), config.gc_frame)
+
     # lm10
     lm10 = fits.getdata(config.lm10_file)
+    sedfile = os.path.join(os.path.dirname(config.lm10_file), "LM10_seds.fits")
+    lm10_seds = fits.getdata(sedfile)
     lm10_r = rectify(homogenize(lm10, "LM10", pcat=pcat, 
                                 fractional_distance_error=frac_err), 
                      gc_frame_law10)
     rmax, energy = convert_estar_rmax(lm10["Estar"])
 
     # selections
-    from make_selection import rcat_select
+    from make_selection import rcat_select, gc_select
     good, sgr = rcat_select(rcat, rcat_r)
+    sgr_gcs, gc_feh = gc_select(gcat)
     unbound = lm10["tub"] > 0
+    mag = lm10_seds["PS_r"] + 5 * np.log10(lm10_r["dist"])
+    bright = (mag > 15) & (mag < 18.5)
 
 
     # plot setup
@@ -125,11 +136,15 @@ if __name__ == "__main__":
     #colorby, cname = lm10["tub"], r"t$_{\rm unbound}$"
     #vmin, vmax = 0, 5
     
-    show = unbound
+    sel = unbound
+    if config.mag_cut:
+        sel = sel & bright
+
+    show = sel
     ax, cb = hquiver(lm10_r, show, colorby=colorby,
                      ax=lax, axes=galaxes, nshow=nshow*3,
                      vmin=vmin, vmax=vmax, cmap="magma_r", alpha=0.3)
-    show = unbound & (lm10_r["in_h3"] > 0.)
+    show = sel & (lm10_r["in_h3"] > 0.)
     ax, cb = hquiver(lm10_r, show, colorby=colorby,
                      ax=ax, axes=galaxes, nshow=nshow,
                      vmin=vmin, vmax=vmax, cmap="magma_r")

@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import numpy as np
 import matplotlib.pyplot as pl
 from matplotlib import rcParams
+from matplotlib.colors import ListedColormap
+from matplotlib.lines import Line2D
 
 from astropy.io import fits
 
@@ -46,24 +49,44 @@ def show_lzly(cat, show, ax, colorby=None, **plot_kwargs):
                 **plot_kwargs)
         return ax
 
+def remnant_L():
+    from archer.frames import sgr_fritz18
+    gc = sgr_fritz18.transform_to(config.gc_frame)
+    xx = np.array([getattr(gc, a).to("kpc").value for a in "xyz"]).T
+    p = np.array([getattr(gc, "v_{}".format(a)).to("km/s").value
+                  for a in "xyz"]).T
+    Lstar = np.cross(xx, p)
+    return Lstar / 1e3
+
 
 if __name__ == "__main__":
 
-    ncol = 2
     try:
         parser.add_argument("--show_errors", action="store_true")
+        parser.add_argument("--show_gcs", action="store_true")
+        parser.add_argument("--ncol", type=int, default=2)
+        parser.add_argument("--mag_cut", action="store_true")
     except:
         pass
     config = rectify_config(parser.parse_args())
     frac_err = config.fractional_distance_error
+    ncol = config.ncol
     pcat = fits.getdata(config.pcat_file)
 
     # rcat
     rcat = fits.getdata(config.rcat_file)
     rcat_r = rectify(homogenize(rcat, "RCAT"), config.gc_frame)
 
+    lsgr = remnant_L()
+
+    # GCs
+    gcat = fits.getdata(config.b19_file)
+    gcat_r = rectify(homogenize(gcat, "B19"), config.gc_frame)
+
     # lm10
     lm10 = fits.getdata(config.lm10_file)
+    sedfile = os.path.join(os.path.dirname(config.lm10_file), "LM10_seds.fits")
+    lm10_seds = fits.getdata(sedfile)
     lm10_r = rectify(homogenize(lm10, "LM10"), gc_frame_law10)
 
     # noisy lm10
@@ -76,9 +99,14 @@ if __name__ == "__main__":
     dl17_r = rectify(homogenize(dl17, "DL17"), gc_frame_dl17)
 
     # selections
-    from make_selection import rcat_select
+    from make_selection import rcat_select, gc_select
     good, sgr = rcat_select(rcat, rcat_r)
+    sgr_gcs, gc_feh = gc_select(gcat)
     unbound = lm10["tub"] > 0
+    mag = lm10_seds["PS_r"] + 5 * np.log10(lm10_r["dist"])
+    bright = (mag > 15) & (mag < 18.5)
+    dl_remnant = ((dl17_r["ra"] < 315) & (dl17_r["ra"] > 285)  &
+                  (dl17_r["dec"] < -25) & (dl17_r["dec"] > -32)) 
 
     # plot setup
     rcParams = plot_defaults(rcParams)
@@ -93,7 +121,7 @@ if __name__ == "__main__":
     #               bottom=0.89, top=0.95)
     laxes = []
 
-    # plot H3
+    # --- plot H3 ---
     laxes.append(fig.add_subplot(gs[0, 0]))
     ax = show_lzly(rcat_r, good, laxes[0], linestyle="",
                    marker="o", markersize=ms, mew=0, color='black', alpha=0.5)
@@ -102,10 +130,26 @@ if __name__ == "__main__":
                       covdir=config.covar_dir, alpha=0.3)
 
     ax.set_title("All H3 Giants")
+    art = {"Sgr remnant (F18)": Line2D([], [], marker="s", ms=4, markerfacecolor="royalblue",
+                                       markeredgecolor="k", linestyle=""),
+           }
+
+    # plot GCs
+    if config.show_gcs:
+        ax = show_lzly(gcat_r, slice(None), laxes[0], linestyle="",
+                       marker="s", markersize=ms*2, markerfacecolor="tomato",
+                       markeredgecolor='k', alpha=1.0)
+        art["Globular Clusters"] = Line2D([], [], linestyle="", marker="s", markersize=ms*2,
+                                          markerfacecolor="tomato", markeredgecolor='k')
     
-    #plot LM10
+    leg = list(art.keys())
+    ax.legend([art[l] for l in leg], leg, fontsize=10)
+    
+    # --- plot LM10 ---
     laxes.append(fig.add_subplot(gs[0, 1], sharey=laxes[0], sharex=laxes[0]))
     show = unbound & (lm10_rn["in_h3"] == 1)
+    if config.mag_cut:
+        show = show & bright
     ax = show_lzly(lm10_rn, show, laxes[-1], linestyle="",
                    marker="o", markersize=ms, mew=0, color='grey',
                    alpha=0.5, zorder=0)
@@ -114,26 +158,56 @@ if __name__ == "__main__":
                   span=span, fill_contours=False, color="black",
                   contour_kwargs={"linewidths": 0.75})
     ax.set_title("LM10")
+    art = {"Unbound particles": Line2D([], [], color="k", linewidth=0.75),
+           "Within H3 window": Line2D([], [], marker="o", markersize=ms, linewidth=0, color="grey")}
+    leg = list(art.keys())
+    ax.legend([art[l] for l in leg], leg, fontsize=10)
 
-    #plot DL17
+    # --- plot DL17 ---
     if ncol > 2:
-        laxes.append(fig.add_subplot(gs[0, 2], sharey=laxes[0], sharex=laxes[0]))
-        ax = show_lzly(dl17_r, dl17["id"]==0, laxes[-1], linestyle="",
-                       marker="o", markersize=ms, mew=0, color='tomato', alpha=0.5, label="Stars")
-        #ax = show_lzly(dl17_r, dl17["id"]==1, laxes[-1], linestyle="",
-        #               marker="o", markersize=ms, mew=0, color='royalblue', alpha=0.5, label="DM")
+        colorby = dl17["id"]
+        vmin, vmax = 0, 1
+        cm = ListedColormap(["tomato", "black"])
+        rand = np.random.choice(len(dl17), size=(good & sgr).sum(), replace=False)
+
+        ax = fig.add_subplot(gs[0, 2], sharey=laxes[0], sharex=laxes[0])
+        laxes.append(ax)
+        #ax, cb = show_lzly(dl17_r, rand, laxes[-1], colorby=colorby,
+        #                   vmin=vmin, vmax=vmax, cmap=cm,
+        #                   marker="o", s=ms**2, linewidth=0, alpha=0.8)
+        
+        stars = (dl17["id"] < 1) & ~dl_remnant
+        dark = (dl17["id"] == 1) & ~dl_remnant
+        _ = twodhist(dl17_r["lz"][stars], dl17_r["ly"][stars], ax=laxes[-1],
+                     span=span, fill_contours=True, color="tomato",
+                     contour_kwargs={"linewidths": 1.0})
+        _ = twodhist(dl17_r["lz"][dark], dl17_r["ly"][dark], ax=laxes[-1],
+                     span=span, fill_contours=False, color="k",
+                     contour_kwargs={"linewidths": 0.75})
+        ax.plot([np.nanmedian(dl17_r["lz"][dl_remnant])], [np.nanmedian(dl17_r["ly"][dl_remnant])],
+                marker="*", markersize=7, linewidth=0, color="k", label="DL17 remnant")
+
         ax.set_title("DL17")
-        ax.legend()
-    # plot selection line
+        art = {"Unbound stars": Line2D([], [], color="tomato"),
+               "Dark Matter": Line2D([], [], color="k", linewidth=0.75),
+               "Remnant": Line2D([], [], marker="*", markersize=7, linewidth=0, color="k")}
+        leg = list(art.keys())
+        ax.legend([art[l] for l in leg], leg, fontsize=10)
+    
+    # --- plot selection line ---
     zz =  np.linspace(-9, 10, 100)
     [ax.plot(zz, -0.3 * zz - 2.5, linestyle="--", color="royalblue", linewidth=2) for ax in laxes]
 
-    # prettify
+    [ax.plot([lsgr[2]], [lsgr[1]], label="Sgr remnant", linestyle="",
+             marker="s", markerfacecolor="royalblue", markersize=4, markeredgecolor="k",
+             ) for ax in laxes]
+
+    # --- prettify ---
     lunit = r" ($10^3 \,\, {\rm kpc} \,\, {\rm km} \,\, {\rm s}^{-1}$)"
     [ax.set_ylabel(r"L$_{\rm y}$" + lunit) for ax in laxes]
     [ax.set_xlabel(r"L$_{\rm z}$" + lunit) for ax in laxes]
-    [ax.set_ylim(-14, 11) for ax in laxes]
-    [ax.set_xlim(-9.9, 11.5) for ax in laxes]
+    [ax.set_ylim(*span[1]) for ax in laxes]
+    [ax.set_xlim(*span[0]) for ax in laxes]
     [ax.axvline(0, linestyle="-", color="k", linewidth=0.75, alpha=0.8) for ax in laxes]
     [ax.axhline(0, linestyle="-", color="k", linewidth=0.75, alpha=0.8) for ax in laxes]
 

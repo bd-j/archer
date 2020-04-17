@@ -62,13 +62,25 @@ rcat_cols = {"ra": "RA", "dec": "DEC",
              "vrad": "Vrad",
              "flag": "FLAG"}
 
+vcat_cols = {"ra": "RAJ2000", "dec": "DEJ2000",
+             "pmra": "pmRA", "pmdec": "pmDE",
+             "dist": "Dist",
+             "vrad": "HRV"}
+
+bcat_cols = {"ra": "RAJ2000", "dec": "DEJ2000",
+             "pmra": "pmRA_", "pmdec": "pmDE",
+             "dist": "Rsun",
+             "vrad": "RV"}
+
 
 # Map the required column names
 COLMAPS = {"LM10": lm10_cols,
            "DL17": dl17_cols,
            "R18": r18_cols,
            "KSEGUE": kcat_cols,
-           "RCAT": rcat_cols}
+           "RCAT": rcat_cols,
+           "V19": vcat_cols,
+           "B19": bcat_cols}
 
 
 def homogenize(cat, catname="", pcat=None,
