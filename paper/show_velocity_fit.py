@@ -103,7 +103,7 @@ if __name__ == "__main__":
     from matplotlib.gridspec import GridSpec
     gs = GridSpec(ncol, 2, height_ratios=ncol * [10],
                   wspace=0.05, hspace=0.2,
-                  left=0.2, right=0.93, top=0.93)
+                  left=0.13, right=0.94, top=0.93)
 
     #gsc = GridSpec(ncol, 1, left=0.85, right=0.86, hspace=0.2)
     vtax = fig.add_subplot(gs[0, 0])

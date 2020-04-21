@@ -39,6 +39,7 @@ if __name__ == "__main__":
     try:
         parser.add_argument("--feh_cut", type=float, default=-1.9)
         parser.add_argument("--show_gcs", action="store_true")
+        parser.add_argument("--pcol_limit", type=int, default=8)
     except:
         pass
     config = rectify_config(parser.parse_args())
@@ -110,7 +111,8 @@ if __name__ == "__main__":
             transform=ax.transAxes, bbox=bbox)
 
     # --- LM10 Mocks ---
-    colorby, cname = 0.66*0.85*rmax, r"$\hat{\rm R}_{\rm prog}$ (kpc)"
+    rprog = 0.66*0.85*rmax
+    colorby, cname = rprog, r"$\hat{\rm R}_{\rm prog}$ (kpc)"
     vmin, vmax = 0.25, 2.5
     #colorby, cname = lm10["Estar"], r"E$_\ast$"
     #vmin, vmax = 0, 1
@@ -118,7 +120,8 @@ if __name__ == "__main__":
     #vmin, vmax = 0, 5
     for i in range(2):
         ax = axes[1, i]
-        show = unbound
+        show = unbound & (lm10["Pcol"] <= config.pcol_limit)
+        vmax = np.percentile(colorby[show], [84])[0]
         cbl = show_xlam(lm10_r, show, dist=bool(i), ax=ax, colorby=colorby,
                         vmin=vmin, vmax=vmax, cmap="magma_r",
                         marker='o', s=2, alpha=0.5, zorder=2, linewidth=0)

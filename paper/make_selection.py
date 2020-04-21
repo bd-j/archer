@@ -22,9 +22,9 @@ def rcat_select(rcat, rcat_r, dly=0):
 def gc_select(gcat):
     sgr_gcs = {'Whiting 1': -0.7, 'Pal 12': -0.85,
                'NGC 6715': -1.49, 'Ter 7': -0.32, 'Arp 2': -1.75, 'Ter 8': -2.16, 
-               'NGC 2419': -2.15, "NGC 5466": -1.99}# "NGC5634": -1.88, "Pal 2": -1.42} #'NGC 5824': -1.91, 'NGC 4147': -1.80}
+               'NGC 2419': -2.15,}# "NGC 5466": -1.99}# "NGC5634": -1.88, "Pal 2": -1.42} #'NGC 5824': -1.91, 'NGC 4147': -1.80}
     inds = np.array([g["Name"] in sgr_gcs.keys() for g in gcat], dtype=bool)
-    feh = np.array([sgr_gcs.get(g["Name"], 99) for g in gcat])
+    feh = np.array([sgr_gcs.get(g["Name"], -2) for g in gcat])
     return inds, feh
 
 

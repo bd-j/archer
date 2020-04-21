@@ -61,7 +61,7 @@ if __name__ == "__main__":
     fig = pl.figure(figsize=figsize)
     from matplotlib.gridspec import GridSpec
     gs = GridSpec(2, 2,
-                  left=0.1, right=0.95, wspace=0.2, hspace=0.3, top=0.95)
+                  left=0.08, right=0.94, wspace=0.2, hspace=0.3, top=0.95)
 
     axes = np.array([fig.add_subplot(g) for g in gs])
     axes = axes.reshape(2, 2).T
