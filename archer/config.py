@@ -34,7 +34,7 @@ parser.add_argument("--mag_cut", action="store_true")
 
 # --- selection ---
 parser.add_argument("--dly", type=float,
-                    default=0.0, help"shift selection line by this amount in Ly")
+                    default=0.0, help="shift selection line by this amount in Ly")
 
 # --- catalog versions ---
 parser.add_argument("--rcat_vers", type=str, default="2_0")
