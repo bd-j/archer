@@ -1,6 +1,6 @@
 rcat_vers=2_4
 dist_err=0.1
-dly=-0.5
+dly=+0.0
 refit=false
 
 fdir=figures/V$rcat_vers/dly$dly
