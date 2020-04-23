@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select
-    good, sgr = rcat_select(rcat, rcat_r)
+    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly)
     sel = sgr & good
 
     # plot setup

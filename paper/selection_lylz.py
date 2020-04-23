@@ -11,7 +11,7 @@ from matplotlib.lines import Line2D
 from astropy.io import fits
 
 from archer.config import parser, rectify_config, plot_defaults
-from archer.catalogs import rectify, homogenize, pm_sigma
+from archer.catalogs import rectify, homogenize
 from archer.frames import gc_frame_law10, gc_frame_dl17
 from archer.cornerplot import twodhist
 from archer.chains import ellipse_pars, ellipse_artist
@@ -89,13 +89,10 @@ if __name__ == "__main__":
     lm10_r = rectify(homogenize(lm10, "LM10"), gc_frame_law10)
 
     # noisy lm10
-    lm10_rn = rectify(homogenize(lm10, "LM10", pcat=pcat, 
+    lm10_rn = rectify(homogenize(lm10, "LM10", pcat=pcat,
+                                 seds=lm10_seds, noisify_pms=config.noisify_pms,
                                  fractional_distance_error=frac_err), 
                       gc_frame_law10)
-    if config.noisify_pms:
-        pmunc = pm_sigma(lm10_seds, dist=lm10["dist"])
-        lm10_rn["pmra"] += np.random.normal(size=len(lm10)) * pmunc[0]
-        lm10_rn["pmdec"] += np.random.normal(size=len(lm10)) * pmunc[1]
 
     # dl17
     dl17 = fits.getdata(config.dl17_file)
@@ -103,7 +100,7 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select, gc_select
-    good, sgr = rcat_select(rcat, rcat_r)
+    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly)
     sgr_gcs, gc_feh = gc_select(gcat)
     unbound = lm10["tub"] > 0
     mag = lm10_seds["PS_r"] + 5 * np.log10(lm10_r["dist"])
@@ -133,7 +130,7 @@ if __name__ == "__main__":
                       covdir=config.covar_dir, alpha=0.3)
 
     ax.set_title("All H3 Giants")
-    art = {"Sgr remnant (F18)": Line2D([], [], marker="*", ms=8, markerfacecolor="royalblue",
+    art = {"Sgr remnant (F18)": Line2D([], [], marker="*", ms=8, markerfacecolor="gold",
                                        markeredgecolor="k", linestyle=""),
            }
 
@@ -199,10 +196,10 @@ if __name__ == "__main__":
     
     # --- plot selection line ---
     zz =  np.linspace(-9, 10, 100)
-    [ax.plot(zz, -0.3 * zz - 2.5, linestyle="--", color="royalblue", linewidth=2) for ax in laxes]
+    [ax.plot(zz, -0.3 * zz - 2.5 + config.dly, linestyle="--", color="royalblue", linewidth=2) for ax in laxes]
 
     [ax.plot([lsgr[2]], [lsgr[1]], label="Sgr remnant", linestyle="",
-             marker="*", markerfacecolor="royalblue", markersize=8, markeredgecolor="k",
+             marker="*", markerfacecolor="gold", markersize=10, markeredgecolor="k",
              ) for ax in laxes]
 
     # --- prettify ---

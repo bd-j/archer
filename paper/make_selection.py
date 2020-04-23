@@ -3,7 +3,7 @@
 
 import numpy as np
 
-def rcat_select(rcat, rcat_r, dly=0):
+def rcat_select(rcat, rcat_r, dly=0.0):
 
     good = ((rcat["FLAG"] == 0) & (rcat["SNR"] >= 3) &
             (rcat["logg"] < 3.5) & (rcat["FeH"] >= -3))

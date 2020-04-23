@@ -13,6 +13,7 @@ fi
 python selection_lylz.py --savefig --rcat_vers $rcat_vers --figure_dir $fdir --ncol 3 \
                          --fractional_distance_error $dist_err --mag_cut --noisify_pms
 python metallicities.py --savefig --rcat_vers $rcat_vers --figure_dir $fdir
+python show_velocity_fit.py --savefig --rcat_vers $rcat_vers --figure_dir $fdir
 python ely.py --savefig --rcat_vers $rcat_vers --figure_dir $fdir
 python vgsr_lambda_feh.py --savefig --rcat_vers $rcat_vers --figure_dir $fdir
 python mdf_by_vlam.py --savefig --rcat_vers $rcat_vers --figure_dir $fdir
@@ -23,7 +24,6 @@ python quiver.py --savefig --rcat_vers $rcat_vers --figure_dir $fdir \
                  --fractional_distance_error $dist_err --mag_cut --noisify_pms
 
 # Appendix
-python show_velocity_fit.py --savefig --rcat_vers $rcat_vers --figure_dir $fdir
 python el_unc.py --savefig --rcat_vers $rcat_vers --figure_dir $fdir
 python globulars.py --savefig --rcat_vers $rcat_vers --figure_dir $fdir
 

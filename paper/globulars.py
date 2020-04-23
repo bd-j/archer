@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select, gc_select
-    good, sgr = rcat_select(rcat, rcat_r)
+    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly)
     sgr_gcs, gc_feh = gc_select(gcat)
     #sgr_gcs = (gcat_r["ly"] < -2) & (gcat_r["ly"] > -7)
     unbound = lm10["tub"] > 0
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     ax = show_lzly(rcat_r, good, lax, linestyle="",
                    marker="o", markersize=ms, mew=0, color='black', alpha=0.5)
     #ax.set_title("All H3 Giants")
-    art = {"Sgr remnant (F18)": Line2D([], [], marker="*", ms=10, markerfacecolor="royalblue",
+    art = {"Sgr remnant (F18)": Line2D([], [], marker="*", ms=10, markerfacecolor="gold",
                                        markeredgecolor="k", linestyle=""),
            "H3 Giants": Line2D([], [], marker="o", ms=ms, mew=0, color="k", alpha=0.5, linestyle="")
            }
@@ -165,11 +165,11 @@ if __name__ == "__main__":
 
     # --- plot selection line ---
     zz =  np.linspace(-9, 10, 100)
-    [ax.plot(zz, -0.3 * zz - 2.5, linestyle="--", color="royalblue", linewidth=2) 
+    [ax.plot(zz, -0.3 * zz - 2.5 + config.dly, linestyle="--", color="royalblue", linewidth=2) 
      for ax in [lax]]
 
     [ax.plot([lsgr[2]], [lsgr[1]], label="Sgr remnant", linestyle="",
-             marker="*", markerfacecolor="royalblue", markersize=10, markeredgecolor="k",
+             marker="*", markerfacecolor="gold", markersize=10, markeredgecolor="k",
              ) for ax in [lax]]
 
     # --- prettify ---

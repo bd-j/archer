@@ -91,7 +91,7 @@ COLMAPS = {"LM10": lm10_cols,
            "B19": bcat_cols}
 
 
-def homogenize(cat, catname="", pcat=None,
+def homogenize(cat, catname="", pcat=None, noisify_pms=False, seds=None,
                fractional_distance_error=0.0):
     """Construct an auxiliary, row matched, catalog that has a standardized
     set of column names for phase spece infomation.
@@ -127,6 +127,10 @@ def homogenize(cat, catname="", pcat=None,
         ncat = reflex_uncorrect(cat=ncat, gc_frame=gc_frame_dl17)
         # id stars in the progenitor?
 
+    if noisify_pms:
+        pmunc = pm_sigma(seds, dist=ncat["dist"])
+        ncat["pmra"] += np.random.normal(size=len(ncat)) * pmunc[0]
+        ncat["pmdec"] += np.random.normal(size=len(ncat)) * pmunc[1]
 
     if fractional_distance_error > 0.0:
         # Noise up the mocks

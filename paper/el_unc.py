@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select
-    good, sgr = rcat_select(rcat, rcat_r)
+    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly)
     lowz = rcat["FeH"] < zsplit
 
     # plot setup
@@ -115,7 +115,7 @@ if __name__ == "__main__":
     #ax.set_title("All metallicities")
         # plot selection line
     zz =  np.linspace(-9, 10, 100)
-    ax.plot(zz, -0.3 * zz - 2.5, linestyle="--", color="royalblue", linewidth=2, label="Sgr Selection")
+    ax.plot(zz, -0.3 * zz - 2.5 + config.dly, linestyle="--", color="royalblue", linewidth=2, label="Sgr Selection")
     #ax.legend(loc="lower left", fontsize=10)
     ax.set_title("[Fe/H] < {}".format(zsplit))
 

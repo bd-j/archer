@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select, gc_select
-    good, sgr = rcat_select(rcat, rcat_r)
+    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly)
     sgr_gcs, gc_feh = gc_select(gcat)
     #sgr_gcs = (gcat_r["ly"] < -2) & (gcat_r["ly"] > -7)
     unbound = lm10["tub"] > 0
@@ -121,10 +121,12 @@ if __name__ == "__main__":
     for i in range(2):
         ax = axes[1, i]
         show = unbound & (lm10["Pcol"] <= config.pcol_limit)
-        vmax = np.percentile(colorby[show], [84])[0]
+        #vmax = np.percentile(colorby[show], [84])[0]
         cbl = show_xlam(lm10_r, show, dist=bool(i), ax=ax, colorby=colorby,
                         vmin=vmin, vmax=vmax, cmap="magma_r",
                         marker='o', s=2, alpha=0.5, zorder=2, linewidth=0)
+        
+    cbl = ax.scatter([-10], [-10], c=[1], vmin=vmin, vmax=vmax, cmap="magma_r")
         # plot GCs
 #        show = sgr_gcs
 #        _ = show_xlam(gcat_r, show, dist=bool(i), ax=ax, colorby=None,
@@ -158,7 +160,7 @@ if __name__ == "__main__":
     from matplotlib.lines import Line2D
     points = Line2D([], [], linestyle="", color="black",
                     marker="o", markersize=3)
-    axes[0, 0].legend([points], ["[Fe/H] < {}".format(zcut)], loc="upper right")
+    axes[0, 1].legend([points], ["[Fe/H] < {:.1f}".format(zcut)], loc="upper left", fontsize=10)
 
     # --- Colorbars ---
     cax1 = fig.add_subplot(gsc[1, -1])

@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select
-    good, sgr = rcat_select(rcat, rcat_r)
+    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly)
    
     trail = rcat_r["lambda"] < 175
     lead = rcat_r["lambda"] > 175
@@ -82,7 +82,7 @@ if __name__ == "__main__":
         gsc = GridSpec(nrow, 1, left=right, right=0.86, hspace=0.2)
     gs = GridSpec(nrow, ncol, height_ratios=nrow * [10],
                   width_ratios=ncol * [10], wspace=0.05,
-                  left=0.1, right=right, hspace=0.2, top=0.93)
+                  left=0.09, right=right, hspace=0.2, top=0.95, bottom=0.09)
                    #bottom=0.89, top=0.95)
     vlaxes = []
     cbars = []
@@ -101,7 +101,7 @@ if __name__ == "__main__":
             ax, cbh = show_vlam(rcat_r, show, ax=ax, color="black", linestyle="", mew=0,
                                 marker='o', ms=2, alpha=0.9, zorder=2, linewidth=0, label="Cold")
             show = good & sgr & inz & inarm & (~cold)
-            ax, _ = show_vlam(rcat_r, show, ax=ax, color="black", linestyle="", mew=0.7,
+            ax, _ = show_vlam(rcat_r, show, ax=ax, color="tomato", linestyle="", mew=0.75,
                               marker='o', ms=2, alpha=1.0, zorder=2, linewidth=0.7, label="Diffuse",
                               fillstyle="none")
             cbars.append(cbh)
@@ -119,13 +119,18 @@ if __name__ == "__main__":
         [ax.plot(llam, lmu - config.nsigma * lsig, **mkwargs) for ax in vlaxes[:, 1]]
 
     # prettify
+    vlaxes[0, 0].legend(loc="upper left", fontsize=10)
+    
     [ax.set_xlim(40, 145) for ax in vlaxes[:, 0]]
     [ax.set_xlim(195, 300) for ax in vlaxes[:, 1]]
     [ax.set_ylim(-330, 340) for ax in vlaxes.flat]
     [ax.set_ylabel(r"V$_{\rm GSR}$ (${\rm km} \,\, {\rm s}^{-1}$)") for ax in vlaxes[:, 0]]
-    [ax.set_xlabel(r"$\Lambda_{\rm Sgr}$ (deg)") for ax in vlaxes[-1, :]]
-    vlaxes[0, 0].set_title("Trailing")
-    vlaxes[0, 1].set_title("Leading")
+    #[ax.set_xlabel(r"$\Lambda_{\rm Sgr}$ (deg)") for ax in vlaxes[-1, :]]
+    #vlaxes[0, 0].set_title("Trailing")
+    #vlaxes[0, 1].set_title("Leading")
+    s1 = 0.48
+    fig.text(s1, 0.03, r"$\Lambda_{\rm Sgr}$ (deg)")
+
     
     # break axes
     [ax.spines['right'].set_visible(False) for ax in vlaxes[:, 0]]
@@ -144,7 +149,7 @@ if __name__ == "__main__":
             pl.colorbar(cb, cax=cax, label=r"[Fe/H]")
     else:
         for iz, ax in enumerate(vlaxes[:, 0]):
-            ax.text(0.08, 0.08, "{} < [Fe/H] < {}".format(*zbins[iz]),
+            ax.text(0.08, 0.08, "{:.1f} < [Fe/H] < {:.1f}".format(*zbins[iz]),
                     transform=ax.transAxes)
 
     if config.savefig:

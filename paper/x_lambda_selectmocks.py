@@ -10,7 +10,7 @@ from matplotlib.colors import ListedColormap
 from astropy.io import fits
 
 from archer.config import parser, rectify_config, plot_defaults
-from archer.catalogs import rectify, homogenize, pm_sigma
+from archer.catalogs import rectify, homogenize
 from archer.frames import gc_frame_law10, gc_frame_dl17
 from archer.plotting import make_cuts
 from archer.plummer import convert_estar_rmax
@@ -79,15 +79,14 @@ if __name__ == "__main__":
     lm10 = fits.getdata(config.lm10_file)
     sedfile = os.path.join(os.path.dirname(config.lm10_file), "LM10_seds.fits")
     lm10_seds = fits.getdata(sedfile)
-    lm10_dist = rectify(homogenize(lm10, "LM10"), gc_frame_law10)["dist"]
-    lm10_r = rectify(homogenize(lm10, "LM10", pcat=pcat,
-                                fractional_distance_error=frac_err),
-                     gc_frame_law10)
     rmax, energy = convert_estar_rmax(lm10["estar"])
-    if config.noisify_pms:
-        pmunc = pm_sigma(lm10_seds, dist=lm10_dist)
-        lm10_r["pmra"] += np.random.normal(size=len(lm10)) * pmunc[0]
-        lm10_r["pmdec"] += np.random.normal(size=len(lm10)) * pmunc[1]
+    lm10_noiseless = rectify(homogenize(lm10, "LM10"), gc_frame_law10)
+
+    # noisy lm10
+    lm10_r = rectify(homogenize(lm10, "LM10", pcat=pcat,
+                                 seds=lm10_seds, noisify_pms=config.noisify_pms,
+                                 fractional_distance_error=frac_err), 
+                      gc_frame_law10)
 
     # dl17
     dl17 = fits.getdata(config.dl17_file)
@@ -97,10 +96,10 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select, gc_select
-    good, sgr = rcat_select(rcat, rcat_r)
+    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly)
     sgr_gcs, gc_feh = gc_select(gcat)
     unbound = lm10["tub"] > 0
-    mag = lm10_seds["PS_r"] + 5 * np.log10(lm10_dist)
+    mag = lm10_seds["PS_r"] + 5 * np.log10(lm10_noiseless["dist"])
     bright = (mag > 15) & (mag < 18.5)
 
     # plot setup
@@ -194,9 +193,9 @@ if __name__ == "__main__":
     [ax.text(text[0], text[1], "DL17", transform=ax.transAxes, bbox=bbox)
      for ax in vlaxes[2, 0:1]]
 
-    s1 = 0.25
-    fig.text(s1, 0.03, r"$\Lambda_{\rm Sgr}$ (deg)")
-    fig.text(s1 + 0.4 + 0.04, 0.03, r"$\Lambda_{\rm Sgr}$ (deg)")
+    s1 = 0.24
+    fig.text(s1, 0.015, r"$\Lambda_{\rm Sgr}$ (deg)")
+    fig.text(s1 + 0.4 + 0.04, 0.015, r"$\Lambda_{\rm Sgr}$ (deg)")
 
     # ---- Colorbars ----
     cax1 = fig.add_subplot(gsc[1, -1])
