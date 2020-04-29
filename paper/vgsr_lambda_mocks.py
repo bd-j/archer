@@ -22,6 +22,7 @@ if __name__ == "__main__":
 
     zcut = -1.9
     config = rectify_config(parser.parse_args())
+    rtype = config.rcat_type
 
     # rcat
     rcat = fits.getdata(config.rcat_file)

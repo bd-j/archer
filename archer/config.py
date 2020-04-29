@@ -38,6 +38,7 @@ parser.add_argument("--dly", type=float,
 
 # --- catalog versions ---
 parser.add_argument("--rcat_vers", type=str, default="2_0")
+parser.add_argument("--rcat_type", type=str, default="RCAT_KIN")
 
 parser.add_argument("--segue_cat", action="store_true")
 parser.add_argument("--covar_dir", type=str,

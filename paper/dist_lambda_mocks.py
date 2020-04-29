@@ -31,10 +31,11 @@ if __name__ == "__main__":
 
     zcut = -1.9
     config = rectify_config(parser.parse_args())
+    rtype = config.rcat_type
 
     # rcat
     rcat = fits.getdata(config.rcat_file)
-    rcat_r = rectify(homogenize(rcat, "RCAT"), config.gc_frame)
+    rcat_r = rectify(homogenize(rcat, rtype), config.gc_frame)
 
     # lm10
     lm10 = fits.getdata(config.lm10_file)

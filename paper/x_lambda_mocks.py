@@ -43,11 +43,12 @@ if __name__ == "__main__":
     except:
         pass
     config = rectify_config(parser.parse_args())
+    rtype = config.rcat_type
     zcut = config.feh_cut
 
     # rcat
     rcat = fits.getdata(config.rcat_file)
-    rcat_r = rectify(homogenize(rcat, "RCAT"), config.gc_frame)
+    rcat_r = rectify(homogenize(rcat, rtype), config.gc_frame)
 
     # GCs
     gcat = fits.getdata(config.b19_file)

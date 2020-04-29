@@ -56,10 +56,11 @@ if __name__ == "__main__":
     except:
         pass
     config = rectify_config(parser.parse_args())
+    rtype = config.rcat_type
 
     # rcat
     rcat = fits.getdata(config.rcat_file)
-    rcat_r = rectify(homogenize(rcat, "RCAT"), config.gc_frame)
+    rcat_r = rectify(homogenize(rcat, rtype), config.gc_frame)
 
     # selections
     from make_selection import rcat_select

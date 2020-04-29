@@ -70,12 +70,13 @@ if __name__ == "__main__":
         pass
 
     config = rectify_config(parser.parse_args())
+    rtype = config.rcat_type
     frac_err = config.fractional_distance_error
     galaxes = config.galaxes
 
     # rcat
     rcat = fits.getdata(config.rcat_file)
-    rcat_r = rectify(homogenize(rcat, "RCAT"), config.gc_frame)
+    rcat_r = rectify(homogenize(rcat, rtype), config.gc_frame)
     pcat = fits.getdata(config.pcat_file)
 
     # GCs

@@ -50,6 +50,7 @@ if __name__ == "__main__":
     except:
         pass
     config = rectify_config(parser.parse_args())
+    rtype = config.rcat_type
     frac_err = config.fractional_distance_error
     nrow = len(zbins)
     ncol = 2
@@ -57,7 +58,7 @@ if __name__ == "__main__":
 
     # rcat
     rcat = fits.getdata(config.rcat_file)
-    rcat_r = rectify(homogenize(rcat, "RCAT"), config.gc_frame)
+    rcat_r = rectify(homogenize(rcat, rtype), config.gc_frame)
     lsgr = remnant_L()
 
     # selections

@@ -34,51 +34,76 @@ derived_columns = [("x_gal", u.kpc, "galactocentric"),
                    ("etot", (u.km / u.s)**2),
                    ("in_h3", bool)]
 
-lm10_cols = {"ra": "ra", "dec": "dec",
-             "pmra": "mua", "pmdec": "mud",
+# Law & Majewski 10
+lm10_cols = {"ra": "ra",
+             "dec": "dec",
+             "pmra": "mua",
+             "pmdec": "mud",
              "dist": "dist",
              "vgsr": "vgsr"}
 
-dl17_cols = {"ra": "ra", "dec": "dec",
+# Dierikx & Loeb 17
+dl17_cols = {"ra": "ra",
+             "dec": "dec",
              # Note the pms are solar reflex corrected
-             "pmra": "pmRA", "pmdec": "pmdec",
+             "pmra": "pmRA",
+             "pmdec": "pmdec",
              "dist": "dist",
              # this is solar reflex corrected (i.e. is vgsr)
              "vrad": "vlos"}
 
-r18_cols = {"ra": "ra", "dec": "dec",
-            "pmra": "pm_ra", "pmdec": "pm_dec",
+# Rybizki 18
+r18_cols = {"ra": "ra",
+            "dec": "dec",
+            "pmra": "pm_ra",
+            "pmdec": "pm_dec",
             "dist": ("parallax", lambda x: 1 / x),
             "vrad": "radial_velocity"}
 
-kcat_cols = {"ra": "ra", "dec": "dec",
-             "pmra": "gaia.pmra", "pmdec": "gaia.pmdec",
+# KSEGUE (Xue 14)
+kcat_cols = {"ra": "ra",
+             "dec": "dec",
+             "pmra": "gaia.pmra",
+             "pmdec": "gaia.pmdec",
              "dist": "Dist",
              "vrad": "HRV"}
 
-rcat_cols = {"ra": "RA", "dec": "DEC",
-             "pmra": "GAIADR2_PMRA", "pmdec": "GAIADR2_PMDEC",
+# H3 RCAT
+rcat_cols = {"ra": "RA",
+             "dec": "DEC",
+             "pmra": "GAIADR2_PMRA",
+             "pmdec": "GAIADR2_PMDEC",
              "dist": "dist_adpt",
              "vrad": "Vrad",
-             "flag": "FLAG",
-# we use the rcat derived values because they come from means of operations on samples
-             "vgsr": "V_gsr"}
-rcat_cols.update(dict([("{}_gal".format(a), "{}_gal".format(a.upper()))
-                       for a in "xyz"]))
-rcat_cols.update(dict([("v{}_gal".format(a), "V{}_gal".format(a))
-                       for a in "xyz"]))
-rcat_cols.update(dict([("l{}".format(a), ("L{}".format(a), lambda x: x / 1e3))
-                       for a in "xyz"]))
+             "flag": "FLAG"}
 
-vcat_cols = {"ra": "RAJ2000", "dec": "DEJ2000",
-             "pmra": "pmRA", "pmdec": "pmDE",
+# Vasiliev 19 (globulars)
+vcat_cols = {"ra": "RAJ2000",
+             "dec": "DEJ2000",
+             "pmra": "pmRA",
+             "pmdec": "pmDE",
              "dist": "Dist",
              "vrad": "HRV"}
 
-bcat_cols = {"ra": "RAJ2000", "dec": "DEJ2000",
-             "pmra": "pmRA_", "pmdec": "pmDE",
+# Baumgardt 2019 (globulars)
+bcat_cols = {"ra": "RAJ2000",
+             "dec": "DEJ2000",
+             "pmra": "pmRA_",
+             "pmdec": "pmDE",
              "dist": "Rsun",
              "vrad": "RV"}
+
+
+# we can use the rcat derived values because they come from means of operations on samples
+rcat_kin = {}
+rcat_kin.update(rcat_cols)
+rcat_kin["vgsr"] = "V_gsr"
+rcat_kin.update(dict([("{}_gal".format(a), "{}_gal".format(a.upper()))
+                       for a in "xyz"]))
+rcat_kin.update(dict([("v{}_gal".format(a), "V{}_gal".format(a))
+                       for a in "xyz"]))
+rcat_kin.update(dict([("l{}".format(a), ("L{}".format(a), lambda x: x / 1e3))
+                       for a in "xyz"]))
 
 
 # Map the required column names
@@ -87,6 +112,7 @@ COLMAPS = {"LM10": lm10_cols,
            "R18": r18_cols,
            "KSEGUE": kcat_cols,
            "RCAT": rcat_cols,
+           "RCAT_KIN": rcat_kin,
            "V19": vcat_cols,
            "B19": bcat_cols}
 
@@ -101,7 +127,7 @@ def homogenize(cat, catname="", pcat=None, noisify_pms=False, seds=None,
     cat : numpy structured array
 
     catname : str
-        One of "RCAT", "DL17", "LM10", "KSEGUE", or "R18"
+        One of "RCAT", "RCAT_KIN", "DL17", "LM10", "KSEGUE", or "R18"
 
     fractional_distance_error: float, optional (default 0.0)
         Fractional distance error to add to heliocentric distances
@@ -121,6 +147,11 @@ def homogenize(cat, catname="", pcat=None, noisify_pms=False, seds=None,
             ncat[c] = mapping[1](cat[mapping[0]])
         else:
             ncat[c] = cat[mapping]
+
+    if (catname == "RCAT") & (len(cat) < 1000):
+        # double the distances to weird stars
+        print("Increasing distance by factor 2")
+        ncat["dist"] *= 2
 
     if catname == "DL17":
         # reflex uncorrect the DL17 values
