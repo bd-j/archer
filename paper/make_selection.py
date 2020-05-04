@@ -61,3 +61,6 @@ def count_selections(rcat, rcat_r, dly=0):
     n_good_lerr_sgr = (good & good_chem & good_lerr & sgr).sum()
     n_all_good_sgr = (good & good_chem & good_lerr & good_lx & sgr).sum()
     
+    goodish = ((rcat["SNR"] >= 3) &
+            (rcat["logg"] < 3.5) & (rcat["FeH"] >= -3))
+    sgr = rcat_r["ly"] < (-0.3 * rcat_r["lz"] - 2.5 + dly)

@@ -58,6 +58,11 @@ def compute_energy(cat, potential):
     return cat
 
 
+def compute_vtan(cat):
+    vtan = 4.74 * np.hypot(cat["pmra"], cat["pmdec"]) * cat["dist"] 
+    return vtan
+
+
 def compute_orbit(w, potential):
     raise(NotImplementedError)
 
