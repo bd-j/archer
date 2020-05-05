@@ -40,6 +40,7 @@ if __name__ == "__main__":
         parser.add_argument("--feh_cut", type=float, default=-1.9)
         parser.add_argument("--show_gcs", action="store_true")
         parser.add_argument("--pcol_limit", type=int, default=8)
+        parser.add_argument("--by_vtan", action="store_true")
     except:
         pass
     config = rectify_config(parser.parse_args())
@@ -65,10 +66,12 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select, gc_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly)
+    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, allow_flags=[])
+    good_v, _ = rcat_select(rcat, rcat_r, dly=config.dly, allow_flags=["high_vtan"])
     sgr_gcs, gc_feh = gc_select(gcat)
     #sgr_gcs = (gcat_r["ly"] < -2) & (gcat_r["ly"] > -7)
     unbound = lm10["tub"] > 0
+    vtan_rejected = (good_v & ~good & sgr)
 
     # plot setup
     rcParams = plot_defaults(rcParams)
@@ -89,6 +92,7 @@ if __name__ == "__main__":
     # --- plot H3 ----
     colorby = rcat["feh"]
     zmin, zmax = -2, -0.1
+    if config.by_vtan
     for i in range(2):
         ax = axes[0, i]
         show = good & sgr
@@ -115,6 +119,11 @@ if __name__ == "__main__":
     rprog = 0.66*0.85*rmax
     colorby, cname = rprog, r"$\hat{\rm R}_{\rm prog}$ (kpc)"
     vmin, vmax = 0.25, 2.5
+    if config.by_vtan:
+        from archer.quantities import compute_vtan
+        vtan = compute_vtan(lm10_r)
+        colorby, cname = vtan, r"V$_{\rm tan}$"
+        vmin, vmax = 0, 700
     #colorby, cname = lm10["Estar"], r"E$_\ast$"
     #vmin, vmax = 0, 1
     #colorby, cname = lm10["tub"], r"t$_{\rm unbound}$"
@@ -141,6 +150,13 @@ if __name__ == "__main__":
     colorby = dl17["id"]
     vmin, vmax = 0, 1
     cm = ListedColormap(["tomato", "black"])
+    if config.by_vtan:
+        from archer.quantities import compute_vtan
+        vtan = compute_vtan(dl17_r)
+        colorby, cname = vtan, r"V$_{\rm tan}$"
+        vmin, vmax = 0, 700
+        cm = "magma_r"
+ 
     for i in range(2):
         ax = axes[2, i]
         show = dl17["id"] >= 0

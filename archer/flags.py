@@ -17,6 +17,7 @@ flagval = {}
 for ii,ff in enumerate(flags):
     flagval[ii] = int(ff,2)
 
+
 def flag_set(bitmask, flag_name, only=False):
     ind = flag_names.index(flag_name) + 1
     assert ind >= 0
@@ -26,3 +27,10 @@ def flag_set(bitmask, flag_name, only=False):
         f = np.bitwise_and(bitmask, flagval[ind]) > 0
     
     return f
+
+def make_bitmask(flags):
+    bitmask = 0
+    for f in flags:
+        ind = len(flag_names) - flag_names.index(f) - 1
+        bitmask += (1 << ind)
+    return bitmask

@@ -64,6 +64,8 @@ parser.add_argument("--nnfile", type=str,
                     default="nnMIST_BC.h5")
 parser.add_argument("--mistfile", type=str,
                     default="MIST_1.2_EEPtrk.h5")
+parser.add_argument("--mistiso", type=str,
+                    default="MIST_1.2_iso_vvcrit0.4.h5")
 
 
 
@@ -82,6 +84,7 @@ def rectify_config(config):
 
     config.nnfile = pjoin(config.data_dir, "sps", config.nnfile)
     config.mistfile = pjoin(config.data_dir, "sps", config.mistfile)
+    config.mistiso = pjoin(config.data_dir, "sps", config.mistiso)
 
     config.gc_frame = astropy.coordinates.Galactocentric()
 

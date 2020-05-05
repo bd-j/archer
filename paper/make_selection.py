@@ -2,14 +2,25 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+from archer.flags import flag_names, make_bitmask
 
 
-def rcat_select(rcat, rcat_r, dly=0.0, achilles_file=None):
+def rcat_select(rcat, rcat_r, dly=0.0, achilles_file=None,
+                allow_flags=[]):
 
-    good = ((rcat["FLAG"] == 0) & (rcat["SNR"] >= 3) &
-            (rcat["logg"] < 3.5) & (rcat["FeH"] >= -3))
     sgr = rcat_r["ly"] < (-0.3 * rcat_r["lz"] - 2.5 + dly)
 
+    # allow some bits to be set
+    assert np.all([f in flag_names for f in allow_flags])
+    bitmask = np.int64(make_bitmask(allow_flags))
+    ok_flags = np.bitwise_xor(np.bitwise_or(rcat["FLAG_BITMASK"], bitmask), bitmask) == 0
+    
+    # main quality selection
+    good = (ok_flags & (rcat["SNR"] >= 3) &
+            (rcat["logg"] < 3.5) & (rcat["FeH"] >= -3))
+
+    # remove large L uncertainties
+    # remove large Lx and weird chemistry
     try:
         good_l = (rcat["Lz_err"] < 3e3) & (rcat["Ly_err"] < 3e3)
         good_l = good_l & (np.abs(rcat_r["lx"]) < 10) & (rcat["afe"] < (-0.3*rcat["FeH"]+0.2))
