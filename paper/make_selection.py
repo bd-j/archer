@@ -5,7 +5,8 @@ import numpy as np
 from archer.flags import flag_names, make_bitmask
 
 
-def good_select(rcat, rcat_r, allow_flags=["hot", "high_vtan"]):
+def good_select(rcat, allow_flags=["hot", "high_vtan"], extras=True,
+                snr_limit=3):
 
     # allow some bits to be set
     assert np.all([f in flag_names for f in allow_flags])
@@ -13,16 +14,16 @@ def good_select(rcat, rcat_r, allow_flags=["hot", "high_vtan"]):
     ok_flags = np.bitwise_xor(np.bitwise_or(rcat["FLAG_BITMASK"], bitmask), bitmask) == 0
     
     # main quality selection
-    good = (ok_flags & (rcat["SNR"] >= 3) & (rcat["V_tan"] < 900) &
-            (rcat["logg"] < 3.5) & (rcat["FeH"] >= -3))
+    good = (ok_flags & (rcat["SNR"] >= snr_limit) & (rcat["V_tan"] < 900) &
+            (rcat["logg"] < 3.5) & (rcat["FeH"] >= -3) & (rcat["XFIT_RANK"] < 4))
 
     # remove large L uncertainties
     # remove weird chemistry
-    try:
+    if extras:
         good_l = (rcat["Lz_err"] < 3e3) & (rcat["Ly_err"] < 3e3)
         good_c = (rcat["afe"] < (-0.3*rcat["FeH"]+0.2))
         good = good & good_l & good_c
-    except:
+    else:
         print("No L error or chem cut")
 
     #return np.ones(len(rcat), dtype=bool), np.ones(len(rcat), dtype=bool) 
@@ -33,7 +34,7 @@ def rcat_select(rcat, rcat_r, dly=0.0, allow_flags=["hot", "high_vtan"]):
 
     sgr = rcat_r["ly"] < (-0.3 * rcat_r["lz"] - 2.5 + dly) 
     sgr = sgr & (np.abs(rcat_r["lx"]) < 10)
-    good = good_select(rcat, rcat_r, allow_flags=allow_flags)
+    good = good_select(rcat, allow_flags=allow_flags)
     return good, sgr
 
 
