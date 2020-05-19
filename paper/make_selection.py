@@ -30,10 +30,10 @@ def good_select(rcat, allow_flags=["hot", "high_vtan"], extras=True,
     return good
 
 
-def rcat_select(rcat, rcat_r, dly=0.0, allow_flags=["hot", "high_vtan"]):
+def rcat_select(rcat, rcat_r, dly=0.0, flx=0.95, allow_flags=["hot", "high_vtan"]):
 
     sgr = rcat_r["ly"] < (-0.3 * rcat_r["lz"] - 2.5 + dly) 
-    sgr = sgr & (np.abs(rcat_r["lx"]) < 10)
+    sgr = sgr & (np.abs(rcat_r["lx"]) < flx*np.hypot(rcat_r["ly"], rcat_r["lz"]))
     good = good_select(rcat, allow_flags=allow_flags)
     return good, sgr
 
@@ -55,23 +55,21 @@ def gc_select(gcat):
     return inds, feh
 
 
-def count_selections(rcat, rcat_r, dly=0):
+def count_selections(rcat, rcat_r, dly=0, flx=0.9):
 
-    good = ((rcat["FLAG"] == 0) & (rcat["SNR"] >= 3) &
-            (rcat["logg"] < 3.5))
-    sgr = rcat["Ly"]/1e3 < (-0.3 * rcat["Lz"]/1e3 - 2.5 + dly)
-    good_chem = (rcat["FeH"] >= -3) & (rcat["afe"] < (-0.3*rcat["FeH"]+0.2))
+    goodish = good_select(rcat, extras=False)
     good_lerr = (rcat["Lz_err"] < 3e3) & (rcat["Ly_err"] < 3e3)
-    good_lx = (np.abs(rcat_r["lx"]) < 10)
+    good_chem = (rcat["afe"] < (-0.3*rcat["FeH"]+0.2))
+    good_lx = (np.abs(rcat_r["lx"]) < flx*np.hypot(rcat_r["ly"], rcat_r["lz"]))
+
+    sgr = rcat_r["ly"] < (-0.3 * rcat_r["lz"] - 2.5 + dly)
 
  
     n_tot = len(rcat)
-    n_good = good.sum()
-    n_good_sgr = (good & sgr).sum()
-    n_good_chem_sgr = (good & good_chem & sgr).sum()
-    n_good_lerr_sgr = (good & good_chem & good_lerr & sgr).sum()
-    n_all_good_sgr = (good & good_chem & good_lerr & good_lx & sgr).sum()
+    n_good = goodish.sum()
+    n_good_lerr = (goodish & good_lerr).sum()
+    n_sgr = (goodish & good_lerr & sgr).sum()
+    n_good_chem_sgr = (goodish & good_lerr & sgr & good_chem).sum()
+    n_good_lx_sgr = (goodish & good_lerr & sgr & good_lx).sum()
+    n_all_good_sgr = (goodish & good_chem & good_lerr & good_lx & sgr).sum()
     
-    goodish = ((rcat["SNR"] >= 3) &
-            (rcat["logg"] < 3.5) & (rcat["FeH"] >= -3))
-    sgr = rcat_r["ly"] < (-0.3 * rcat_r["lz"] - 2.5 + dly)

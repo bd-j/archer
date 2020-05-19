@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as pl
 from matplotlib import rcParams
 from matplotlib.colors import ListedColormap
+from matplotlib.lines import Line2D
 
 from astropy.io import fits
 
@@ -12,6 +13,12 @@ from archer.config import parser, rectify_config, plot_defaults
 from archer.catalogs import rectify, homogenize
 from archer.frames import gc_frame_law10, gc_frame_dl17
 from archer.fitting import best_model, sample_posterior
+
+
+def renorm_weight(weights, show):
+    renorm = show.sum() / weights[show].sum()
+    wght = weights * renorm
+    return wght[show]
 
 
 if __name__ == "__main__":
@@ -29,11 +36,14 @@ if __name__ == "__main__":
     # rcat
     rcat = fits.getdata(config.rcat_file)
     rcat_r = rectify(homogenize(rcat, rtype), config.gc_frame)
+    wcat = fits.getdata(config.rcat_file.replace("rcat", "wcat"))
  
     # selections
     from make_selection import rcat_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly)
-    n_tot = (good & sgr).sum()
+    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
+    weights = 1./wcat["total_weight"]
+    weights[~np.isfinite(weights)] = 0
+    bhb = rcat["BHB"] > 0
 
     trail = rcat_r["lambda"] < 175
     lead = rcat_r["lambda"] > 175
@@ -50,10 +60,10 @@ if __name__ == "__main__":
     cold_lead =  np.abs(rcat_r["vgsr"] - lmu) < (config.nsigma * lsig)
 
     selections = {
-        "$\Lambda<140$, Cold\n(Trailing Arm)": good & sgr & trail & cold_trail,
-        "$\Lambda<140$, Diffuse": good & sgr & trail & ~cold_trail,
-        "$\Lambda>200$, Cold\n(Leading Arm)": good & sgr & lead & cold_lead,
-        "$\Lambda>200$, Diffuse": good & sgr & lead & ~cold_lead
+        "$\Lambda<140$, Cold\n(Trailing Arm)": good & sgr & trail & cold_trail & ~bhb,
+        "$\Lambda<140$, Diffuse": good & sgr & trail & ~cold_trail & ~bhb,
+        "$\Lambda>200$, Cold\n(Leading Arm)": good & sgr & lead & cold_lead & ~bhb,
+        "$\Lambda>200$, Diffuse": good & sgr & lead & ~cold_lead & ~bhb
     }
 
     # plot setup
@@ -67,14 +77,21 @@ if __name__ == "__main__":
     axes = np.array([fig.add_subplot(g) for g in gs])
     axes = axes.reshape(2, 2).T
 
+    sel_tot = good & sgr & (rcat["BHB"] == 0)
+    n_tot = sel_tot.sum()
+    renorm = sel_tot.sum() / weights[sel_tot].sum()
+    wght = weights * renorm
+
     for i, (k, sel) in enumerate(selections.items()):
         n_this = sel.sum()
+        #wght = renorm_weight(weights, sel)
         ax = axes.flat[i]
-        ax.hist(rcat[sel]["FeH"], bins=zbins, color="darkgrey", alpha=0.8, histtype="stepfilled")
-        ax.hist(rcat[sel]["FeH"], bins=zbins, color="darkgrey", histtype="step", linewidth=2)
+        ax.hist(rcat[sel]["FeH"], bins=zbins, weights=wght[sel], color="darkgrey", alpha=0.8, histtype="stepfilled")
+        ax.hist(rcat[sel]["FeH"], bins=zbins, weights=wght[sel], color="darkgrey", histtype="step", linewidth=2)
         ax.text(0.06, 0.94, "{}\nN={}".format(k, sel.sum()),
                 transform=ax.transAxes, verticalalignment="top")
-        ax.hist(rcat[good & sgr]["FeH"], bins=zbins, weights=np.ones(n_tot) * n_this/n_tot,
+        
+        ax.hist(rcat[sel_tot]["FeH"], bins=zbins, weights=wght[sel_tot]*n_this/n_tot,
                 color="black", histtype="step", linestyle=":")
 
     [ax.set_xlabel("[Fe/H]") for ax in axes.flat]

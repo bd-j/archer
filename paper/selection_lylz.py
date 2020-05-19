@@ -79,10 +79,6 @@ if __name__ == "__main__":
     rcat_r = rectify(homogenize(rcat, rtype), config.gc_frame)
     lsgr = remnant_L()
 
-    # GCs
-    gcat = fits.getdata(config.b19_file)
-    gcat_r = rectify(homogenize(gcat, "B19"), config.gc_frame)
-
     # lm10
     lm10 = fits.getdata(config.lm10_file)
     sedfile = os.path.join(os.path.dirname(config.lm10_file), "LM10_seds.fits")
@@ -101,8 +97,7 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select, gc_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly)
-    sgr_gcs, gc_feh = gc_select(gcat)
+    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
     unbound = lm10["tub"] > 0
     mag = lm10_seds["PS_r"] + 5 * np.log10(lm10_r["dist"])
     bright = (mag > 15) & (mag < 18.5)
@@ -131,17 +126,9 @@ if __name__ == "__main__":
                       covdir=config.covar_dir, alpha=0.3)
 
     ax.set_title("All H3 Giants")
-    art = {"Sgr remnant (F18)": Line2D([], [], marker="*", ms=8, markerfacecolor="gold",
+    art = {"Sgr remnant (F18)": Line2D([], [], marker="*", ms=10, markerfacecolor="gold",
                                        markeredgecolor="k", linestyle=""),
            }
-
-    # plot GCs
-    if config.show_gcs:
-        ax = show_lzly(gcat_r, slice(None), laxes[0], linestyle="",
-                       marker="s", markersize=ms*2, markerfacecolor="tomato",
-                       markeredgecolor='k', alpha=1.0)
-        art["Globular Clusters"] = Line2D([], [], linestyle="", marker="s", markersize=ms*2,
-                                          markerfacecolor="tomato", markeredgecolor='k')
     
     leg = list(art.keys())
     ax.legend([art[l] for l in leg], leg, fontsize=10)
@@ -158,7 +145,7 @@ if __name__ == "__main__":
     _ = twodhist(lm10_r["lz"][show], lm10_r["ly"][show], ax=laxes[-1],
                   span=span, fill_contours=False, color="black",
                   contour_kwargs={"linewidths": 0.75})
-    ax.set_title("LM10")
+    ax.set_title("Law & Majewski (2010)")
     art = {"Unbound particles": Line2D([], [], color="k", linewidth=0.75),
            "Within H3 window": Line2D([], [], marker="o", markersize=ms, linewidth=0, color="grey")}
     leg = list(art.keys())
@@ -188,10 +175,10 @@ if __name__ == "__main__":
         ax.plot([np.nanmedian(dl17_r["lz"][dl_remnant])], [np.nanmedian(dl17_r["ly"][dl_remnant])],
                 marker="*", markersize=7, linewidth=0, color="k", label="DL17 remnant")
 
-        ax.set_title("DL17")
+        ax.set_title("Dierickx & Loeb (2017)")
         art = {"Unbound stars": Line2D([], [], color="tomato"),
                "Dark Matter": Line2D([], [], color="k", linewidth=0.75),
-               "Remnant": Line2D([], [], marker="*", markersize=7, linewidth=0, color="k")}
+               "Remnant": Line2D([], [], marker="*", markersize=8, linewidth=0, color="k")}
         leg = list(art.keys())
         ax.legend([art[l] for l in leg], leg, fontsize=10)
     
@@ -200,7 +187,7 @@ if __name__ == "__main__":
     [ax.plot(zz, -0.3 * zz - 2.5 + config.dly, linestyle="--", color="royalblue", linewidth=2) for ax in laxes]
 
     [ax.plot([lsgr[2]], [lsgr[1]], label="Sgr remnant", linestyle="",
-             marker="*", markerfacecolor="gold", markersize=10, markeredgecolor="k",
+             marker="*", markerfacecolor="gold", markersize=12, markeredgecolor="k",
              ) for ax in laxes]
 
     # --- prettify ---

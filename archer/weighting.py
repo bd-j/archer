@@ -95,18 +95,16 @@ def mag_weight(dist, feh, iso, masker=None,
                                    **lf_params)
     params["eep"] = iso.eep_u.copy()
     weights = imf_weight(params["mini"])
-    mags = dict(zip(iso.filters, marr.T))
+    mags = dict(zip(iso.filters, marr.T + mu))
 
-    # FIXME: could apply distance modulus to all mags and pass apparent mag
-    # arrays to `masker`
-    mag = mags[band] + mu
+    mag = mags[band]
     if masker is not None:
         mask = masker(params, mags)
     else:
         mask = True
     valid = (mag > bright) & (mag < faint) & mask
     if wisecut:
-        w1 = mags["WISE_W1"] + mu
+        w1 = mags["WISE_W1"]
         valid = valid & (w1 < 15.5)
     frac = np.nansum(weights[valid])
     return frac
@@ -120,7 +118,7 @@ def logg_masker(params, mags):
     return sel
 
 
-def mgiant_masker(params, mags):
+def mgiant_masker(params, mags, w1cut=True):
     """Identify M(K) Giants basd on Conroy+ 2019.  Does not include apparent mag
     cut in WISE_W1, but does include logg cut
     """
@@ -132,6 +130,8 @@ def mgiant_masker(params, mags):
            (z_w1 > 1.9) & (z_w1 < 2.5) &
            (z_w1 > (1.2*g_r + 0.95)) & (z_w1 < (1.2*g_r + 1.15)) &
            (params["logg"] < 3.5))
+    if w1cut:
+        sel = sel & (mags["WISE_W1"] < 15.5)
     return sel
 
 
@@ -153,17 +153,17 @@ def bhb_masker(params, mags):
     return sel
 
 
-def rank_weight(rank, ptgID, wcat=None):
+def rank_weight(rank, ptgID, pcat=None):
     """Compute the fraction of stars that made it from mag selected sample
     (scat) into rcat given rank and ptgID
     """
-    ind = wcat["PTGID"] == ptgID
+    ind = pcat["PTGID"] == ptgID
     # probability to go from scat to rcat for this rank
-    w1 = wcat[ind]["RANK{:.0f}_WGT_ALL".format(rank)]
+    w1 = pcat[ind]["RANK{:.0f}_WGT_ALL".format(rank)]
     return w1
 
 
-def compute_total_weight(rcat_row, iso, wcat, snr_limit=3.0, use_ebv=False, 
+def compute_total_weight(rcat_row, iso, pcat, snr_limit=3.0, use_ebv=False, 
                          lf_params=dict(afe=0, loga=10)):
     """Compute the fiber assignment weight and the magnitude weighting for this star.
     The inverse of the product of these weights represents the number of stars
@@ -178,7 +178,7 @@ def compute_total_weight(rcat_row, iso, wcat, snr_limit=3.0, use_ebv=False,
     iso : brutus.seds.Isochrone instance
         must have the PS and WISE filters
 
-    wcat : FITS_rec or structured array
+    pcat : FITS_rec or structured array
         pcat with weights
     
     snr_limit : float (optional, default=3.)
@@ -209,19 +209,19 @@ def compute_total_weight(rcat_row, iso, wcat, snr_limit=3.0, use_ebv=False,
     
     # probability to go from scat to rcat for this rank
     ptgID = "{}_{}_{}".format(row["tileID"], row["selID"], row["dateID"])
-    ptg_ind = wcat["PTGID"] == ptgID
+    ptg_ind = pcat["PTGID"] == ptgID
     rank = row["XFIT_RANK"]
-    rw = wcat[ptg_ind]["RANK{:.0f}_WGT_ALL".format(rank)]
+    rw = pcat[ptg_ind]["RANK{:.0f}_WGT_ALL".format(rank)]
     
     # find PS_r s.t. SNR=3 in this ptg
-    coeffs = wcat[ptg_ind]["snr_curve"][0].copy()
+    coeffs = pcat[ptg_ind]["snr_curve"][0].copy()
     coeffs[-1] -= snr_limit
     faint_snr = min(np.roots(coeffs)).real
 
     masker = logg_masker
     
     # get bright and faint limits for this rank, ptg
-    band, wisecut = "PS_r", False
+    band = "PS_r"
     if rank == 3:
         faint = min(18.5, faint_snr)
         bright = 18
@@ -241,14 +241,13 @@ def compute_total_weight(rcat_row, iso, wcat, snr_limit=3.0, use_ebv=False,
     # get isochrone masker for this selection
     if (rank == 1) & (row["MGIANT"] > 0):
         masker = mgiant_masker
-        wisecut = True
         #band = "WISE_W1"
     elif (rank == 1) & (row["BHB"] > 0):
         masker = bhb_masker
 
     mw = mag_weight(row["dist_adpt"], row["FeH"], iso,
                     bright=bright, faint=faint, selection_band=band,
-                    wisecut=wisecut, masker=masker,
+                    masker=masker,
                     lf_params=lf_params)
 
     return rw, mw, faint_snr
@@ -269,7 +268,7 @@ if __name__ == "__main__":
     iso = Isochrone(mistfile=config.mistiso, nnfile=config.nnfile, filters=filters)
     mags, params, weights = get_lf(iso, feh=feh)
     gmask = logg_masker(params, mags)
-    mmask = mgiant_masker(params, mags)
+    mmask = mgiant_masker(params, mags, w1cut=False)
     bmask = bhb_masker(params, mags)
 
     d_arr = np.linspace(2, 100, 1000)

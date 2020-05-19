@@ -7,7 +7,8 @@ from scipy.special import logsumexp
 
 class VelocityModel:
 
-    def __init__(self, alpha_range, beta_range, pout_range):
+    def __init__(self, alpha_range, beta_range, pout_range,
+                 vmu_bad_range=None, vsig_bad_range=None):
         """
         Parameters
         ----------
@@ -24,15 +25,26 @@ class VelocityModel:
         """
         self.alpha_range = alpha_range
         self.beta_range = beta_range
-        self.pout_range = pout_range
+        self.pout_range = np.array(pout_range)
         self.vmu_bad = -100
         self.vsig_bad = 200
+        self.free_bad = False
+        if vmu_bad_range is not None:
+            self.free_bad = True
+            self.vmu_bad_range = np.array(vmu_bad_range)
+            self.vsig_bad_range = np.array(vsig_bad_range)
+            assert vsig_bad_range is not None
 
     def pos_to_params(self, pos):
+        """ {alpha}_i^N, {beta}_i^N, [vmu_bad, vsig_bad], pout
+        """
         na, nb = self.alpha_order, self.beta_order
         self.alpha = pos[:na]
         self.beta = pos[na: (na + nb)]
         self.pout = pos[-1]
+        if self.free_bad:
+            self.vmu_bad = pos[-3]
+            self.vsig_bad = pos[-2]
 
     def set_data(self, Lam, vel, vel_unc=0, idx=[-1]):
         self.lamb = Lam
@@ -60,7 +72,13 @@ class VelocityModel:
         a = ar[0] + u[:na] * np.diff(ar, axis=0)[0]
         b = br[0] + u[na:(na + nb)] * np.diff(br, axis=0)[0]
         pout = self.pout_range[0] + u[-1] * np.diff(self.pout_range)
-        return np.hstack([a, b, pout])
+        if self.free_bad:
+            vm = self.vmu_bad_range[0] + u[-3] * np.diff(self.vmu_bad_range)
+            vs = self.vsig_bad_range[0] + u[-2] * np.diff(self.vsig_bad_range)
+            pars = np.hstack([a, b, vm, vs, pout])
+        else:    
+            pars = np.hstack([a, b, pout])
+        return pars
 
     def outlier_odds(self, pos):
         """Compute the odds ratio of any given data point being an outlier for
@@ -84,7 +102,7 @@ class VelocityModel:
 
     @property
     def ndim(self):
-        return self.beta_order + self.alpha_order + 1
+        return self.beta_order + self.alpha_order + 1 + 2 * self.free_bad
 
 
 def musig(lam, alpha, beta):
@@ -131,11 +149,15 @@ def outlier_oddsratio(lam, vel, alpha, beta, vel_unc=0, pout=0.0,
 
 
 def write_to_h5(results, model, oname):
-    model_columns = ["alpha_range", "beta_range", "pout_range", "lamb", "vel", "idx"]
+    model_columns = ["alpha_range", "beta_range", "pout_range", 
+                     "vmu_bad_range", "vsig_bad_range",
+                     "lamb", "vel", "idx"]
     import h5py
     with h5py.File(oname, "w") as out:
         for mc in model_columns:
-            out.create_dataset(mc, data=getattr(model, mc))
+            d = getattr(model, mc)
+            if d is not None:
+                out.create_dataset(mc, data=d)
         for k, v in results.items():
             try:
                 out.create_dataset(k, data=v)
@@ -147,8 +169,14 @@ def read_from_h5(iname):
     rcols = ["logl", "samples", "logz", "logwt"]
     import h5py
     with h5py.File(iname, "r") as f:
+        if "vmu_bad_range" in f:
+            vmb = f["vmu_bad_range"][:]
+            vsb = f["vsig_bad_range"][:]
+        else:
+            vmb = vsb = None
         model = VelocityModel(f["alpha_range"][:], f["beta_range"][:],
-                              f["pout_range"][:])
+                              f["pout_range"][:],
+                              vmu_bad_range=vmb, vsig_bad_range=vsb)
         try:
             idx = f["idx"][:]
         except:

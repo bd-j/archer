@@ -72,10 +72,6 @@ if __name__ == "__main__":
     rcat_r = rectify(homogenize(rcat, rtype), config.gc_frame)
     pcat = fits.getdata(config.pcat_file)
 
-    # GCs
-    gcat = fits.getdata(config.b19_file)
-    gcat_r = rectify(homogenize(gcat, "B19"), config.gc_frame)
-
     # lm10
     lm10 = fits.getdata(config.lm10_file)
     sedfile = os.path.join(os.path.dirname(config.lm10_file), "LM10_seds.fits")
@@ -97,8 +93,7 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select, gc_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly)
-    sgr_gcs, gc_feh = gc_select(gcat)
+    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
     unbound = lm10["tub"] > 0
     mag = lm10_seds["PS_r"] + 5 * np.log10(lm10_noiseless["dist"])
     bright = (mag > 15) & (mag < 18.5)
@@ -129,14 +124,6 @@ if __name__ == "__main__":
     nshow = (good & sgr).sum()
     vlaxes.append(axes)
     vcb.append(cbs[0])
-
-    # plot GCs
-    if config.show_gcs:
-        axes, _ = show_allx(gcat_r, sgr_gcs, colorby=gc_feh,
-                            icat=0, nshow=None, figure=fig, gridspec=(gsv, gsd),
-                            vmin=-2.0, vmax=-0.1, cmap="magma",
-                            marker='s', s=25, markerfacecolor="none", edgecolor="k", 
-                            alpha=1.0, zorder=2)
 
     # --- LM10 Mocks ---
     colorby, cname = 0.66*0.85*rmax, r"$\hat{\rm R}_{\rm prog}$ (kpc)" #r"typical radius ($\sim 0.66 \, r_{\rm max}/r_0$)"

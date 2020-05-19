@@ -34,6 +34,15 @@ derived_columns = [("x_gal", u.kpc, "galactocentric"),
                    ("etot", (u.km / u.s)**2),
                    ("in_h3", bool)]
 
+# H3 RCAT
+rcat_cols = {"ra": "RA",
+             "dec": "DEC",
+             "pmra": "GAIADR2_PMRA",
+             "pmdec": "GAIADR2_PMDEC",
+             "dist": "dist_adpt",
+             "vrad": "Vrad",
+             "flag": "FLAG"}
+
 # Law & Majewski 10
 lm10_cols = {"ra": "ra",
              "dec": "dec",
@@ -68,14 +77,14 @@ kcat_cols = {"ra": "ra",
              "dist": "Dist",
              "vrad": "HRV"}
 
-# H3 RCAT
-rcat_cols = {"ra": "RA",
-             "dec": "DEC",
-             "pmra": "GAIADR2_PMRA",
-             "pmdec": "GAIADR2_PMDEC",
-             "dist": "dist_adpt",
-             "vrad": "Vrad",
-             "flag": "FLAG"}
+# ycat (Yang20)
+ycat_cols = {"ra": "RAdeg",
+             "dec": "DEdeg",
+             "pmra": "pmRA",
+             "pmdec": "pmDE",
+             "dist": "Dist",
+             "vrad": "HRV"}
+
 
 # Vasiliev 19 (globulars)
 vcat_cols = {"ra": "RAJ2000",
@@ -107,12 +116,13 @@ rcat_kin.update(dict([("l{}".format(a), ("L{}".format(a), lambda x: x / 1e3))
 
 
 # Map the required column names
-COLMAPS = {"LM10": lm10_cols,
+COLMAPS = {"RCAT": rcat_cols,
+           "RCAT_KIN": rcat_kin,
+           "LM10": lm10_cols,
            "DL17": dl17_cols,
            "R18": r18_cols,
+           "Y19": ycat_cols,
            "KSEGUE": kcat_cols,
-           "RCAT": rcat_cols,
-           "RCAT_KIN": rcat_kin,
            "V19": vcat_cols,
            "B19": bcat_cols}
 
@@ -148,10 +158,10 @@ def homogenize(cat, catname="", pcat=None, noisify_pms=False, seds=None,
         else:
             ncat[c] = cat[mapping]
 
-    if (catname == "RCAT") & (len(cat) < 1000):
+    #if (catname == "RCAT") & (len(cat) < 1000):
         # double the distances to weird stars
-        print("Increasing distance by factor 2")
-        ncat["dist"] *= 2
+    #    print("Increasing distance by factor 2")
+    #    ncat["dist"] *= 2
 
     if catname == "DL17":
         # reflex uncorrect the DL17 values

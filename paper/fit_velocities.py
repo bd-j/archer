@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select
-    good, sgr = rcat_select(rcat, rcat_r)
+    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
     unbound = lm10["tub"] > 0
 
     # --- Smaht fit ---
@@ -47,16 +47,20 @@ if __name__ == "__main__":
     alpha_range = [(250, 450), (-10, -5), (-0.05, 0.05)]
     beta_range = [(-160, 0), (-1.0, 4), (-0.05, 0.05)]
     pout_range = np.array([0, 0.15])
+    vmu_range = np.array([-150, 150])
+    vsig_range = np.array([100, 250])
     trail_model = VelocityModel(alpha_range=np.array(alpha_range).T,
                                 beta_range=np.array(beta_range).T,
-                                pout_range=pout_range)
+                                pout_range=pout_range,
+                                vmu_bad_range=vmu_range, vsig_bad_range=vsig_range)
 
     alpha_range = [(-200, 1500), (-20, 0.1), (-0.05, 0.05)]
     beta_range = [(-500, 100), (-4., 5.0), (-0.03, 0.03)]
     pout_range = np.array([0.0, 0.5])
     lead_model = VelocityModel(alpha_range=np.array(alpha_range).T,
                                 beta_range=np.array(beta_range).T,
-                                pout_range=pout_range)
+                                pout_range=pout_range,
+                                vmu_bad_range=vmu_range, vsig_bad_range=vsig_range)
 
     #sys.exit()
     

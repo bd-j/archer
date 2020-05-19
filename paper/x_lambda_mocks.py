@@ -10,6 +10,7 @@ from astropy.io import fits
 
 from archer.config import parser, rectify_config, plot_defaults
 from archer.catalogs import rectify, homogenize
+from archer.quantities import compute_vtan
 from archer.frames import gc_frame_law10, gc_frame_dl17
 from archer.plummer import convert_estar_rmax
 
@@ -38,7 +39,6 @@ if __name__ == "__main__":
 
     try:
         parser.add_argument("--feh_cut", type=float, default=-1.9)
-        parser.add_argument("--show_gcs", action="store_true")
         parser.add_argument("--pcol_limit", type=int, default=8)
         parser.add_argument("--by_vtan", action="store_true")
     except:
@@ -51,10 +51,6 @@ if __name__ == "__main__":
     rcat = fits.getdata(config.rcat_file)
     rcat_r = rectify(homogenize(rcat, rtype), config.gc_frame)
 
-    # GCs
-    gcat = fits.getdata(config.b19_file)
-    gcat_r = rectify(homogenize(gcat, "B19"), config.gc_frame)
-
     # lm10
     lm10 = fits.getdata(config.lm10_file)
     lm10_r = rectify(homogenize(lm10, "LM10"), gc_frame_law10)
@@ -66,12 +62,8 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select, gc_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, allow_flags=[])
-    good_v, _ = rcat_select(rcat, rcat_r, dly=config.dly, allow_flags=["high_vtan"])
-    sgr_gcs, gc_feh = gc_select(gcat)
-    #sgr_gcs = (gcat_r["ly"] < -2) & (gcat_r["ly"] > -7)
+    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
     unbound = lm10["tub"] > 0
-    vtan_rejected = (good_v & ~good & sgr)
 
     # plot setup
     rcParams = plot_defaults(rcParams)
@@ -92,24 +84,23 @@ if __name__ == "__main__":
     # --- plot H3 ----
     colorby = rcat["feh"]
     zmin, zmax = -2, -0.1
-    if config.by_vtan
+    cmap = "magma"
+    if config.by_vtan:
+        colorby = compute_vtan(rcat_r)
+        zmin, zmax = -100, 500
+        cmap = "magma_r"
+
     for i in range(2):
         ax = axes[0, i]
         show = good & sgr
         cbh = show_xlam(rcat_r, show, dist=bool(i), ax=ax, colorby=colorby,
-                        vmin=zmin, vmax=zmax, cmap="magma",
+                        vmin=zmin, vmax=zmax, cmap=cmap,
                         marker='o', s=4, alpha=1.0, zorder=2, linewidth=0)
         # highlight low feh
         show = good & sgr & (rcat["FeH"] < zcut)
-        cbh = show_xlam(rcat_r, show, dist=bool(i), ax=ax, colorby=rcat["feh"],
-                        vmin=zmin, vmax=zmax, cmap="magma",
+        cbh = show_xlam(rcat_r, show, dist=bool(i), ax=ax, colorby=colorby,
+                        vmin=zmin, vmax=zmax, cmap=cmap,
                         marker='o', s=9, alpha=1.0, zorder=3, linewidth=0,)
-        if config.show_gcs:
-            show = sgr_gcs
-            _ = show_xlam(gcat_r, show, dist=bool(i), ax=ax, colorby=gc_feh,
-                          #color="cyan",
-                          vmin=zmin, vmax=zmax, cmap="magma",
-                          marker='s', s=36, alpha=1.0, zorder=3, linewidth=0.5, edgecolor="k")
 
     ax = axes[0, 0]
     ax.text(text[0], text[1], "H3 Giants",
@@ -120,10 +111,8 @@ if __name__ == "__main__":
     colorby, cname = rprog, r"$\hat{\rm R}_{\rm prog}$ (kpc)"
     vmin, vmax = 0.25, 2.5
     if config.by_vtan:
-        from archer.quantities import compute_vtan
-        vtan = compute_vtan(lm10_r)
-        colorby, cname = vtan, r"V$_{\rm tan}$"
-        vmin, vmax = 0, 700
+        colorby, cname = compute_vtan(lm10_r), r"V$_{\rm tan}$"
+        vmin, vmax = -100, 500
     #colorby, cname = lm10["Estar"], r"E$_\ast$"
     #vmin, vmax = 0, 1
     #colorby, cname = lm10["tub"], r"t$_{\rm unbound}$"
@@ -151,10 +140,8 @@ if __name__ == "__main__":
     vmin, vmax = 0, 1
     cm = ListedColormap(["tomato", "black"])
     if config.by_vtan:
-        from archer.quantities import compute_vtan
-        vtan = compute_vtan(dl17_r)
-        colorby, cname = vtan, r"V$_{\rm tan}$"
-        vmin, vmax = 0, 700
+        colorby, cname =compute_vtan(dl17_r), r"V$_{\rm tan}$"
+        vmin, vmax = -100, 500
         cm = "magma_r"
  
     for i in range(2):

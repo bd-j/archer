@@ -35,6 +35,8 @@ parser.add_argument("--mag_cut", action="store_true")
 # --- selection ---
 parser.add_argument("--dly", type=float,
                     default=0.0, help="shift selection line by this amount in Ly")
+parser.add_argument("--flx", type=float,
+                    default=0.9, help="allowed |Lx| as fraction of quadrature sum of Ly+Lz")
 
 # --- catalog versions ---
 parser.add_argument("--rcat_vers", type=str, default="2_4")
@@ -52,6 +54,8 @@ parser.add_argument("--r18_file", type=str,
                     default="R18_noiseless_v5.fits")
 parser.add_argument("--segue_file", type=str,
                     default="ksegue_gaia_v5.fits")
+parser.add_argument("--yang19_file", type=str,
+                    default="yang19.fits")
 parser.add_argument("--b19_file", type=str,
                     default="baumgardt19.fits")
 parser.add_argument("--v19_file", type=str,
@@ -75,6 +79,7 @@ def rectify_config(config):
     config.dl17_file = pjoin(config.data_dir, "mocks", "DL17", config.dl17_file)
     config.r18_file = pjoin(config.data_dir, "mocks", "R18", config.r18_file)
     config.segue_file = pjoin(config.data_dir, "catalogs", config.segue_file)
+    config.yang19_file = pjoin(config.data_dir, "catalogs", config.yang19_file)
     config.b19_file = pjoin(config.data_dir, "gcs", config.b19_file)
     config.v19_file = pjoin(config.data_dir, "gcs", config.v19_file)
 

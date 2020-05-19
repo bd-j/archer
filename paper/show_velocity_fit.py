@@ -64,16 +64,20 @@ belokurov14 = [(217.5, 227.5, 232.5, 237.5, 242.5, 247.5, 252.5, 257.5, 262.5,
 
 if __name__ == "__main__":
 
-    nsig = 2
+    try:
+        parser.add_argument("--nsig", type=float, default=2.)
+    except:
+        pass
     config = rectify_config(parser.parse_args())
     rtype = config.rcat_type
+    nsig = config.nsig
 
     rcat = fits.getdata(config.rcat_file)
     rcat_r = rectify(homogenize(rcat, rtype), config.gc_frame)
     
     # selection
     from make_selection import rcat_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly)
+    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
     n_tot = (good & sgr).sum()
 
     trail = rcat_r["lambda"] < 175
@@ -151,8 +155,9 @@ if __name__ == "__main__":
 
     # Monaco and Majewski
     stax.fill_between(np.array([30, 90]), 8.3 - 0.9, 8.3 + 0.9, alpha=0.5,
-                      label="Monaco07", color="royalblue")
-    stax.plot(np.array([30, 90]), np.array([11.7, 11.7]), linestyle="--",
+                      label="Monaco07", color="green")
+    stax.plot(np.array([30, 90]), np.array([8.3, 8.3]), color="green")
+    stax.plot(np.array([30, 90]), np.array([11.7, 11.7]), linestyle="-",
               label="Majewski04", color="royalblue")
 
 

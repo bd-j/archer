@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select, gc_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly)
+    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
     sgr_gcs, gc_feh = gc_select(gcat)
     #sgr_gcs = (gcat_r["ly"] < -2) & (gcat_r["ly"] > -7)
     unbound = lm10["tub"] > 0

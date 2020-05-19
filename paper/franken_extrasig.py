@@ -60,6 +60,8 @@ if __name__ == "__main__":
     np.random.seed(101)
     try:
         parser.add_argument("--show_gcs", action="store_true")
+        parser.add_argument("--extra_sigma", type=float, default=40)
+        parser.add_argument("--outer_radius", type=float, default=1.5)
     except:
         pass
 
@@ -71,10 +73,6 @@ if __name__ == "__main__":
     rcat = fits.getdata(config.rcat_file)
     rcat_r = rectify(homogenize(rcat, rtype), config.gc_frame)
     pcat = fits.getdata(config.pcat_file)
-
-    # GCs
-    gcat = fits.getdata(config.b19_file)
-    gcat_r = rectify(homogenize(gcat, "B19"), config.gc_frame)
 
     # lm10
     lm10 = fits.getdata(config.lm10_file)
@@ -90,9 +88,8 @@ if __name__ == "__main__":
                       gc_frame_law10)
 
     # add dispersion to outer LM10 particles
-    extra_sigma = 40
-    outer = (0.66*0.85*rmax) > 1.5
-    dv = outer * extra_sigma * np.random.normal(size=len(lm10))
+    outer = (0.66*0.85*rmax) > config.outer_radius
+    dv = outer * config.extra_sigma * np.random.normal(size=len(lm10))
     lm10_r["vgsr"] += dv
 
     # dl17
@@ -103,8 +100,7 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select, gc_select
-    good, sgr = rcat_select(rcat, rcat_r)
-    sgr_gcs, gc_feh = gc_select(gcat)
+    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
     unbound = lm10["tub"] > 0
     mag = lm10_seds["PS_r"] + 5 * np.log10(lm10_noiseless["dist"])
     bright = (mag > 15) & (mag < 18.5)
@@ -135,14 +131,6 @@ if __name__ == "__main__":
     nshow = (good & sgr).sum()
     vlaxes.append(axes)
     vcb.append(cbs[0])
-
-    # plot GCs
-    if config.show_gcs:
-        axes, _ = show_allx(gcat_r, sgr_gcs, colorby=gc_feh,
-                            icat=0, nshow=None, figure=fig, gridspec=(gsv, gsd),
-                            vmin=-2.0, vmax=-0.1, cmap="magma",
-                            marker='s', s=25, markerfacecolor="none", edgecolor="k", 
-                            alpha=1.0, zorder=2)
 
     # --- LM10 Mocks ---
     colorby, cname = 0.66*0.85*rmax, r"$\hat{\rm R}_{\rm prog}$ (kpc)" #r"typical radius ($\sim 0.66 \, r_{\rm max}/r_0$)"

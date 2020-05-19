@@ -33,15 +33,24 @@ def show_dlam(cat_r, show, nshow=None, ax=None, colorby=None, randomize=True,
 
 if __name__ == "__main__":
 
-    zcut = -1.9
+    try:
+        parser.add_argument("--feh_cut", type=float, default=-1.9)
+        parser.add_argument("--show_yang", action="store_true")
+    except:
+        pass
     config = rectify_config(parser.parse_args())
     rtype = config.rcat_type
+    zcut = config.feh_cut
     frac_err = config.fractional_distance_error
 
     # rcat
     rcat = fits.getdata(config.rcat_file)
     rcat_r = rectify(homogenize(rcat, rtype), config.gc_frame)
     pcat = fits.getdata(config.pcat_file)
+
+    # ycat
+    ycat = fits.getdata(config.yang19_file)
+    ycat_r = rectify(homogenize(ycat, "Y19"), config.gc_frame)
 
     # lm10
     lm10 = fits.getdata(config.lm10_file)
@@ -58,7 +67,7 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly)
+    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
     unbound = lm10["tub"] > 0
 
     # plot setup
@@ -91,6 +100,19 @@ if __name__ == "__main__":
                         vmin=zmin, vmax=zmax, cmap="magma",
                         marker='o', s=9, alpha=1.0, zorder=3, linewidth=0)
                         #label="[Fe/H] < {}".format(zcut))
+
+    if config.show_yang:
+        bsel = ycat["type"] == "SDSS BHB"
+        show = ~bsel
+        ax.plot(ycat_r[show]["lambda"], ycat_r[show]["beta"],
+                #c=rcat[show]["feh"], vmin=zmin, vmax=zmax, cmap="magma",
+                color="green", linestyle="", markersize=4, mew=0,
+                marker='D', alpha=0.8, zorder=1, linewidth=0)
+        show = bsel
+        ax.plot(ycat_r[show]["lambda"], ycat_r[show]["beta"],
+                #c=rcat[show]["feh"], vmin=zmin, vmax=zmax, cmap="magma",
+                color="royalblue", linestyle="", markersize=4, mew=0,
+                marker='D', alpha=0.8, zorder=1, linewidth=0)
 
     # --- LM10 Mocks ---
     ax = fig.add_subplot(gs[1, 0], sharey=vlaxes[0], sharex=vlaxes[0])

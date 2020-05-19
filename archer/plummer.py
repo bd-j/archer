@@ -4,6 +4,7 @@
 import numpy as np
 import matplotlib.pyplot as pl
 
+
 def phi(s):
     return -(1 + s**2)**(-1./2.)
 
@@ -67,6 +68,18 @@ def convert_estar_rmax(estar):
     return r, eout
 
 
+def vesc_at_R(M=6.4e8, R=0.85):
+    from astropy.constants import G
+    from astropy import units as u
+    M = M * u.solMass
+    R = R * u.kpc
+    # potential energy at r=R
+    U0 = - G * M / R 
+    Ve = (-2 * U0)**(1./2)
+    k = Ve.to(u.km/u.s).value
+    return k
+
+
 if __name__ == "__main__":
     
     s, v, e = make_particles()
@@ -81,7 +94,7 @@ if __name__ == "__main__":
     estar = rank(e)
     o = np.argsort(estar)
 
-    fig, axes = pl.subplots(1, 2)
+    fig, axes = pl.subplots(1, 3)
     ax = axes[0]
     ax.plot(estar[o], e[o], marker="", color="k")
     ax.set_xlabel(r"E$_\ast$")
@@ -96,6 +109,10 @@ if __name__ == "__main__":
     ax.set_ylabel(r"typical radius ($\sim 0.66 \, r_{\rm max}/r_0$)")
     fig.savefig("estar_energy_radius.png", dpi=450)  
 
-
-
-
+    ax = axes[2]
+    r0 = 1.
+    rr = rr = np.linspace(0, 5, 100) 
+    dm = (1+(rr/r0)**2)**(-5./2.) * (rr/r0)**2
+    ax.hist(s * r0, bins=np.linspace(0, 4, 100), alpha=0.5, density=True)
+    ax.hist(rm * 0.67 * r0, bins=np.linspace(0, 4, 100), alpha=0.5, density=True)
+    ax.plot(rr, dm * 3.3/r0)
