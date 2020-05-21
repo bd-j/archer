@@ -1,8 +1,28 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""weighting.py - logic for computing weights of stars in the rcat
+"""
+
 import numpy as np
 import matplotlib.pyplot as pl
+from functools import partial
+
+__all__ = ["compute_total_weight", "mag_weight", "rank_weight",
+           "logg_masker", "mgiant_masker", "bhb_masker",
+           "kroupa_imf", "imf_weight",
+           "EBV"]
+
+
+EBV = dict([("PS_{}".format(b), e)
+            for b, e in zip("grizy", [3.172, 2.271, 1.682, 1.322, 1.087])])
+EBV.update(dict([("SDSS_{}".format(b), e)
+           for b, e in zip("ugriz", [4.239, 3.303, 2.285, 1.698, 1.263])]))
+EBV.update(dict([("TMASS_{}".format(b), e)
+           for b, e in zip("JHK", [0.65, 0.33, 0.2])]))
+EBV["GAIA_G"] = 2.79
+EBV["WISE_W1"] = 0.18
+EBV["WISE_W2"] = 0.16
 
 
 def kroupa_imf(minit):
@@ -21,35 +41,9 @@ def imf_weight(mass_array):
     return wght
 
 
-def get_lf(iso, loga=10, feh=-1, afe=0):
-    mags, params, _ = iso.get_seds(loga=loga, feh=feh, afe=afe,
-                                   apply_corr=False, dist=10)
-    params["eep"] = iso.eep_u.copy()
-    weights = imf_weight(params["mini"])
-    mags = dict(zip(iso.filters, mags.T))
-    return mags, params, weights
-
-
-def lf_observable_fraction(mags, wght, d_kpc, mask=True,
-                           selection_band="PS_r", faint=18, bright=15,
-                           wisecut=False):
-    """Given an LF ([mag, weight] pair), compute corrections for a range of distances
-    """
-    mu = 5 * np.log10(d_kpc) + 10
-    frac = np.zeros_like(mu)
-    for i, m in enumerate(mu):
-        mag = mags[selection_band] + m
-        valid = (mag > bright) & (mag < faint) & mask
-        if wisecut:
-            w1 = mags["WISE_W1"] + m
-            valid = valid & (w1 < 15.5)
-        frac[i] = np.nansum(wght[valid])
-    return frac
-
-
 def mag_weight(dist, feh, iso, masker=None,
                bright=15, faint=18, selection_band="PS_r",
-               lf_params=dict(afe=0, loga=10), wisecut=False):
+               lf_params=dict(afe=0, loga=10)):
     """Compute fraction of stars of a given feh and distance that made it into
     the magnitude selection (and other conditions given by `masker`), based on
     the LF for that metallicity. Takes about 50ms per object
@@ -79,7 +73,7 @@ def mag_weight(dist, feh, iso, masker=None,
 
     lf_params : dict
         Dictionary of parameters (e.g. loga, afe) for generating the isochrone & LF
-    
+
     Returns
     -------
     mag_weight : float
@@ -103,24 +97,22 @@ def mag_weight(dist, feh, iso, masker=None,
     else:
         mask = True
     valid = (mag > bright) & (mag < faint) & mask
-    if wisecut:
-        w1 = mags["WISE_W1"]
-        valid = valid & (w1 < 15.5)
     frac = np.nansum(weights[valid])
     return frac
 
 
-def logg_masker(params, mags):
+def logg_masker(params, mags, faintg=None):
     """Default: identify giants based on logg, remove  K Giants.
     """
     sel = params["logg"] < 3.5
     sel = sel & (~mgiant_masker(params, mags))
+    if faintg is not None:
+        sel = sel & (mags["PS_g"] < faintg)
     return sel
 
 
-def mgiant_masker(params, mags, w1cut=True):
-    """Identify M(K) Giants basd on Conroy+ 2019.  Does not include apparent mag
-    cut in WISE_W1, but does include logg cut
+def mgiant_masker(params, mags, w1cut=True, faintg=None):
+    """Identify M(K) Giants basd on Conroy+ 2019.  Includes logg cut
     """
     g_r = mags["PS_g"] - mags["PS_r"]
     w1_w2 = mags["WISE_W1"] - mags["WISE_W2"]
@@ -132,10 +124,12 @@ def mgiant_masker(params, mags, w1cut=True):
            (params["logg"] < 3.5))
     if w1cut:
         sel = sel & (mags["WISE_W1"] < 15.5)
+    if faintg is not None:
+        sel = sel & (mags["PS_g"] < faintg)
     return sel
 
 
-def bhb_masker(params, mags):
+def bhb_masker(params, mags, faintg=None):
     """Identify BHB stars based on EEPs
     """
     # Deason 2014 color cuts
@@ -149,6 +143,8 @@ def bhb_masker(params, mags):
 
     # Just cut on EEP
     sel = (params["eep"] < 707) & (params["eep"] > 631)
+    if faintg is not None:
+        sel = sel & (mags["PS_g"] < faintg)
 
     return sel
 
@@ -163,42 +159,66 @@ def rank_weight(rank, ptgID, pcat=None):
     return w1
 
 
-def compute_total_weight(rcat_row, iso, pcat, snr_limit=3.0, use_ebv=False, 
-                         lf_params=dict(afe=0, loga=10)):
+def ptg_limit(ptgID, pcat, snr_limit, rcat=None, band="g"):
+    if rcat is not None:
+        tileID, selID, dateID = ptgID.split("_")
+        inptg = ((rcat["tileID"] == tileID) &
+                 (rcat["selID"] == selID) &
+                 (rcat["dateID"] == dateID) &
+                 (rcat["SNR"] > snr_limit) &
+                 (rcat["Ps_{}".format(band)] < 80)
+                )
+        faint = np.max(rcat[inptg]["PS_{}".format(band)])
+    else:
+        ptg_ind = pcat["PTGID"] == ptgID
+        if band == "g":
+            col = "snr_curve_g"
+        else:
+            col = "snr_curve"
+        coeffs = pcat[ptg_ind][col][0].copy()
+        coeffs[-1] -= snr_limit
+        faint = min(np.roots(coeffs)).real
+
+    return faint
+
+
+def compute_total_weight(rcat_row, iso, pcat, snr_limit=3.0, rcat=None,
+                         use_ebv=False, use_afe=False, use_age=False,
+                         lf_params=dict(afe=0, loga=10), delta_m=0):
     """Compute the fiber assignment weight and the magnitude weighting for this star.
     The inverse of the product of these weights represents the number of stars
     that would be required to produce a single expected star at this distance
     and FeH in the rcat.
-    
+
     Parameters
     ----------
     rcat_row : length 1 FITS_rec or structured array
         A row in the rcat, must be a giant (logg < 3.5) and have SNR < snr_limit
-    
+
     iso : brutus.seds.Isochrone instance
         must have the PS and WISE filters
 
     pcat : FITS_rec or structured array
         pcat with weights
-    
+
     snr_limit : float (optional, default=3.)
         The limiting SNR used to select this row.
 
     use_ebv : bool (optional, default=False)
         Adjust the weights to account for a foreground screen (EBV) when
         computing the observability of isochrone points.
-    
+
     lf_params : dict (optional)
         Parameters (e.g. `loga`, `afe` used to construct the isochrone; weights
         will be appropriate for a population described by these parameters.
-        
+
     Returns
     -------
-    rank_weight : float
+    eta_rank : float
         Number between 0 and 1 that gives the probability a star of this rank
         had a fiber assigned.
 
-    mag_weight :  float
+    eta_mag :  float
         Number that gives the fraction of stars in an SSP with the
         same distance and FeH of the star that would have been selected for the
         scat and observed above the given SNR threshold.
@@ -206,51 +226,70 @@ def compute_total_weight(rcat_row, iso, pcat, snr_limit=3.0, use_ebv=False,
     assert rcat_row["logg"] < 3.5
     assert rcat_row["SNR"] >= snr_limit
     row = rcat_row
-    
+
     # probability to go from scat to rcat for this rank
     ptgID = "{}_{}_{}".format(row["tileID"], row["selID"], row["dateID"])
     ptg_ind = pcat["PTGID"] == ptgID
     rank = row["XFIT_RANK"]
-    rw = pcat[ptg_ind]["RANK{:.0f}_WGT_ALL".format(rank)]
-    
-    # find PS_r s.t. SNR=3 in this ptg
-    coeffs = pcat[ptg_ind]["snr_curve"][0].copy()
-    coeffs[-1] -= snr_limit
-    faint_snr = min(np.roots(coeffs)).real
+    er = pcat[ptg_ind]["RANK{:.0f}_WGT_ALL".format(rank)]
 
-    masker = logg_masker
-    
+    # find PS_g s.t. SNR=snr_limit in this ptg
+    faintg = ptg_limit(ptgID, pcat, snr_limit, rcat=rcat, band="g")
+    # make sure the star is brighter than the faint limit
+    faintg = max(faintg, row["PS_g"])
+    # add a fudge to the limit?
+    faintg += delta_m
+
+    masker = partial(logg_masker, faintg=faintg)
+
     # get bright and faint limits for this rank, ptg
-    band = "PS_r"
+    band, bright, faint = "PS_r", 15.0, 18.5
     if rank == 3:
-        faint = min(18.5, faint_snr)
+        faint = 18.5
         bright = 18
     elif (rank == 1):
-        faint = min(17.5, faint_snr)
+        faint = 17.5
         bright = 13.5
-    else:
-        faint = min(18.0, faint_snr)
-        bright = 15.0
-    
-    # Account for reddening in the limits
+
+    # De-reddening the limits
     if use_ebv:
-        a_r = row["EBV"] * 2.271
-        bright -= a_r
-        faint -= a_r
-    
+        Ab = row["EBV"] * EBV[band]
+        bright -= Ab
+        faint -= Ab
+        faintg -= row["EBV"] * EBV["PS_g"]
+
     # get isochrone masker for this selection
     if (rank == 1) & (row["MGIANT"] > 0):
-        masker = mgiant_masker
+        masker = partial(mgiant_masker, faintg=faintg)
         #band = "WISE_W1"
     elif (rank == 1) & (row["BHB"] > 0):
-        masker = bhb_masker
+        masker = partial(bhb_masker, faintg=faintg)
 
-    mw = mag_weight(row["dist_adpt"], row["FeH"], iso,
+    # choose afe and age
+    if use_afe:
+        lf_params["afe"] = row["aFe"]
+    if use_age:
+        lf_params["loga"] = row["logAge"]
+
+
+    em = mag_weight(row["dist_adpt"], row["FeH"], iso,
                     bright=bright, faint=faint, selection_band=band,
                     masker=masker,
                     lf_params=lf_params)
 
-    return rw, mw, faint_snr
+    return er, em, faintg
+
+
+def eta_iso(distances, feh, iso, masker=None,
+            bright=15, faint=18, band="PS_r",
+            lf_params=dict(afe=0, loga=10),):
+
+    eta = np.zeros_like(distances)
+    for i, dist in enumerate(distances):
+        eta[i] = mag_weight(dist, feh, iso, masker=masker,
+                            bright=bright, faint=faint, selection_band=band,
+                            lf_params=lf_params)
+    return eta
 
 
 if __name__ == "__main__":
@@ -262,32 +301,29 @@ if __name__ == "__main__":
 
     # test the mag weight code
     feh = -1.0
-    filters = np.array(["PS_r", "PS_g", "PS_z", 
+    filters = np.array(["PS_r", "PS_g", "PS_z",
                         "SDSS_u", "SDSS_g", "SDSS_r",
                         "WISE_W1", "WISE_W2"])
     iso = Isochrone(mistfile=config.mistiso, nnfile=config.nnfile, filters=filters)
-    mags, params, weights = get_lf(iso, feh=feh)
-    gmask = logg_masker(params, mags)
-    mmask = mgiant_masker(params, mags, w1cut=False)
-    bmask = bhb_masker(params, mags)
 
-    d_arr = np.linspace(2, 100, 1000)
-    frac_g = lf_observable_fraction(mags, weights, d_arr, mask=gmask)
-    frac_r3 = lf_observable_fraction(mags, weights, d_arr, mask=gmask,
-                                     faint=18.5, bright=18.0,)
-    frac_m = lf_observable_fraction(mags, weights, d_arr, mask=mmask,
-                                    faint=17.5, bright=13.5, wisecut=True)
-    frac_b = lf_observable_fraction(mags, weights, d_arr, mask=bmask,
-                                    faint=17.5, bright=13.5)
-    frac = lf_observable_fraction(mags, weights, d_arr)
+    d_arr = np.linspace(2, 100, 500)
+    frac_all    = eta_iso(d_arr, feh, iso)
+    frac_giants = eta_iso(d_arr, feh, iso, masker=logg_masker)
+    frac_rank3  = eta_iso(d_arr, feh, iso, masker=logg_masker,
+                          faint=18.5, bright=18.0,)
+    frac_mgiant = eta_iso(d_arr, feh, iso, masker=mgiant_masker,
+                          faint=17.5, bright=13.5)
+    frac_bhbs   = eta_iso(d_arr, feh, iso, masker=bhb_masker,
+                          faint=17.5, bright=13.5)
 
 
     fig, ax = pl.subplots()
-    ax.plot(d_arr, np.log10(frac) - np.log10(frac[0]), label="All stars")
-    ax.plot(d_arr, np.log10(frac_g) - np.log10(frac[0]), label="logg < 3.5")
-    ax.plot(d_arr, np.log10(frac_m) - np.log10(frac[0]), label="M Giants")
-    ax.plot(d_arr, np.log10(frac_b) - np.log10(frac[0]), label="BHB")
-    ax.plot(d_arr, np.log10(frac_r3) - np.log10(frac[0]), label="rank=3 logg < 3.5")
+    logf0 = np.log10(frac_all[0])
+    ax.plot(d_arr, np.log10(frac_all) - logf0, label="All stars")
+    ax.plot(d_arr, np.log10(frac_giants) - logf0, label="logg < 3.5")
+    ax.plot(d_arr, np.log10(frac_mgiant) - logf0, label="M Giants")
+    ax.plot(d_arr, np.log10(frac_bhbs) - logf0, label="BHB")
+    ax.plot(d_arr, np.log10(frac_rank3) - logf0, label="rank=3 logg < 3.5")
     ax.set_xscale("log")
     ax.set_xlabel("Distance (kpc)")
     ax.set_ylabel(r"log (N$_{\rm targetable}$ / N) + const.")
@@ -295,8 +331,9 @@ if __name__ == "__main__":
     ax.set_xlim(2, 50)
     ax.set_ylim(-5, 0.2)
     ax.set_title("[Fe/H] = {:3.1f}".format(feh))
+    pl.ion()
     pl.show()
-    fig.savefig("mag_weighting_feh{:+3.1f}.png".format(feh), dpi=450)  
+    #fig.savefig("mag_weighting_feh{:+3.1f}.png".format(feh), dpi=450)  
 
     import sys
     sys.exit()
@@ -306,4 +343,22 @@ if __name__ == "__main__":
     pcat = None
     for row in rcat[good & sgr]:
         if row["BHB"] == 0:
-            rw, mw = compute_total_weight(row, iso, pcat, snr_limit=3)
+            rw, mw, limit = compute_total_weight(row, iso, pcat, snr_limit=3)
+
+
+    from astropy.io import fits
+    from archer.config import rectify_config, parser
+    from archer.weighting import ptg_limit
+    config = rectify_config(parser.parse_args())
+    pcat = fits.getdata(config.pcat_file)
+    rcat = fits.getdata(config.rcat_file)
+    snr_limit = 3
+    glim_curve = np.array([ptg_limit(p, pcat, snr_limit) for p in pcat["ptgID"]])
+    glim_rcat = np.array([ptg_limit(p, pcat, snr_limit, rcat=rcat) for p in pcat["ptgID"]])
+    fig, ax = pl.subplots()
+    pl.ion()
+
+    xx = np.linspace(14, 20, 10)
+    ax.plot(glim_curve, glim_rcat, marker='o', markersize=3, linestyle="")
+    ax.plot(xx, xx, linestyle=":")
+    pl.show()

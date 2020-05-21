@@ -17,8 +17,7 @@ from archer.plummer import convert_estar_rmax
 
 
 def show_allx(cat_r, selection, colorby=None, nshow=None,
-              splitlambda=175, icat=0,
-              figure=None, gridspec=None, **plot_kwargs):
+              splitlambda=175, axes=[], **plot_kwargs):
 
     pkwargs = dict(vmin=-2.5, vmax=-0.5, cmap="rainbow",
                    marker='o', s=4, alpha=0.8, zorder=2, linewidth=0)
@@ -29,28 +28,26 @@ def show_allx(cat_r, selection, colorby=None, nshow=None,
         nshow = sel.sum()
     rand = np.random.choice(sel.sum(), size=nshow, replace=False)
 
-    rgal = np.sqrt(cat_r["x_gal"]**2 + cat_r["y_gal"]**2 + cat_r["z_gal"]**2)
-    ycols = cat_r["vgsr"], rgal
+    ycol = cat_r["vgsr"]
     arms = (cat_r["lambda"] < splitlambda), (cat_r["lambda"] > splitlambda)
 
-    axes, cbars = [], []
-    for iy, ycol in enumerate(ycols):
-        gs = gridspec[iy]
+    cbars = []
+#    for iy, ycol in enumerate(ycols):
+#        gs = gridspec[iy]
+#            ax = figure.add_subplot(gs[icat, iarm])
 
-        for iarm, arm in enumerate(arms):
+    for iarm, arm in enumerate(arms):
+        ax = axes[iarm]
+        #j = iy * 2 + iarm
 
-            #j = iy * 2 + iarm
-            ax = figure.add_subplot(gs[icat, iarm])
+        xx = cat_r["lambda"][sel][rand]
+        yy = ycol[sel][rand]
+        zz = colorby[sel][rand]
+        inarm = arm[sel][rand]
 
-            xx = cat_r["lambda"][sel][rand]
-            yy = ycol[sel][rand]
-            zz = colorby[sel][rand]
-            inarm = arm[sel][rand]
+        cb = ax.scatter(xx[inarm], yy[inarm], c=zz[inarm], **pkwargs)
 
-            cb = ax.scatter(xx[inarm], yy[inarm], c=zz[inarm], **pkwargs)
-
-            axes += [ax]
-            cbars += [cb]
+        cbars += [cb]
 
     return axes, cbars
 
@@ -61,7 +58,7 @@ if __name__ == "__main__":
     try:
         parser.add_argument("--show_gcs", action="store_true")
         parser.add_argument("--extra_sigma", type=float, default=40)
-        parser.add_argument("--outer_radius", type=float, default=1.5)
+        parser.add_argument("--outer_radius", type=float, default=0.85)
     except:
         pass
 
@@ -88,15 +85,9 @@ if __name__ == "__main__":
                       gc_frame_law10)
 
     # add dispersion to outer LM10 particles
-    outer = (0.66*0.85*rmax) > config.outer_radius
-    dv = outer * config.extra_sigma * np.random.normal(size=len(lm10))
-    lm10_r["vgsr"] += dv
-
-    # dl17
-    dl17 = fits.getdata(config.dl17_file)
-    dl17_r = rectify(homogenize(dl17, "DL17", pcat=pcat,
-                                fractional_distance_error=frac_err),
-                     gc_frame_dl17)
+    vgsr_original = lm10_r["vgsr"].copy()
+    extra_sigmas = [10, 20, 40]
+    config.outer_radius = 1.25
 
     # selections
     from make_selection import rcat_select, gc_select
@@ -109,23 +100,25 @@ if __name__ == "__main__":
     rcParams = plot_defaults(rcParams)
     text = [0.1, 0.1]
     bbox = dict(facecolor='white')
-    nrow = 3
-    figsize = (11, 6.6)
+    nrow = 2
+    figsize = (11, 5.0)
     fig = pl.figure(figsize=figsize)
     from matplotlib.gridspec import GridSpec
     gsv = GridSpec(nrow, 2, height_ratios=nrow * [10],
                    hspace=0.2, wspace=0.08,
-                   left=0.08, right=0.46, top=0.93, bottom=0.08)
+                   left=0.08, right=0.45, top=0.97, bottom=0.1)
     gsd = GridSpec(nrow, 2, height_ratios=nrow * [10],
                    hspace=0.2, wspace=0.08,
-                   left=0.52, right=0.90, top=0.93, bottom=0.08)
+                   left=0.53, right=0.90, top=0.97, bottom=0.1)
     gsc = GridSpec(nrow, 1, hspace=0.2,
-                   left=0.92, right=0.93, top=0.93, bottom=0.08)
+                   left=0.92, right=0.93, top=0.97, bottom=0.1)
+    grids = gsv, gsd
     vlaxes, vcb = [], []
 
     # --- plot H3 ----
+    axes = [fig.add_subplot(gsv[0, i]) for i in range(2)]
     axes, cbs = show_allx(rcat_r, good & sgr, colorby=rcat["FeH"],
-                          icat=0, nshow=None, figure=fig, gridspec=(gsv, gsd),
+                          nshow=None, axes=axes,
                           vmin=-2.0, vmax=-0.1, cmap="magma",
                           marker='o', s=4, alpha=0.8, zorder=2, linewidth=0)
     nshow = (good & sgr).sum()
@@ -140,33 +133,34 @@ if __name__ == "__main__":
     sel = unbound & (lm10_r["in_h3"] == 1)
     if config.mag_cut:
         sel = sel & bright
-    axes, cbs = show_allx(lm10_r, sel, colorby=colorby,
-                          icat=1, nshow=nshow, figure=fig, gridspec=(gsv, gsd),
-                          vmin=vmin, vmax=vmax, cmap="magma_r",
-                          marker='o', linewidth=0, alpha=1.0, s=4)
-    vlaxes.append(axes)
-    vcb.append(cbs[0])
 
-    # --- DL17 Mock ---
-    cm = ListedColormap(["tomato", "black"])
-    sel = (dl17["id"] >= 0) & (dl17_r["in_h3"] == 1)
-    axes, cbs = show_allx(dl17_r, sel, colorby=dl17["id"],
-                          icat=2, nshow=nshow, figure=fig, gridspec=(gsv, gsd),
-                          vmin=0, vmax=1, cmap=cm,
-                          marker='o', linewidth=0, alpha=1.0, s=4)
-    vlaxes.append(axes)
-    vcb.append(cbs[0])
+    for iv, ev in enumerate(extra_sigmas):
+        outer = (0.66*0.85*rmax) > config.outer_radius
+        dv = outer * ev * np.random.normal(size=len(lm10))
+        lm10_r["vgsr"] = vgsr_original + dv
+
+        i = np.mod(iv + 1, 2)
+        j = int((iv + 1) / 2)
+
+        axes = [fig.add_subplot(grids[i][j, k]) for k in range(2)]
+        axes, cbs = show_allx(lm10_r, sel, colorby=colorby,
+                                nshow=nshow, axes=axes,
+                                vmin=vmin, vmax=vmax, cmap="magma_r",
+                                marker='o', linewidth=0, alpha=1.0, s=4)
+        vlaxes.append(axes)
+        vcb.append(cbs[0])
+
 
     vlaxes = np.array(vlaxes)
 
     # prettify
     [ax.set_xlim(40, 145) for ax in vlaxes[:, 0::2].flat]
     [ax.set_xlim(195, 300) for ax in vlaxes[:, 1::2].flat]
-    [ax.set_ylim(-330, 330) for ax in vlaxes[:, :2].flat]
-    [ax.set_ylim(0, 90) for ax in vlaxes[:, 2:].flat]
+    [ax.set_ylim(-330, 330) for ax in vlaxes.flat]
+    #[ax.set_ylim(0, 90) for ax in vlaxes[:, 2:].flat]
     [ax.set_ylabel(r"V$_{\rm GSR}$ (${\rm km} \,\, {\rm s}^{-1}$)")
-     for ax in vlaxes[:, 0].flat]
-    [ax.set_ylabel(r"$R_{\rm GC}$ (kpc)") for ax in vlaxes[:, 2].flat]
+     for ax in vlaxes[:, 0::2].flat]
+    #[ax.set_ylabel(r"$R_{\rm GC}$ (kpc)") for ax in vlaxes[:, 2].flat]
     #[ax.set_xlabel(r"$\Lambda_{\rm Sgr}$ (deg)") for ax in vlaxes[-1,:]]
 
     # break axes
@@ -183,14 +177,14 @@ if __name__ == "__main__":
     # Labels
     [ax.text(text[0], text[1], "H3", transform=ax.transAxes, bbox=bbox)
      for ax in vlaxes[0, 0:1]]
-    [ax.text(text[0], text[1], "LM10", transform=ax.transAxes, bbox=bbox)
-     for ax in vlaxes[1, 0:1]]
-    [ax.text(text[0], text[1], "DL17", transform=ax.transAxes, bbox=bbox)
-     for ax in vlaxes[2, 0:1]]
+    [ax.text(text[0], text[1], r"LM10, $\sigma_+={}$ km/s".format(ev), transform=ax.transAxes, bbox=bbox)
+     for ev, ax in zip(extra_sigmas, vlaxes[1:, 0].flat)]
+    #[ax.text(text[0], text[1], "DL17", transform=ax.transAxes, bbox=bbox)
+    # for ax in vlaxes[2, 0:1]]
 
     s1 = 0.25
-    fig.text(s1, 0.03, r"$\Lambda_{\rm Sgr}$ (deg)")
-    fig.text(s1 + 0.4 + 0.04, 0.03, r"$\Lambda_{\rm Sgr}$ (deg)")
+    fig.text(s1, 0.02, r"$\Lambda_{\rm Sgr}$ (deg)")
+    fig.text(s1 + 0.4 + 0.04, 0.02, r"$\Lambda_{\rm Sgr}$ (deg)")
 
     # ---- Colorbars ----
     cax1 = fig.add_subplot(gsc[1, -1])
@@ -199,9 +193,9 @@ if __name__ == "__main__":
     cb1.ax.set_ylabel(cname, rotation=90, clip_on=False)
     cax2 = fig.add_subplot(gsc[0, -1])
     pl.colorbar(vcb[0], cax=cax2, label=r"[Fe/H]")
-    cax3 = fig.add_subplot(gsc[2, -1])
-    pl.colorbar(vcb[2], cax=cax3, label=r"", ticks=[0.25, 0.75])
-    cax3.set_yticklabels(["Stars", "DM"])
+    #cax3 = fig.add_subplot(gsc[2, -1])
+    #pl.colorbar(vcb[2], cax=cax3, label=r"", ticks=[0.25, 0.75])
+    #cax3.set_yticklabels(["Stars", "DM"])
 
     if config.savefig:
         fig.savefig("{}/extra_sigma.{}".format(config.figure_dir, config.figure_extension),

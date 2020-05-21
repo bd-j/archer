@@ -46,7 +46,7 @@ if __name__ == "__main__":
     zax = fig.add_subplot(gs[1, 0])
     
     # --- Plot histogram of feh values ---
-    show = good & sgr & (rcat["BHB"] == 0) #& (rcat["XFIT_RANK"] < 3)
+    show = good & sgr & (rcat["BHB"] == 0) & (rcat["XFIT_RANK"] < 3)
     renorm = show.sum() / weights[show].sum()
     wght = weights * renorm
     #wght = np.clip(weights * renorm, 0, 5)

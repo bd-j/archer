@@ -86,17 +86,20 @@ if __name__ == "__main__":
                      #label="[Fe/H] < {}".format(zcut))
 
     if config.show_yang:
-        bsel = ycat["type"] == "SDSS BHB"
-        show = ~bsel
-        ax.plot(ycat_r[show]["lambda"], ycat_r[show]["vgsr"],
-                #c=rcat[show]["feh"], vmin=zmin, vmax=zmax, cmap="magma",
-                color="green", linestyle="", markersize=3, mew=0,
-                marker='D', alpha=0.8, zorder=1, linewidth=0)
+        ycat, ycat_r = rcat, rcat_r
+        bsel = good & sgr & (ycat["XFIT_RANK"] == 3)
+        #bsel = ycat["type"] == "SDSS BHB"
+        #show = ~bsel
         show = bsel
         ax.plot(ycat_r[show]["lambda"], ycat_r[show]["vgsr"],
                 #c=rcat[show]["feh"], vmin=zmin, vmax=zmax, cmap="magma",
-                color="royalblue", linestyle="", markersize=3, mew=0,
-                marker='D', alpha=0.8, zorder=1, linewidth=0)
+                color="green", linestyle="", markersize=3, mew=0,
+                marker='D', alpha=1.0, zorder=100, linewidth=0)
+        #show = bsel
+        #ax.plot(ycat_r[show]["lambda"], ycat_r[show]["vgsr"],
+        #        #c=rcat[show]["feh"], vmin=zmin, vmax=zmax, cmap="magma",
+        #        color="royalblue", linestyle="", markersize=3, mew=0,
+        #        marker='D', alpha=0.8, zorder=1, linewidth=0)
 
     # --- LM10 Mocks ---
     ax = fig.add_subplot(gs[1, 0], sharey=vlaxes[0], sharex=vlaxes[0])

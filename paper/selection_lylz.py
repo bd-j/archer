@@ -142,7 +142,7 @@ if __name__ == "__main__":
                    marker="o", markersize=ms, mew=0, color='grey',
                    alpha=0.5, zorder=0)
     show = unbound
-    _ = twodhist(lm10_r["lz"][show], lm10_r["ly"][show], ax=laxes[-1],
+    _ = twodhist(lm10_rn["lz"][show], lm10_rn["ly"][show], ax=laxes[-1],
                   span=span, fill_contours=False, color="black",
                   contour_kwargs={"linewidths": 0.75})
     ax.set_title("Law & Majewski (2010)")
@@ -156,13 +156,8 @@ if __name__ == "__main__":
         colorby = dl17["id"]
         vmin, vmax = 0, 1
         cm = ListedColormap(["tomato", "black"])
-        rand = np.random.choice(len(dl17), size=(good & sgr).sum(), replace=False)
-
         ax = fig.add_subplot(gs[0, 2], sharey=laxes[0], sharex=laxes[0])
         laxes.append(ax)
-        #ax, cb = show_lzly(dl17_r, rand, laxes[-1], colorby=colorby,
-        #                   vmin=vmin, vmax=vmax, cmap=cm,
-        #                   marker="o", s=ms**2, linewidth=0, alpha=0.8)
         
         stars = (dl17["id"] < 1) & ~dl_remnant
         dark = (dl17["id"] == 1) & ~dl_remnant

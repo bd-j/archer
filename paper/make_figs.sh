@@ -53,3 +53,6 @@ python beta_lambda_mocks.py --dly $dly --flx $flx --rcat_vers $rcat_vers --rcat_
                             --savefig --figure_dir $fdir
 python lylz_feh.py          --dly $dly --flx $flx --rcat_vers $rcat_vers --rcat_type $rtype \
                             --savefig --flx $flx --figure_dir $fdir
+python franken_extrasig.py  --dly $dly --flx $flx --rcat_vers $rcat_vers --rcat_type $rtype \
+                            --savefig --figure_dir $fdir \
+                            --fractional_distance_error $dist_err --mag_cut --noisify_pms
