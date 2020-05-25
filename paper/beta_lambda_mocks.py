@@ -54,20 +54,21 @@ if __name__ == "__main__":
 
     # lm10
     lm10 = fits.getdata(config.lm10_file)
-    lm10_r = rectify(homogenize(lm10, "LM10", pcat=pcat, 
-                                fractional_distance_error=frac_err), 
+    lm10_r = rectify(homogenize(lm10, "LM10", pcat=pcat,
+                                fractional_distance_error=frac_err),
                      gc_frame_law10)
     rmax, energy = convert_estar_rmax(lm10["estar"])
 
     # dl17
     dl17 = fits.getdata(config.dl17_file)
-    dl17_r = rectify(homogenize(dl17, "DL17", pcat=pcat, 
+    dl17_r = rectify(homogenize(dl17, "DL17", pcat=pcat,
                                 fractional_distance_error=frac_err),
                      gc_frame_dl17)
 
     # selections
     from make_selection import rcat_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
+    good, sgr = rcat_select(rcat, rcat_r, max_rank=config.max_rank,
+                            dly=config.dly, flx=config.flx)
     unbound = lm10["tub"] > 0
 
     # plot setup

@@ -62,7 +62,8 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select, gc_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
+    good, sgr = rcat_select(rcat, rcat_r, max_rank=config.max_rank,
+                            dly=config.dly, flx=config.flx)
     unbound = lm10["tub"] > 0
 
     # plot setup
@@ -75,10 +76,10 @@ if __name__ == "__main__":
     gs = GridSpec(nrow, 2, height_ratios=nrow * [10],
                   hspace=0.2, wspace=0.15,
                   left=0.08, right=0.9,  bottom=0.08, top=0.93)
-    gsc = GridSpec(nrow, 1, left=0.92, right=0.93, hspace=0.2, 
+    gsc = GridSpec(nrow, 1, left=0.92, right=0.93, hspace=0.2,
                    bottom=0.08, top=0.93)
                    #bottom=0.89, top=0.95)
-    axes = np.array([fig.add_subplot(gs[i, j]) 
+    axes = np.array([fig.add_subplot(gs[i, j])
                      for i in range(nrow) for j in range(2)]).reshape(nrow, 2)
 
     # --- plot H3 ----
@@ -97,7 +98,8 @@ if __name__ == "__main__":
                         vmin=zmin, vmax=zmax, cmap=cmap,
                         marker='o', s=4, alpha=1.0, zorder=2, linewidth=0)
         # highlight low feh
-        show = good & sgr & (rcat["FeH"] < zcut)
+        with np.errstate(invalid="ignore"):
+            show = good & sgr & (rcat["FeH"] < zcut)
         cbh = show_xlam(rcat_r, show, dist=bool(i), ax=ax, colorby=colorby,
                         vmin=zmin, vmax=zmax, cmap=cmap,
                         marker='o', s=9, alpha=1.0, zorder=3, linewidth=0,)
@@ -124,7 +126,7 @@ if __name__ == "__main__":
         cbl = show_xlam(lm10_r, show, dist=bool(i), ax=ax, colorby=colorby,
                         vmin=vmin, vmax=vmax, cmap="magma_r",
                         marker='o', s=2, alpha=0.5, zorder=2, linewidth=0)
-        
+
     cbl = ax.scatter([-10], [-10], c=[1], vmin=vmin, vmax=vmax, cmap="magma_r")
         # plot GCs
 #        show = sgr_gcs
@@ -135,7 +137,7 @@ if __name__ == "__main__":
     ax.text(text[0], text[1], "LM10\n(noiseless)",
             transform=ax.transAxes,bbox=bbox)
 
-    # --- DL17 Mock --- 
+    # --- DL17 Mock ---
     colorby = dl17["id"]
     vmin, vmax = 0, 1
     cm = ListedColormap(["tomato", "black"])
@@ -143,7 +145,7 @@ if __name__ == "__main__":
         colorby, cname =compute_vtan(dl17_r), r"V$_{\rm tan}$"
         vmin, vmax = -100, 500
         cm = "magma_r"
- 
+
     for i in range(2):
         ax = axes[2, i]
         show = dl17["id"] >= 0

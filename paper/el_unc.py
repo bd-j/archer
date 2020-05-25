@@ -24,14 +24,14 @@ def get(p, cat_r, cat):
         return cat_r[parmap[p][0]]
     else:
         return cat[p] / parmap[p][1]
-    
+
 
 def show_ellipses(rcat, rcat_r, ax=None, pars=[], covdir="",
                   edgecolor="k", linewidth=0.5,
                   alpha=1.0, facecolor="none"):
     px, py = pars
     xs, ys = parmap[px][1], parmap[py][1]
-    
+
     rarr = np.array(rcat)
     for i, row in enumerate(rcat_r):
         x = get(px, row, rarr[i])
@@ -86,7 +86,8 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
+    good, sgr = rcat_select(rcat, rcat_r, max_rank=config.max_rank,
+                            dly=config.dly, flx=config.flx)
     lowz = rcat["FeH"] < zsplit
 
     # plot setup
@@ -101,7 +102,7 @@ if __name__ == "__main__":
     #gsc = GridSpec(1, 2, left=0.1, right=0.95, wspace=0.3,
     #               bottom=0.89, top=0.95)
     laxes = []
-    
+
     # --- plot H3 ly-lz ---
     laxes.append(fig.add_subplot(gs[0, 0]))
     ax = show_lylz(rcat_r, good & lowz, laxes[0], linestyle="",

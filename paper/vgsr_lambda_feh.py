@@ -22,7 +22,7 @@ def show_vlam(cat, show, ax=None, colorby=None, **plot_kwargs):
     else:
         cbh = ax.plot(cat[show]["lambda"], cat[show]["vgsr"],
                       **plot_kwargs)
-    
+
     return ax, cbh
 
 
@@ -47,8 +47,9 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
-   
+    good, sgr = rcat_select(rcat, rcat_r, max_rank=config.max_rank,
+                            dly=config.dly, flx=config.flx)
+
     trail = rcat_r["lambda"] < 175
     lead = rcat_r["lambda"] > 175
     arms = [trail, lead]
@@ -57,7 +58,7 @@ if __name__ == "__main__":
     tsel = good & sgr & trail
     tmu, tsig, _ = best_model("fits/h3_trailing_fit.h5", rcat_r["lambda"])
     cold_trail = np.abs(rcat_r["vgsr"] - tmu) < (config.nsigma * tsig)
-    
+
     # leading
     lsel = good & sgr & lead
     lmu, lsig, _ = best_model("fits/h3_leading_fit.h5", rcat_r["lambda"])
@@ -93,7 +94,8 @@ if __name__ == "__main__":
         for iarm, inarm in enumerate(arms):
             vlaxes.append(fig.add_subplot(gs[iz, iarm]))
             ax = vlaxes[-1]
-            inz = (rcat["FeH"] < zrange[1]) & (rcat["FeH"] >= zrange[0])
+            with np.errstate(invalid="ignore"):
+                inz = (rcat["FeH"] < zrange[1]) & (rcat["FeH"] >= zrange[0])
             show = good & sgr & inz & inarm & cold
             #if colorby is not None:
             #    ax, cbh = show_vlam(rcat_r, show, ax=ax, colorby=colorby,
@@ -121,7 +123,7 @@ if __name__ == "__main__":
 
     # prettify
     vlaxes[0, 0].legend(loc="upper left", fontsize=10)
-    
+
     [ax.set_xlim(40, 145) for ax in vlaxes[:, 0]]
     [ax.set_xlim(195, 300) for ax in vlaxes[:, 1]]
     [ax.set_ylim(-330, 340) for ax in vlaxes.flat]
@@ -132,7 +134,7 @@ if __name__ == "__main__":
     s1 = 0.48
     fig.text(s1, 0.03, r"$\Lambda_{\rm Sgr}$ (deg)")
 
-    
+
     # break axes
     [ax.spines['right'].set_visible(False) for ax in vlaxes[:, 0]]
     [ax.spines['left'].set_visible(False) for ax in vlaxes[:, 1]]

@@ -26,7 +26,7 @@ if __name__ == "__main__":
         parser.add_argument("--show_yang", action="store_true")
     except:
         pass
- 
+
     config = rectify_config(parser.parse_args())
     rtype = config.rcat_type
     zcut = config.feh_cut
@@ -50,7 +50,8 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
+    good, sgr = rcat_select(rcat, rcat_r, max_rank=config.max_rank,
+                            dly=config.dly, flx=config.flx)
     unbound = lm10["tub"] > 0
 
     # plot setup
@@ -129,7 +130,7 @@ if __name__ == "__main__":
     cbd = ax.scatter(dl17_r[show][rand]["lambda"], dl17_r[show][rand]["vgsr"],
                      c=dl17[show][rand]["id"], cmap=cm, #norm=norm,
                      marker='o', linewidth=0, alpha=1.0, vmin=0, vmax=1, s=4)
- 
+
     ax.text(text[0], text[1], "DL17\n(noiseless)", transform=ax.transAxes,
             bbox=bbox)
 

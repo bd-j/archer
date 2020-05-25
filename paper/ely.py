@@ -19,7 +19,7 @@ def show_ellipses(rcat, rcat_r, ax=None, covdir="",
                   alpha=1.0, facecolor="none"):
     px, rpx, xs = "Ly", "ly", 1e3
     py, rpy, ys = "E_tot_pot1", "E_tot_pot1", 1e5
-    
+
     for i, row in enumerate(rcat_r):
         x, y = row[rpx], rcat[i][rpy]
         n = rcat[i]["starname"]
@@ -64,7 +64,8 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
+    good, sgr = rcat_select(rcat, rcat_r, max_rank=config.max_rank,
+                            dly=config.dly, flx=config.flx)
 
     # plot setup
     rcParams = plot_defaults(rcParams)
@@ -89,9 +90,10 @@ if __name__ == "__main__":
                    label="Sgr Selected Giants")
     ax.set_title("All metallicities")
     ax.legend(loc="lower left", fontsize=10)
-    
+
     #plot h3 low FeH
-    lowz = rcat["FeH"] < zsplit
+    with np.errstate(invalid="ignore"):
+        lowz = rcat["FeH"] < zsplit
     laxes.append(fig.add_subplot(gs[0, 1], sharey=laxes[0], sharex=laxes[0]))
     ax = show_ely(rcat_r, rcat, good & lowz, laxes[-1], linestyle="",
                    marker="o", markersize=ms, mew=0, color='grey', alpha=0.5)

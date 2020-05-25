@@ -88,7 +88,7 @@ if __name__ == "__main__":
     # noisy lm10
     lm10_rn = rectify(homogenize(lm10, "LM10", pcat=pcat,
                                  seds=lm10_seds, noisify_pms=config.noisify_pms,
-                                 fractional_distance_error=frac_err), 
+                                 fractional_distance_error=frac_err),
                       gc_frame_law10)
 
     # dl17
@@ -97,12 +97,14 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select, gc_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
+    good, sgr = rcat_select(rcat, rcat_r, max_rank=config.max_rank,
+                            dly=config.dly, flx=config.flx)
     unbound = lm10["tub"] > 0
     mag = lm10_seds["PS_r"] + 5 * np.log10(lm10_r["dist"])
-    bright = (mag > 15) & (mag < 18.5)
-    dl_remnant = ((dl17_r["ra"] < 315) & (dl17_r["ra"] > 285)  &
-                  (dl17_r["dec"] < -25) & (dl17_r["dec"] > -32)) 
+    with np.errstate(invalid="ignore"):
+        bright = (mag > 15) & (mag < 18.5)
+        dl_remnant = ((dl17_r["ra"] < 315) & (dl17_r["ra"] > 285)  &
+                      (dl17_r["dec"] < -25) & (dl17_r["dec"] > -32))
 
     # plot setup
     rcParams = plot_defaults(rcParams)
@@ -122,17 +124,17 @@ if __name__ == "__main__":
     ax = show_lzly(rcat_r, good, laxes[0], linestyle="",
                    marker="o", markersize=ms, mew=0, color='black', alpha=0.5)
     if config.show_errors:
-        show_ellipses(rcat[good & sgr], rcat_r[good & sgr], ax=ax, 
+        show_ellipses(rcat[good & sgr], rcat_r[good & sgr], ax=ax,
                       covdir=config.covar_dir, alpha=0.3)
 
     ax.set_title("All H3 Giants")
     art = {"Sgr remnant (F18)": Line2D([], [], marker="*", ms=10, markerfacecolor="gold",
                                        markeredgecolor="k", linestyle=""),
            }
-    
+
     leg = list(art.keys())
     ax.legend([art[l] for l in leg], leg, fontsize=10)
-    
+
     # --- plot LM10 ---
     laxes.append(fig.add_subplot(gs[0, 1], sharey=laxes[0], sharex=laxes[0]))
     show = unbound & (lm10_rn["in_h3"] == 1)
@@ -158,7 +160,7 @@ if __name__ == "__main__":
         cm = ListedColormap(["tomato", "black"])
         ax = fig.add_subplot(gs[0, 2], sharey=laxes[0], sharex=laxes[0])
         laxes.append(ax)
-        
+
         stars = (dl17["id"] < 1) & ~dl_remnant
         dark = (dl17["id"] == 1) & ~dl_remnant
         _ = twodhist(dl17_r["lz"][stars], dl17_r["ly"][stars], ax=laxes[-1],
@@ -176,7 +178,7 @@ if __name__ == "__main__":
                "Remnant": Line2D([], [], marker="*", markersize=8, linewidth=0, color="k")}
         leg = list(art.keys())
         ax.legend([art[l] for l in leg], leg, fontsize=10)
-    
+
     # --- plot selection line ---
     zz =  np.linspace(-9, 10, 100)
     [ax.plot(zz, -0.3 * zz - 2.5 + config.dly, linestyle="--", color="royalblue", linewidth=2) for ax in laxes]

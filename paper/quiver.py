@@ -16,7 +16,7 @@ from archer.plummer import convert_estar_rmax
 
 
 def get_axes(rcParams, figxper=5, figyper=5, nrow=1, ncol=1, **extras):
-    
+
     cdims = 0.03, 0.04, 0.1, figxper*0.1
     edges = 0.1, 0.95
 
@@ -35,7 +35,7 @@ def get_axes(rcParams, figxper=5, figyper=5, nrow=1, ncol=1, **extras):
     figsize = (figxper * ncol + rightbar*cdims[3],
                figyper * nrow + topbar*cdims[3])
     fig = pl.figure(figsize=figsize)
-    
+
     # main
     pdict.update(mdims)
     gs = GridSpec(nrow, ncol, **pdict)
@@ -93,16 +93,18 @@ if __name__ == "__main__":
     # noisy lm10
     lm10_r = rectify(homogenize(lm10, "LM10", pcat=pcat,
                                  seds=lm10_seds, noisify_pms=config.noisify_pms,
-                                 fractional_distance_error=frac_err), 
+                                 fractional_distance_error=frac_err),
                       gc_frame_law10)
 
     # selections
     from make_selection import rcat_select, gc_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
+    good, sgr = rcat_select(rcat, rcat_r, max_rank=config.max_rank,
+                            dly=config.dly, flx=config.flx)
     sgr_gcs, gc_feh = gc_select(gcat)
     unbound = lm10["tub"] > 0
     mag = lm10_seds["PS_r"] + 5 * np.log10(lm10_noiseless["dist"])
-    bright = (mag > 15) & (mag < 18.5)
+    with np.errstate(invalid="ignore"):
+        bright = (mag > 15) & (mag < 18.5)
 
 
     # plot setup
@@ -131,7 +133,7 @@ if __name__ == "__main__":
     ax.text(text[0], text[1], "H3", bbox=bbox, transform=ax.transAxes)
     vlaxes.append(ax)
     cbars.append(cb)
-    
+
     # Plot lm10
     colorby, cname = 0.66*0.85*rmax, r"$\hat{\rm R}_{\rm prog}$ (kpc)" #r"typical radius ($\sim 0.66 \, r_{\rm max}/r_0$)"
     vmin, vmax = 0.25, 2.5
@@ -139,7 +141,7 @@ if __name__ == "__main__":
     #vmin, vmax = 0, 1
     #colorby, cname = lm10["tub"], r"t$_{\rm unbound}$"
     #vmin, vmax = 0, 5
-    
+
     sel = unbound
     if config.mag_cut:
         sel = sel & bright

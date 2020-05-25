@@ -22,12 +22,13 @@ def renorm_weight(weights, show):
 
 
 if __name__ == "__main__":
-    
+
     zmin, zmax = -3.0, 0.05
     zbins = np.arange(zmin, zmax, 0.1)
 
     try:
         parser.add_argument("--nsigma", type=float, default=2.)
+        parser.add_argument("--reweight", action="store_true")
     except:
         pass
     config = rectify_config(parser.parse_args())
@@ -36,24 +37,29 @@ if __name__ == "__main__":
     # rcat
     rcat = fits.getdata(config.rcat_file)
     rcat_r = rectify(homogenize(rcat, rtype), config.gc_frame)
-    wcat = fits.getdata(config.rcat_file.replace("rcat", "wcat"))
- 
+    #wcat = fits.getdata(config.rcat_file.replace("rcat", "wcat"))
+    wcat = fits.getdata("../data/catalogs/wcat_V2.4_MSG[alpha_age_PSr].fits")
+
     # selections
     from make_selection import rcat_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
-    weights = 1./wcat["total_weight"]
-    weights[~np.isfinite(weights)] = 0
+    good, sgr = rcat_select(rcat, rcat_r, max_rank=config.max_rank,
+                            dly=config.dly, flx=config.flx)
     bhb = rcat["BHB"] > 0
-
     trail = rcat_r["lambda"] < 175
     lead = rcat_r["lambda"] > 175
     arms = [trail, lead]
+    if config.reweight:
+        with np.errstate(invalid="ignore"):
+            weights = 1./wcat["total_weight"]
+            weights[~np.isfinite(weights)] = 0
+    else:
+        weights = np.ones(len(rcat))
 
     # trailing
     tsel = good & sgr & trail
     tmu, tsig, _ = best_model("fits/h3_trailing_fit.h5", rcat_r["lambda"])
     cold_trail = np.abs(rcat_r["vgsr"] - tmu) < (config.nsigma * tsig)
-    
+
     # leading
     lsel = good & sgr & lead
     lmu, lsig, _ = best_model("fits/h3_leading_fit.h5", rcat_r["lambda"])
@@ -83,20 +89,20 @@ if __name__ == "__main__":
     wght = weights * renorm
 
     for i, (k, sel) in enumerate(selections.items()):
-        n_this = sel.sum()
+        n_this =sel.sum()
         #wght = renorm_weight(weights, sel)
         ax = axes.flat[i]
         ax.hist(rcat[sel]["FeH"], bins=zbins, weights=wght[sel], color="darkgrey", alpha=0.8, histtype="stepfilled")
         ax.hist(rcat[sel]["FeH"], bins=zbins, weights=wght[sel], color="darkgrey", histtype="step", linewidth=2)
         ax.text(0.06, 0.94, "{}\nN={}".format(k, sel.sum()),
                 transform=ax.transAxes, verticalalignment="top")
-        
-        ax.hist(rcat[sel_tot]["FeH"], bins=zbins, weights=wght[sel_tot]*n_this/n_tot,
+
+        ax.hist(rcat[sel_tot]["FeH"], bins=zbins, weights=wght[sel_tot]*wght[sel].sum()/wght[sel_tot].sum(),
                 color="black", histtype="step", linestyle=":")
 
     [ax.set_xlabel("[Fe/H]") for ax in axes.flat]
     [ax.set_ylabel("N") for ax in axes.flat]
-    
+
     if config.savefig:
         fig.savefig("{}/mdf_by_vlam.{}".format(config.figure_dir, config.figure_extension),
                     dpi=config.figure_dpi)

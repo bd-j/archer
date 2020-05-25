@@ -13,7 +13,7 @@ from archer.fitting import best_model, sample_posterior
 from archer.plotting import make_cuts
 
 
-def show_vfit(lam, mu, sig, nsig=1, ax=None, color="k", 
+def show_vfit(lam, mu, sig, nsig=1, ax=None, color="k",
               plot_kwargs={}, fill_kwargs={}):
     o = np.argsort(lam)
     ax.plot(lam[o], mu[o], color=color, **plot_kwargs)
@@ -74,10 +74,11 @@ if __name__ == "__main__":
 
     rcat = fits.getdata(config.rcat_file)
     rcat_r = rectify(homogenize(rcat, rtype), config.gc_frame)
-    
+
     # selection
     from make_selection import rcat_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
+    good, sgr = rcat_select(rcat, rcat_r, max_rank=config.max_rank,
+                            dly=config.dly, flx=config.flx)
     n_tot = (good & sgr).sum()
 
     trail = rcat_r["lambda"] < 175
@@ -115,9 +116,9 @@ if __name__ == "__main__":
     vlax = fig.add_subplot(gs[0, 1])
     stax = fig.add_subplot(gs[1, 0])
     slax = fig.add_subplot(gs[1, 1])
-    
+
     axes = np.array([[vtax, vlax], [stax, slax]])
-    
+
     lmcolor = "tomato"
     fcolor = "black"
     cmap = "magma"
@@ -132,16 +133,16 @@ if __name__ == "__main__":
               color=fcolor, ax=vlax, fill_kwargs=fillkw)
     #show_vfit(rcat_r["lambda"][lsel& gl], mock_lmu[lsel & gl], mock_lsig[lsel & gl],
     #          nsig=0, color=lmcolor, ax=vlax, plot_kwargs=dict(linestyle="--"))
-    
+
     # plot sigmas
     show_sfit(rcat_r["lambda"][tsel & gt], tsig[tsel & gt], samples=tsigs[:, tsel & gt],
               ax=stax, color=fcolor, fill_kwargs=fillkw)
     show_sfit(rcat_r["lambda"][tsel & gt], mock_tsig[tsel & gt],
-              ax=stax, color=lmcolor, plot_kwargs=dict(linestyle="--", label="fit to LM10"))    
+              ax=stax, color=lmcolor, plot_kwargs=dict(linestyle="--", label="fit to LM10"))
     show_sfit(rcat_r["lambda"][lsel], lsig[lsel], samples=lsigs[:, lsel],
               ax=slax, color=fcolor, fill_kwargs=fillkw)
     show_sfit(rcat_r["lambda"][lsel & gl], mock_lsig[lsel & gl],
-              ax=slax, color=lmcolor, plot_kwargs=dict(linestyle="--"))    
+              ax=slax, color=lmcolor, plot_kwargs=dict(linestyle="--"))
 
 
     # plot data points
@@ -211,7 +212,7 @@ if __name__ == "__main__":
     _ = [make_cuts(ax, right=False, angle=2.0) for ax in axes[:, 1]]
 
     stax.legend(fontsize=9, loc="upper left")
-    
+
     #cax = fig.add_subplot(gsc[0, 0])
     #pl.colorbar(cbh, cax=cax, label=r"[Fe/H]")#, orientation="horizontal")
 

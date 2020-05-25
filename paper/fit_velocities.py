@@ -30,16 +30,17 @@ if __name__ == "__main__":
     rcat = fits.getdata(config.rcat_file)
     rcat_r = rectify(homogenize(rcat, rtype), config.gc_frame)
     pcat = fits.getdata(config.pcat_file)
-    
+
     # lm10
     lm10 = fits.getdata(config.lm10_file)
     lm10_r = rectify(homogenize(lm10, "LM10", pcat=pcat),
                      gc_frame_law10)
- 
+
 
     # selections
     from make_selection import rcat_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
+    good, sgr = rcat_select(rcat, rcat_r, max_rank=config.max_rank,
+                            dly=config.dly, flx=config.flx)
     unbound = lm10["tub"] > 0
 
     # --- Smaht fit ---
@@ -63,7 +64,7 @@ if __name__ == "__main__":
                                 vmu_bad_range=vmu_range, vsig_bad_range=vsig_range)
 
     #sys.exit()
-    
+
     from dynesty import DynamicNestedSampler as Sampler
 
     print(config.fit_lm10)
@@ -73,7 +74,7 @@ if __name__ == "__main__":
         selection = good & sgr & (rcat_r["lambda"] < 175)
         lam = rcat_r["lambda"][selection]
         vgsr = rcat_r["vgsr"][selection]
-        trail_model.set_data(lam, vgsr)
+        trail_model.set_data(lam, vgsr)s
         dsampler = Sampler(trail_model.lnprob, trail_model.prior_transform, trail_model.ndim)
         dsampler.run_nested()
         trail_results = dsampler.results

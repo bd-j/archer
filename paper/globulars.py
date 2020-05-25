@@ -84,7 +84,8 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select, gc_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
+    good, sgr = rcat_select(rcat, rcat_r, max_rank=config.max_rank,
+                            dly=config.dly, flx=config.flx)
     sgr_gcs, gc_feh = gc_select(gcat)
     #sgr_gcs = (gcat_r["ly"] < -2) & (gcat_r["ly"] > -7)
     unbound = lm10["tub"] > 0
@@ -99,10 +100,10 @@ if __name__ == "__main__":
     fig = pl.figure(figsize=figsize)
     from matplotlib.gridspec import GridSpec
     gs = GridSpec(nrow, 2, height_ratios=nrow * [10],
-                  width_ratios=[3, 4], 
+                  width_ratios=[3, 4],
                   hspace=0.15, wspace=0.2,
                   left=0.08, right=0.9,  bottom=0.12, top=0.95)
-    gsc = GridSpec(1, 1, left=0.92, right=0.93, hspace=0.2, 
+    gsc = GridSpec(1, 1, left=0.92, right=0.93, hspace=0.2,
                    bottom=0.12, top=0.95)
                    #bottom=0.89, top=0.95)
     axes = np.array([fig.add_subplot(gs[j, 1]) for j in range(nrow)])[None, :]
@@ -124,7 +125,7 @@ if __name__ == "__main__":
                     markeredgecolor='k', alpha=1.0)
     art["Globular Clusters (B19)"] = Line2D([], [], linestyle="", marker="s", markersize=ms*2,
                                         markerfacecolor="tomato", markeredgecolor='k')
-    
+
     leg = list(art.keys())
     ax.legend([art[l] for l in leg], leg, fontsize=9)
 
@@ -166,7 +167,7 @@ if __name__ == "__main__":
 
     # --- plot selection line ---
     zz =  np.linspace(-9, 10, 100)
-    [ax.plot(zz, -0.3 * zz - 2.5 + config.dly, linestyle="--", color="royalblue", linewidth=2) 
+    [ax.plot(zz, -0.3 * zz - 2.5 + config.dly, linestyle="--", color="royalblue", linewidth=2)
      for ax in [lax]]
 
     [ax.plot([lsgr[2]], [lsgr[1]], label="Sgr remnant", linestyle="",
@@ -188,7 +189,7 @@ if __name__ == "__main__":
     [ax.set_ylabel(r"$R_{\rm GC}$ (kpc)") for ax in axes[:, 1]]
     [ax.set_xlabel(r"$\Lambda_{\rm Sgr}$ (deg)") for ax in axes[:, -1]]
 
-    
+
     #points = Line2D([], [], linestyle="", color="black",
     #                marker="o", markersize=3)
     #axes[0, 0].legend([points], ["[Fe/H] < {}".format(zcut)], loc="upper right")

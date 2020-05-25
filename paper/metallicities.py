@@ -19,19 +19,33 @@ if __name__ == "__main__":
 
     zmin, zmax = -3.0, 0.05
     zbins = np.arange(zmin, zmax, 0.1)
+    try:
+        parser.add_argument("--reweight", action="store_true")
+    except:
+        pass
     config = rectify_config(parser.parse_args())
     rtype = config.rcat_type
 
     # rcat
     rcat = fits.getdata(config.rcat_file)
     rcat_r = rectify(homogenize(rcat, rtype), config.gc_frame)
-    wcat = fits.getdata(config.rcat_file.replace("rcat", "wcat"))
+    #wcat = fits.getdata("../data/catalogs/wcat_V2.4_MSG[ebv_alpha_age_PSr].fits")
+    #wcat = fits.getdata("../data/catalogs/wcat_V2.4_MSG_rohan.fits")
+    #wcat = fits.getdata("../data/catalogs/wcat_V2.4_MSG[ebv_alpha_age_PSg].fits")
+    #wcat = fits.getdata("../data/catalogs/wcat_V2.4_MSG[ebv_PSr].fits")
+    #ocat = fits.getdata("../data/catalogs/wcat_V2.4_MSG_original_PSr.fits")
+    wcat = fits.getdata("../data/catalogs/wcat_V2.4_MSG[alpha_age_PSr].fits")
 
     # selections
     from make_selection import rcat_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
-    weights = 1./wcat["total_weight"]
-    weights[~np.isfinite(weights)] = 0
+    good, sgr = rcat_select(rcat, rcat_r, max_rank=config.max_rank,
+                            dly=config.dly, flx=config.flx)
+    if config.reweight:
+        with np.errstate(invalid="ignore"):
+            weights = 1./wcat["total_weight"]
+            weights[~np.isfinite(weights)] = 0
+    else:
+        weights = np.ones(len(rcat))
 
     # plot setup
     rcParams = plot_defaults(rcParams)
@@ -41,32 +55,34 @@ if __name__ == "__main__":
     from matplotlib.gridspec import GridSpec
     gs = GridSpec(2, 1, height_ratios=[10, 10],
                   left=0.13, right=0.95, wspace=0.25, hspace=0.2, top=0.95)
-    
+
     hax = fig.add_subplot(gs[0, 0])
     zax = fig.add_subplot(gs[1, 0])
-    
+
     # --- Plot histogram of feh values ---
-    show = good & sgr & (rcat["BHB"] == 0) & (rcat["XFIT_RANK"] < 3)
+    show = good & sgr & (rcat["BHB"] == 0)
     renorm = show.sum() / weights[show].sum()
     wght = weights * renorm
     #wght = np.clip(weights * renorm, 0, 5)
     #wght *= show.sum() / weights[show].sum()
 
-    hax.hist(rcat[show]["feh"], bins=zbins, histtype="step",
-             density=False, color="black", linestyle=":", linewidth=2)
+    if config.reweight:
+        hax.hist(rcat[show]["feh"], bins=zbins, histtype="step",
+                 density=False, color="black", linestyle=":", linewidth=2)
     hax.hist(rcat[show]["feh"], weights=wght[show], bins=zbins, histtype="step",
              density=False, color="maroon", linewidth=2)
     #show = show & (rcat["MGIANT"] == 0)
     #renorm = show.sum() / weights[show].sum()
     #hax.hist(rcat[show]["feh"], weights=weights[show]* renorm, bins=zbins, histtype="step",
     #         density=False, color="darkslateblue")
-    
+
     art = {"Raw counts": Line2D([], [], color="black", linestyle=":", linewidth=2),
            "Reweighted": Line2D([], [], color="maroon", linewidth=2),
           }
     leg = list(art.keys())
-    hax.legend([art[l] for l in leg], leg, fontsize=12, loc="upper left")
- 
+    if config.reweight:
+        hax.legend([art[l] for l in leg], leg, fontsize=12, loc="upper left")
+
     hax.set_xlabel("[Fe/H]")
     hax.set_ylabel("N")
     hax.set_xlim(zmin, zmax)
@@ -77,8 +93,9 @@ if __name__ == "__main__":
     zax.plot(rcat[show]["feh"], rcat[show]["afe"],
              marker="o", mew=0, linewidth=0, markersize=1,
              color="grey", alpha=0.3, linestyle="", label="All Giants, S/N>5")
-    
-    show = good & sgr & (rcat["BHB"] == 0) & (rcat["SNR"] > 5)
+
+    with np.errstate(invalid="ignore"):
+        show = good & sgr & (rcat["BHB"] == 0) & (rcat["SNR"] > 5)
     zax.plot(rcat[show]["feh"], rcat[show]["afe"],
              marker="o", mew=0, linewidth=0, markersize=2,
              color="black", linestyle="", label="Sgr, S/N>5")

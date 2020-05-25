@@ -81,7 +81,7 @@ if __name__ == "__main__":
     # noisy lm10
     lm10_r = rectify(homogenize(lm10, "LM10", pcat=pcat,
                                  seds=lm10_seds, noisify_pms=config.noisify_pms,
-                                 fractional_distance_error=frac_err), 
+                                 fractional_distance_error=frac_err),
                       gc_frame_law10)
 
     # add dispersion to outer LM10 particles
@@ -91,10 +91,12 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select, gc_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
+    good, sgr = rcat_select(rcat, rcat_r, max_rank=config.max_rank,
+                            dly=config.dly, flx=config.flx)
     unbound = lm10["tub"] > 0
     mag = lm10_seds["PS_r"] + 5 * np.log10(lm10_noiseless["dist"])
-    bright = (mag > 15) & (mag < 18.5)
+    with np.errstate(invalid="ignore"):
+        bright = (mag > 15) & (mag < 18.5)
 
     # plot setup
     rcParams = plot_defaults(rcParams)

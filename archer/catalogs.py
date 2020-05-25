@@ -218,7 +218,8 @@ def rectify(ncat, gc_frame):
     sgr = sgr_coords(ncat)
     # wrap the negative coords
     lam = sgr.Lambda.value
-    lam[lam < 0] += 360
+    with np.errstate(invalid="ignore"):
+        lam[lam < 0] += 360
     ncat["lambda"] = lam
     ncat["beta"] = sgr.Beta.value
 

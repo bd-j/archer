@@ -63,7 +63,8 @@ if __name__ == "__main__":
 
     # selections
     from make_selection import rcat_select, gc_select
-    good, sgr = rcat_select(rcat, rcat_r, dly=config.dly, flx=config.flx)
+    good, sgr = rcat_select(rcat, rcat_r, max_rank=config.max_rank,
+                            dly=config.dly, flx=config.flx)
     n_tot = (good & sgr).sum()
 
     trail = rcat_r["lambda"] < 175
@@ -102,7 +103,8 @@ if __name__ == "__main__":
     for iz, zrange in enumerate(zbins):
         for iarm, inarm in enumerate(arms):
             ax = fig.add_subplot(gs[iz, iarm])
-            inz = (rcat["FeH"] < zrange[1]) & (rcat["FeH"] >= zrange[0])
+            with np.errstate(invalid="ignore"):
+                inz = (rcat["FeH"] < zrange[1]) & (rcat["FeH"] >= zrange[0])
             show = good & sgr & inz & inarm & cold
             ax = show_lzly(rcat_r, show, ax, linestyle="",
                            marker="o", markersize=ms, mew=0, color='black', alpha=1.0)
@@ -116,7 +118,7 @@ if __name__ == "__main__":
             show = good & (~sgr) & inz & inarm
             ax = show_lzly(rcat_r, show, ax, linestyle="",
                            marker="o", markersize=2, mew=0, color='grey', alpha=1.0)
-            
+
             axes.append(ax)
 
     # --- plot selection line ---

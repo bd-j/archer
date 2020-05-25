@@ -8,7 +8,8 @@ import numpy as np
 import matplotlib.pyplot as pl
 from functools import partial
 
-__all__ = ["compute_total_weight", "mag_weight", "rank_weight",
+__all__ = ["eta_iso", "show_weights",
+           "compute_total_weight", "mag_weight", "rank_weight",
            "logg_masker", "mgiant_masker", "bhb_masker",
            "kroupa_imf", "imf_weight",
            "EBV"]
@@ -101,17 +102,18 @@ def mag_weight(dist, feh, iso, masker=None,
     return frac
 
 
-def logg_masker(params, mags, faintg=None):
+def logg_masker(params, mags, faint={}, w1cut=True):
     """Default: identify giants based on logg, remove  K Giants.
     """
     sel = params["logg"] < 3.5
-    sel = sel & (~mgiant_masker(params, mags))
-    if faintg is not None:
-        sel = sel & (mags["PS_g"] < faintg)
+    sel = sel & (~mgiant_masker(params, mags, w1cut=w1cut))
+    if len(faint) > 0:
+        band, limit = list(faint.items())[0]
+        sel = sel & (mags[band] < limit)
     return sel
 
 
-def mgiant_masker(params, mags, w1cut=True, faintg=None):
+def mgiant_masker(params, mags, w1cut=True, faint={}):
     """Identify M(K) Giants basd on Conroy+ 2019.  Includes logg cut
     """
     g_r = mags["PS_g"] - mags["PS_r"]
@@ -124,12 +126,13 @@ def mgiant_masker(params, mags, w1cut=True, faintg=None):
            (params["logg"] < 3.5))
     if w1cut:
         sel = sel & (mags["WISE_W1"] < 15.5)
-    if faintg is not None:
-        sel = sel & (mags["PS_g"] < faintg)
+    if len(faint) > 0:
+        band, limit = list(faint.items())[0]
+        sel = sel & (mags[band] < limit)
     return sel
 
 
-def bhb_masker(params, mags, faintg=None):
+def bhb_masker(params, mags, faint={}):
     """Identify BHB stars based on EEPs
     """
     # Deason 2014 color cuts
@@ -138,13 +141,14 @@ def bhb_masker(params, mags, faintg=None):
     #u_g = mags["SDSS_u"] - mags["SDSS_g"]
     #ugbhb = 1.167 - 0.775*g_r - 1.934*g_r**2 + 9.936*g_r**3
     #sel = ((g_r > -2.5) & (g_r < 0.) &
-    #       (np.abs(u_g - ugbhb) < 0.08) & 
+    #       (np.abs(u_g - ugbhb) < 0.08) &
     #       (ps_g_r < 0.05))
 
     # Just cut on EEP
     sel = (params["eep"] < 707) & (params["eep"] > 631)
-    if faintg is not None:
-        sel = sel & (mags["PS_g"] < faintg)
+    if len(faint) > 0:
+        band, limit = list(faint.items())[0]
+        sel = sel & (mags[band] < limit)
 
     return sel
 
@@ -182,7 +186,7 @@ def ptg_limit(ptgID, pcat, snr_limit, rcat=None, band="g"):
     return faint
 
 
-def compute_total_weight(rcat_row, iso, pcat, snr_limit=3.0, rcat=None,
+def compute_total_weight(rcat_row, iso, pcat, snr_limit=3.0, limit_band="g", rcat=None,
                          use_ebv=False, use_afe=False, use_age=False,
                          lf_params=dict(afe=0, loga=10), delta_m=0):
     """Compute the fiber assignment weight and the magnitude weighting for this star.
@@ -222,6 +226,9 @@ def compute_total_weight(rcat_row, iso, pcat, snr_limit=3.0, rcat=None,
         Number that gives the fraction of stars in an SSP with the
         same distance and FeH of the star that would have been selected for the
         scat and observed above the given SNR threshold.
+
+    faintmag : float
+        The limiting magnitude corresponding to the SNR limit
     """
     assert rcat_row["logg"] < 3.5
     assert rcat_row["SNR"] >= snr_limit
@@ -234,16 +241,15 @@ def compute_total_weight(rcat_row, iso, pcat, snr_limit=3.0, rcat=None,
     er = pcat[ptg_ind]["RANK{:.0f}_WGT_ALL".format(rank)]
 
     # find PS_g s.t. SNR=snr_limit in this ptg
-    faintg = ptg_limit(ptgID, pcat, snr_limit, rcat=rcat, band="g")
+    lim_band = "PS_{}".format(limit_band)
+    faintmag = ptg_limit(ptgID, pcat, snr_limit, rcat=rcat, band=limit_band)
     # make sure the star is brighter than the faint limit
-    faintg = max(faintg, row["PS_g"])
+    faintmag = max(faintmag, row[lim_band])
     # add a fudge to the limit?
-    faintg += delta_m
-
-    masker = partial(logg_masker, faintg=faintg)
+    faintmag += delta_m
 
     # get bright and faint limits for this rank, ptg
-    band, bright, faint = "PS_r", 15.0, 18.5
+    band, bright, faint = "PS_r", 15.0, 18.0
     if rank == 3:
         faint = 18.5
         bright = 18
@@ -256,34 +262,34 @@ def compute_total_weight(rcat_row, iso, pcat, snr_limit=3.0, rcat=None,
         Ab = row["EBV"] * EBV[band]
         bright -= Ab
         faint -= Ab
-        faintg -= row["EBV"] * EBV["PS_g"]
+        faintmag -= row["EBV"] * EBV[lim_band]
 
     # get isochrone masker for this selection
+    faintlim = {lim_band: faintmag}
+    masker = partial(logg_masker, faint=faintlim)
     if (rank == 1) & (row["MGIANT"] > 0):
-        masker = partial(mgiant_masker, faintg=faintg)
-        #band = "WISE_W1"
+        masker = partial(mgiant_masker, faint=faintlim)
     elif (rank == 1) & (row["BHB"] > 0):
-        masker = partial(bhb_masker, faintg=faintg)
+        masker = partial(bhb_masker, faint=faintlim)
 
     # choose afe and age
     if use_afe:
-        lf_params["afe"] = row["aFe"]
+        lf_params["afe"] = row["init_aFe"]
     if use_age:
         lf_params["loga"] = row["logAge"]
 
-
-    em = mag_weight(row["dist_adpt"], row["FeH"], iso,
+    em = mag_weight(row["dist_adpt"], row["init_FeH"], iso,
                     bright=bright, faint=faint, selection_band=band,
-                    masker=masker,
-                    lf_params=lf_params)
+                    masker=masker, lf_params=lf_params)
 
-    return er, em, faintg
+    return er, em, faintmag
 
 
 def eta_iso(distances, feh, iso, masker=None,
             bright=15, faint=18, band="PS_r",
             lf_params=dict(afe=0, loga=10),):
-
+    """Construct an eta_mag vs distance curve
+    """
     eta = np.zeros_like(distances)
     for i, dist in enumerate(distances):
         eta[i] = mag_weight(dist, feh, iso, masker=masker,
@@ -292,21 +298,9 @@ def eta_iso(distances, feh, iso, masker=None,
     return eta
 
 
-if __name__ == "__main__":
-
-    from archer.seds import Isochrone, FILTERS
-    from archer.config import parser, rectify_config, plot_defaults
-    _ = plot_defaults(pl.rcParams)
-    config = rectify_config(parser.parse_args())
-
-    # test the mag weight code
-    feh = -1.0
-    filters = np.array(["PS_r", "PS_g", "PS_z",
-                        "SDSS_u", "SDSS_g", "SDSS_r",
-                        "WISE_W1", "WISE_W2"])
-    iso = Isochrone(mistfile=config.mistiso, nnfile=config.nnfile, filters=filters)
-
-    d_arr = np.linspace(2, 100, 500)
+def show_weights(d_arr=np.linspace(2, 50, 100), feh=-1, iso=None):
+    """Make a plot showing the eta_mag v distance curves for different ranks
+    """
     frac_all    = eta_iso(d_arr, feh, iso)
     frac_giants = eta_iso(d_arr, feh, iso, masker=logg_masker)
     frac_rank3  = eta_iso(d_arr, feh, iso, masker=logg_masker,
@@ -315,7 +309,6 @@ if __name__ == "__main__":
                           faint=17.5, bright=13.5)
     frac_bhbs   = eta_iso(d_arr, feh, iso, masker=bhb_masker,
                           faint=17.5, bright=13.5)
-
 
     fig, ax = pl.subplots()
     logf0 = np.log10(frac_all[0])
@@ -331,34 +324,87 @@ if __name__ == "__main__":
     ax.set_xlim(2, 50)
     ax.set_ylim(-5, 0.2)
     ax.set_title("[Fe/H] = {:3.1f}".format(feh))
-    pl.ion()
-    pl.show()
-    #fig.savefig("mag_weighting_feh{:+3.1f}.png".format(feh), dpi=450)  
-
-    import sys
-    sys.exit()
-
-    from astropy.io import fits
-    rcat = fits.getdata(config.rcat_file)
-    pcat = None
-    for row in rcat[good & sgr]:
-        if row["BHB"] == 0:
-            rw, mw, limit = compute_total_weight(row, iso, pcat, snr_limit=3)
+    return fig, ax
 
 
-    from astropy.io import fits
-    from archer.config import rectify_config, parser
-    from archer.weighting import ptg_limit
+if __name__ == "__main__":
+
+    import os, time
+    from archer.seds import Isochrone, FILTERS
+    from archer.config import parser, rectify_config, plot_defaults
+    _ = plot_defaults(pl.rcParams)
+
+    try:
+            parser.add_argument("--snr_limit", type=float, default=3.0)
+            parser.add_argument("--limit_band", type=str, default="r",
+                                help=("band for computing limiting snr, 'r' | 'g'"))
+            parser.add_argument("--use_ebv", action="store_true")
+            parser.add_argument("--use_afe", action="store_true")
+            parser.add_argument("--use_age", action="store_true")
+    except:
+        pass
+
     config = rectify_config(parser.parse_args())
-    pcat = fits.getdata(config.pcat_file)
-    rcat = fits.getdata(config.rcat_file)
-    snr_limit = 3
-    glim_curve = np.array([ptg_limit(p, pcat, snr_limit) for p in pcat["ptgID"]])
-    glim_rcat = np.array([ptg_limit(p, pcat, snr_limit, rcat=rcat) for p in pcat["ptgID"]])
-    fig, ax = pl.subplots()
-    pl.ion()
 
-    xx = np.linspace(14, 20, 10)
-    ax.plot(glim_curve, glim_rcat, marker='o', markersize=3, linestyle="")
-    ax.plot(xx, xx, linestyle=":")
-    pl.show()
+    # test the mag weight code
+    if config.test:
+        filters = np.array(["PS_r", "PS_g", "PS_z",
+                            "SDSS_u", "SDSS_g", "SDSS_r",
+                        "WISE_W1", "WISE_W2"])
+        iso = Isochrone(mistfile=config.mistiso, nnfile=config.nnfile,
+                        filters=filters)
+        fig, ax = show_weights(feh=-1.0, iso=iso)
+        pl.ion()
+        pl.show()
+
+    from astropy.io import fits
+    rcat = fits.getdata(config.rcat_file)
+    pcat = fits.getdata(config.pcat_file)
+
+    # output wcat name
+    outname = config.rcat_file.replace("rcat", "wcat")
+    options = {"ebv": config.use_ebv, "alpha": config.use_alpha, "age": config.use_age}
+    tag = "_".join([k for k in options.keys() if options[k]])
+    outname = outname.replace(".fits", "[{}_PS{}].fits".format(tag, config.limit_band))
+
+    # select the stars to calculate weights for
+    good = ((rcat["logg"] < 3.5) & (rcat["SNR"] > config.snr_limit) &
+            ((rcat["FLAG"] == 0) | (rcat["BHB"] > 0)))
+
+    # build the empty wcat
+    lim_col = "{}mag_snr_limit".format(config.limit_band)
+    colnames = ["rank_weight", "mag_weight", "total_weight", lim_col, "ebv"]
+    cols = [rcat.dtype.descr[rcat.dtype.names.index("starname")]]
+    cols += [(c, np.float) for c in colnames]
+    dtype = np.dtype(cols)
+    wcat = np.zeros(len(rcat), dtype=dtype)
+    wcat["starname"] = rcat["starname"]
+    wcat["ebv"][good] = rcat["EBV"][good]
+    wcat["total_weight"][~good] = -1
+
+    # compute the weights and add to wcat
+    gg = np.where(good)[0]
+    N = len(gg)
+    for i, g in enumerate(gg):
+        if np.mod(i, 1000) == 0:
+            print(f"{i} of {N}")
+
+        rw, mw, lim = compute_total_weight(rcat[g], iso, pcat, snr_limit=config.snr_limit,
+                                           limit_band=config.limit_band, use_ebv=config.use_ebv,
+                                           use_afe=config.use_afe, use_age=config.use_afe)
+        wcat[g]["rank_weight"] = rw
+        wcat[g]["mag_weight"] = mw
+        wcat[g]["total_weight"] = mw * rw
+        wcat[g][lim_col] = lim
+
+    hdu = fits.BinTableHDU(wcat)
+    hdu.header["SNRLIM"] = config.snr_limit
+    hdu.header["LIMBAND"] = config.limit_band
+    hdu.header["USE_EBV"] = options["ebv"]
+    hdu.header["USE_AFE"] = options["alpha"]
+    hdu.header["USE_AGE"] = options["age"]
+    hdu.header["ISOC"] = os.path.basename(config.mistiso)
+    hdu.header["SEDS"] = os.path.basename(config.nnfile)
+    hdu.header["CREATED"] = time.asctime(time.localtime(time.time()))
+    print(f"writing to {outname}")
+    hdu.writeto(outname)
