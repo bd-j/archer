@@ -161,7 +161,7 @@ if __name__ == "__main__":
     [ax.set_ylim(0, 90) for ax in vlaxes[:, 2:].flat]
     [ax.set_ylabel(r"V$_{\rm GSR}$ (${\rm km} \,\, {\rm s}^{-1}$)")
      for ax in vlaxes[:, 0].flat]
-    [ax.set_ylabel(r"$R_{\rm GC}$ (kpc)") for ax in vlaxes[:, 2].flat]
+    [ax.set_ylabel(r"$r_{\rm Gal}$ (kpc)") for ax in vlaxes[:, 2].flat]
     #[ax.set_xlabel(r"$\Lambda_{\rm Sgr}$ (deg)") for ax in vlaxes[-1,:]]
 
     # break axes

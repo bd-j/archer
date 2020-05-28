@@ -29,12 +29,12 @@ if __name__ == "__main__":
     # rcat
     rcat = fits.getdata(config.rcat_file)
     rcat_r = rectify(homogenize(rcat, rtype), config.gc_frame)
-    #wcat = fits.getdata("../data/catalogs/wcat_V2.4_MSG[ebv_alpha_age_PSr].fits")
+    wcat = fits.getdata("../data/catalogs/wcat_V2.4_MSG[ebv_alpha_age_PSr].fits")
     #wcat = fits.getdata("../data/catalogs/wcat_V2.4_MSG_rohan.fits")
     #wcat = fits.getdata("../data/catalogs/wcat_V2.4_MSG[ebv_alpha_age_PSg].fits")
     #wcat = fits.getdata("../data/catalogs/wcat_V2.4_MSG[ebv_PSr].fits")
     #ocat = fits.getdata("../data/catalogs/wcat_V2.4_MSG_original_PSr.fits")
-    wcat = fits.getdata("../data/catalogs/wcat_V2.4_MSG[alpha_age_PSr].fits")
+    #wcat = fits.getdata("../data/catalogs/wcat_V2.4_MSG[alpha_age_PSr].fits")
 
     # selections
     from make_selection import rcat_select

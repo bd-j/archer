@@ -74,7 +74,7 @@ if __name__ == "__main__":
         selection = good & sgr & (rcat_r["lambda"] < 175)
         lam = rcat_r["lambda"][selection]
         vgsr = rcat_r["vgsr"][selection]
-        trail_model.set_data(lam, vgsr)s
+        trail_model.set_data(lam, vgsr)
         dsampler = Sampler(trail_model.lnprob, trail_model.prior_transform, trail_model.ndim)
         dsampler.run_nested()
         trail_results = dsampler.results

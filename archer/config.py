@@ -38,7 +38,7 @@ parser.add_argument("--dly", type=float,
 parser.add_argument("--flx", type=float,
                     default=0.9, help="allowed |Lx| as fraction of quadrature sum of Ly+Lz")
 parser.add_argument("--max_rank", type=int,
-                    default=3, help="maximum xfit rank to include in the selection")
+                    default=2, help="maximum xfit rank to include in the selection")
 
 # --- catalog versions ---
 parser.add_argument("--rcat_vers", type=str, default="2_4")

@@ -10,7 +10,7 @@ flag_names = ["No_Gaia", "Fiber_130", "Nband_lt_5", "low_SNR_dup", "SNR_lt_1",
 nflag = len(flag_names)
 
 flags = [''.join(['1' if ii == j  else '0' for ii in range(nflag)])
-         for j in range(nflag)]  
+         for j in range(nflag)]
 flags = [nflag * '0'] + flags
 
 flagval = {}
@@ -25,7 +25,7 @@ def flag_set(bitmask, flag_name, only=False):
         f = bitmask == flagval[ind]
     else:
         f = np.bitwise_and(bitmask, flagval[ind]) > 0
-    
+
     return f
 
 def make_bitmask(flags):

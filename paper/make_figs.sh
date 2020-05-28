@@ -11,7 +11,9 @@ mkdir -p $fdir
 
 # Fit velocities
 if [ "${refit}" = true ]; then
-  python fit_velocities.py --rcat_vers $rcat_vers --fit_leading --fit_trailing --fit_lm10 --fit_h3
+  python fit_velocities.py  --dly $dly --flx $flx --max_rank=$max_rank \
+                            --rcat_vers $rcat_vers --fit_leading --fit_trailing \
+                            --fit_h3 --fit_lm10
 fi
 
 # Figure 1
@@ -49,22 +51,23 @@ python x_lambda_selectmocks.py --dly $dly --flx $flx --max_rank=$max_rank \
                                --savefig --figure_dir $fdir \
                                --fractional_distance_error $dist_err --mag_cut --noisify_pms
 # Figure 9
+python franken_extrasig.py  --dly $dly --flx $flx --max_rank=$max_rank \
+                            --rcat_vers $rcat_vers --rcat_type $rtype \
+                            --savefig --figure_dir $fdir \
+                            --fractional_distance_error $dist_err --mag_cut --noisify_pms
+# Figure 10
 python quiver.py            --dly $dly --flx $flx --max_rank=$max_rank \
                             --rcat_vers $rcat_vers --rcat_type $rtype \
                             --savefig --figure_dir $fdir \
                             --fractional_distance_error $dist_err --mag_cut --noisify_pms
 
-python franken_extrasig.py  --dly $dly --flx $flx --max_rank=$max_rank \
-                            --rcat_vers $rcat_vers --rcat_type $rtype \
-                            --savefig --figure_dir $fdir \
-                            --fractional_distance_error $dist_err --mag_cut --noisify_pms
 
 # Appendix
-# Figure 10
+# Figure 11
 python el_unc.py            --dly $dly --flx $flx --max_rank=$max_rank \
                             --rcat_vers $rcat_vers --rcat_type $rtype \
                             --savefig --figure_dir $fdir
-# Figure 11
+# Figure 12
 python globulars.py         --dly $dly --flx $flx --max_rank=$max_rank \
                             --rcat_vers $rcat_vers --rcat_type $rtype \
                             --savefig --figure_dir $fdir

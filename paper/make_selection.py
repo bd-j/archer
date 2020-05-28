@@ -33,6 +33,17 @@ def good_select(rcat, allow_flags=["hot", "high_vtan"], extras=True,
     return good
 
 
+def reflect_select(rcat, rcat_r, dly=0.0, flx=0.9, max_rank=3,
+                   allow_flags=["hot", "high_vtan"]):
+
+    with np.errstate(invalid="ignore"):
+        sgr = rcat_r["ly"] > (0.3 * rcat_r["lz"] + 2.5 + dly)
+        sgr = sgr & (np.abs(rcat_r["lx"]) < flx*np.hypot(rcat_r["ly"], rcat_r["lz"]))
+        good = good_select(rcat, allow_flags=allow_flags, max_rank=max_rank)
+
+    return good, sgr
+
+
 def rcat_select(rcat, rcat_r, dly=0.0, flx=0.9, max_rank=3,
                 allow_flags=["hot", "high_vtan"]):
 

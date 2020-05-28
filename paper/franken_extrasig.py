@@ -128,7 +128,7 @@ if __name__ == "__main__":
     vcb.append(cbs[0])
 
     # --- LM10 Mocks ---
-    colorby, cname = 0.66*0.85*rmax, r"$\hat{\rm R}_{\rm prog}$ (kpc)" #r"typical radius ($\sim 0.66 \, r_{\rm max}/r_0$)"
+    colorby, cname = 0.66*0.85*rmax, r"LM10: $\hat{\rm R}_{\rm prog}$ (kpc)"
     vmin, vmax = 0.25, 2.5
     #colorby, cname = lm10["Estar"], r"E$_\ast$"
     #vmin, vmax = 0, 1
@@ -194,7 +194,7 @@ if __name__ == "__main__":
     cb1 = pl.colorbar(vcb[1], cax=cax1,)
     cb1.ax.set_ylabel(cname, rotation=90, clip_on=False)
     cax2 = fig.add_subplot(gsc[0, -1])
-    pl.colorbar(vcb[0], cax=cax2, label=r"[Fe/H]")
+    pl.colorbar(vcb[0], cax=cax2, label=r"H3: [Fe/H]")
     #cax3 = fig.add_subplot(gsc[2, -1])
     #pl.colorbar(vcb[2], cax=cax3, label=r"", ticks=[0.25, 0.75])
     #cax3.set_yticklabels(["Stars", "DM"])

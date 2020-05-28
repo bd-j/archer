@@ -158,10 +158,10 @@ def homogenize(cat, catname="", pcat=None, noisify_pms=False, seds=None,
         else:
             ncat[c] = cat[mapping]
 
-    #if (catname == "RCAT") & (len(cat) < 1000):
+    if (catname == "RCAT") & (len(cat) < 1000):
         # double the distances to weird stars
-    #    print("Increasing distance by factor 2")
-    #    ncat["dist"] *= 2
+        print("Increasing distance by factor 2")
+        ncat["dist"] *= 2
 
     if catname == "DL17":
         # reflex uncorrect the DL17 values

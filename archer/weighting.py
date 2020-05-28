@@ -119,16 +119,17 @@ def mgiant_masker(params, mags, w1cut=True, faint={}):
     g_r = mags["PS_g"] - mags["PS_r"]
     w1_w2 = mags["WISE_W1"] - mags["WISE_W2"]
     z_w1 = mags["PS_z"] - mags["WISE_W1"]
-    sel = ((w1_w2 > -0.4) & (w1_w2 < 0.) &
-           (g_r < 1.1) &
-           (z_w1 > 1.9) & (z_w1 < 2.5) &
-           (z_w1 > (1.2*g_r + 0.95)) & (z_w1 < (1.2*g_r + 1.15)) &
-           (params["logg"] < 3.5))
-    if w1cut:
-        sel = sel & (mags["WISE_W1"] < 15.5)
-    if len(faint) > 0:
-        band, limit = list(faint.items())[0]
-        sel = sel & (mags[band] < limit)
+    with np.errstate(invalid="ignore"):
+        sel = ((w1_w2 > -0.4) & (w1_w2 < 0.) &
+               (g_r < 1.1) &
+               (z_w1 > 1.9) & (z_w1 < 2.5) &
+               (z_w1 > (1.2*g_r + 0.95)) & (z_w1 < (1.2*g_r + 1.15)) &
+               (params["logg"] < 3.5))
+        if w1cut:
+            sel = sel & (mags["WISE_W1"] < 15.5)
+        if len(faint) > 0:
+            band, limit = list(faint.items())[0]
+            sel = sel & (mags[band] < limit)
     return sel
 
 
@@ -145,10 +146,11 @@ def bhb_masker(params, mags, faint={}):
     #       (ps_g_r < 0.05))
 
     # Just cut on EEP
-    sel = (params["eep"] < 707) & (params["eep"] > 631)
-    if len(faint) > 0:
-        band, limit = list(faint.items())[0]
-        sel = sel & (mags[band] < limit)
+    with np.errstate(invalid="ignore"):
+        sel = (params["eep"] < 707) & (params["eep"] > 631)
+        if len(faint) > 0:
+            band, limit = list(faint.items())[0]
+            sel = sel & (mags[band] < limit)
 
     return sel
 
@@ -335,12 +337,13 @@ if __name__ == "__main__":
     _ = plot_defaults(pl.rcParams)
 
     try:
-            parser.add_argument("--snr_limit", type=float, default=3.0)
-            parser.add_argument("--limit_band", type=str, default="r",
-                                help=("band for computing limiting snr, 'r' | 'g'"))
-            parser.add_argument("--use_ebv", action="store_true")
-            parser.add_argument("--use_afe", action="store_true")
-            parser.add_argument("--use_age", action="store_true")
+        parser.add_argument("--test", action="store_true")
+        parser.add_argument("--snr_limit", type=float, default=3.0)
+        parser.add_argument("--limit_band", type=str, default="r",
+                            help=("band for computing limiting snr, 'r' | 'g'"))
+        parser.add_argument("--use_ebv", action="store_true")
+        parser.add_argument("--use_afe", action="store_true")
+        parser.add_argument("--use_age", action="store_true")
     except:
         pass
 
@@ -350,7 +353,7 @@ if __name__ == "__main__":
     if config.test:
         filters = np.array(["PS_r", "PS_g", "PS_z",
                             "SDSS_u", "SDSS_g", "SDSS_r",
-                        "WISE_W1", "WISE_W2"])
+                            "WISE_W1", "WISE_W2"])
         iso = Isochrone(mistfile=config.mistiso, nnfile=config.nnfile,
                         filters=filters)
         fig, ax = show_weights(feh=-1.0, iso=iso)

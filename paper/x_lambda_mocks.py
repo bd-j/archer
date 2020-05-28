@@ -161,7 +161,7 @@ if __name__ == "__main__":
     [ax.set_ylim(-330, 330) for ax in axes[:, 0]]
     [ax.set_ylabel(r"V$_{\rm GSR}$ (${\rm km} \,\, {\rm s}^{-1}$)") for ax in axes[:, 0]]
     [ax.set_ylim(0, 90) for ax in axes[:, 1]]
-    [ax.set_ylabel(r"$R_{\rm GC}$ (kpc)") for ax in axes[:, 1]]
+    [ax.set_ylabel(r"$r_{\rm Gal}$ (kpc)") for ax in axes[:, 1]]
     [ax.set_xlabel(r"$\Lambda_{\rm Sgr}$ (deg)") for ax in axes[-1, :]]
     from matplotlib.lines import Line2D
     points = Line2D([], [], linestyle="", color="black",

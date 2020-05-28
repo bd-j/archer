@@ -20,7 +20,7 @@ def show_vlam(cat, show, ax=None, colorby=None, **plot_kwargs):
         cbh = ax.scatter(cat[show]["lambda"], cat[show]["vgsr"],
                          c=colorby[show], **plot_kwargs)
     else:
-        cbh = ax.plot(cat[show]["lambda"], cat[show]["vgsr"],
+        cbh, = ax.plot(cat[show]["lambda"], cat[show]["vgsr"],
                       **plot_kwargs)
 
     return ax, cbh
@@ -89,14 +89,19 @@ if __name__ == "__main__":
     vlaxes = []
     cbars = []
 
+    diffcolor = "crimson"
+    aname = ["trail", "lead"]
+
     # --- plot H3 ----
     for iz, zrange in enumerate(zbins):
+        print("{:.1f} < {:.1f}".format(*zrange))
         for iarm, inarm in enumerate(arms):
             vlaxes.append(fig.add_subplot(gs[iz, iarm]))
             ax = vlaxes[-1]
             with np.errstate(invalid="ignore"):
                 inz = (rcat["FeH"] < zrange[1]) & (rcat["FeH"] >= zrange[0])
             show = good & sgr & inz & inarm & cold
+            print("{} cold: {:.0f}".format(aname[iarm], show.sum()))
             #if colorby is not None:
             #    ax, cbh = show_vlam(rcat_r, show, ax=ax, colorby=colorby,
             #                        vmin=zrange[0], vmax=zrange[1], cmap="magma",
@@ -104,9 +109,14 @@ if __name__ == "__main__":
             ax, cbh = show_vlam(rcat_r, show, ax=ax, color="black", linestyle="", mew=0,
                                 marker='o', ms=2, alpha=0.9, zorder=2, linewidth=0, label="Cold")
             show = good & sgr & inz & inarm & (~cold)
-            ax, _ = show_vlam(rcat_r, show, ax=ax, color="tomato", linestyle="", mew=0.75,
-                              marker='o', ms=2, alpha=1.0, zorder=2, linewidth=0.7, label="Diffuse",
-                              fillstyle="none")
+            print("{} diffuse: {:.0f}".format(aname[iarm], show.sum()))
+            from matplotlib import colors
+            face = colors.to_rgb(diffcolor)
+            face = tuple(list(face) + [0.25])
+            ax, cb = show_vlam(rcat_r, show, ax=ax, markeredgecolor=diffcolor, markerfacecolor=face,
+                              linestyle="", mew=0.75, #fillstyle="none",
+                              marker='o', ms=2, zorder=2, linewidth=0.7, label="Diffuse",)
+            cb.set_markerfacecolor(face)
             cbars.append(cbh)
 
     vlaxes = np.array(vlaxes).reshape(nrow, ncol)
