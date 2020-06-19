@@ -5,8 +5,10 @@ dly=+0.0       # shift in Ly-Lz selection line
 flx=0.9        # select only |Lx| < flx * sqrt(Ly^2 + Lz^2)
 max_rank=2     # only use stars with XFIT_RANK <= this
 refit=false    # whether to refit the velocities
+extras=false
 
-fdir=figures/V$rcat_vers/dly$dly
+fdir=figures #V$rcat_vers/dly$dly
+ext=pdf
 mkdir -p $fdir
 
 # Fit velocities
@@ -19,46 +21,47 @@ fi
 # Figure 1
 python selection_lylz.py    --dly $dly --flx $flx --max_rank=$max_rank \
                             --rcat_vers $rcat_vers --rcat_type $rtype \
-                            --savefig --figure_dir $fdir --ncol 3 \
+                            --savefig --figure_dir $fdir --figure_extension $ext --ncol 3 \
                             --fractional_distance_error $dist_err --mag_cut --noisify_pms
 # Figure 2
 python metallicities.py     --dly $dly --flx $flx --max_rank=$max_rank \
                             --rcat_vers $rcat_vers --rcat_type $rtype \
-                            --savefig --figure_dir $fdir --reweight
+                            --savefig --figure_dir $fdir --figure_extension $ext \
+                            --reweight
 # Figure 3
 python show_velocity_fit.py --dly $dly --flx $flx --max_rank=$max_rank \
                             --rcat_vers $rcat_vers --rcat_type $rtype \
-                            --savefig --figure_dir $fdir
+                            --savefig --figure_dir $fdir --figure_extension $ext
 # Figure 4
 python ely.py               --dly $dly --flx $flx --max_rank=$max_rank \
                             --rcat_vers $rcat_vers --rcat_type $rtype \
-                            --savefig --figure_dir $fdir
+                            --savefig --figure_dir $fdir --figure_extension $ext
 # Figure 5
 python vgsr_lambda_feh.py   --dly $dly --flx $flx --max_rank=$max_rank \
                             --rcat_vers $rcat_vers --rcat_type $rtype \
-                            --savefig --figure_dir $fdir
+                            --savefig --figure_dir $fdir --figure_extension $ext
 # Figure 6
 python mdf_by_vlam.py       --dly $dly --flx $flx --max_rank=$max_rank \
                             --rcat_vers $rcat_vers --rcat_type $rtype \
-                            --savefig --figure_dir $fdir
+                            --savefig --figure_dir $fdir --figure_extension $ext
 # Figure 7
 python x_lambda_mocks.py    --dly $dly --flx $flx --max_rank=$max_rank \
                             --rcat_vers $rcat_vers --rcat_type $rtype \
-                            --savefig --figure_dir $fdir
+                            --savefig --figure_dir $fdir --figure_extension $ext
 # Figure 8
 python x_lambda_selectmocks.py --dly $dly --flx $flx --max_rank=$max_rank \
                                --rcat_vers $rcat_vers --rcat_type $rtype \
-                               --savefig --figure_dir $fdir \
+                               --savefig --figure_dir $fdir --figure_extension $ext \
                                --fractional_distance_error $dist_err --mag_cut --noisify_pms
 # Figure 9
 python franken_extrasig.py  --dly $dly --flx $flx --max_rank=$max_rank \
                             --rcat_vers $rcat_vers --rcat_type $rtype \
-                            --savefig --figure_dir $fdir \
+                            --savefig --figure_dir $fdir --figure_extension $ext \
                             --fractional_distance_error $dist_err --mag_cut --noisify_pms
 # Figure 10
 python quiver.py            --dly $dly --flx $flx --max_rank=$max_rank \
                             --rcat_vers $rcat_vers --rcat_type $rtype \
-                            --savefig --figure_dir $fdir \
+                            --savefig --figure_dir $fdir --figure_extension $ext \
                             --fractional_distance_error $dist_err --mag_cut --noisify_pms
 
 
@@ -66,26 +69,28 @@ python quiver.py            --dly $dly --flx $flx --max_rank=$max_rank \
 # Figure 11
 python el_unc.py            --dly $dly --flx $flx --max_rank=$max_rank \
                             --rcat_vers $rcat_vers --rcat_type $rtype \
-                            --savefig --figure_dir $fdir
+                            --savefig --figure_dir $fdir --figure_extension $ext
 # Figure 12
 python globulars.py         --dly $dly --flx $flx --max_rank=$max_rank \
                             --rcat_vers $rcat_vers --rcat_type $rtype \
-                            --savefig --figure_dir $fdir
+                            --savefig --figure_dir $fdir --figure_extension $ext
 
 # --- Extras ---
-python quiver.py            --dly $dly --flx $flx --max_rank=$max_rank \
-                            --rcat_vers $rcat_vers --rcat_type $rtype \
-                            --savefig --figure_dir $fdir \
-                            --fractional_distance_error $dist_err --split --mag_cut
-python vgsr_lambda_mocks.py --dly $dly --flx $flx --max_rank=$max_rank \
-                            --rcat_vers $rcat_vers --rcat_type $rtype \
-                            --savefig --figure_dir $fdir
-python dist_lambda_mocks.py --dly $dly --flx $flx --max_rank=$max_rank \
-                            --rcat_vers $rcat_vers --rcat_type $rtype \
-                            --savefig --figure_dir $fdir
-python beta_lambda_mocks.py --dly $dly --flx $flx --max_rank=$max_rank \
-                            --rcat_vers $rcat_vers --rcat_type $rtype \
-                            --savefig --figure_dir $fdir
-python lylz_feh.py          --dly $dly --flx $flx --max_rank=$max_rank \
-                            --rcat_vers $rcat_vers --rcat_type $rtype \
-                            --savefig --flx $flx --figure_dir $fdir
+if [ "${extras}" = true ]; then
+    python quiver.py            --dly $dly --flx $flx --max_rank=$max_rank \
+                                --rcat_vers $rcat_vers --rcat_type $rtype \
+                                --savefig --figure_dir $fdir \
+                                --fractional_distance_error $dist_err --split --mag_cut
+    python vgsr_lambda_mocks.py --dly $dly --flx $flx --max_rank=$max_rank \
+                                --rcat_vers $rcat_vers --rcat_type $rtype \
+                                --savefig --figure_dir $fdir
+    python dist_lambda_mocks.py --dly $dly --flx $flx --max_rank=$max_rank \
+                                --rcat_vers $rcat_vers --rcat_type $rtype \
+                                --savefig --figure_dir $fdir
+    python beta_lambda_mocks.py --dly $dly --flx $flx --max_rank=$max_rank \
+                                --rcat_vers $rcat_vers --rcat_type $rtype \
+                                --savefig --figure_dir $fdir
+    python lylz_feh.py          --dly $dly --flx $flx --max_rank=$max_rank \
+                                --rcat_vers $rcat_vers --rcat_type $rtype \
+                                --savefig --flx $flx --figure_dir $fdir
+fi

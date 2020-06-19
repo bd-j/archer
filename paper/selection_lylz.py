@@ -189,8 +189,8 @@ if __name__ == "__main__":
 
     # --- prettify ---
     lunit = r" ($10^3 \,\, {\rm kpc} \,\, {\rm km} \,\, {\rm s}^{-1}$)"
-    [ax.set_ylabel(r"L$_{\rm y}$" + lunit) for ax in laxes]
-    [ax.set_xlabel(r"L$_{\rm z}$" + lunit) for ax in laxes]
+    [ax.set_ylabel(r"L$_{\rm y}$" + lunit, fontsize=14) for ax in laxes]
+    [ax.set_xlabel(r"L$_{\rm z}$" + lunit, fontsize=14) for ax in laxes]
     [ax.set_ylim(*span[1]) for ax in laxes]
     [ax.set_xlim(*span[0]) for ax in laxes]
     [ax.axvline(0, linestyle="-", color="k", linewidth=0.75, alpha=0.8) for ax in laxes]
