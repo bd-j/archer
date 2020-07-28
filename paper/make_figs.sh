@@ -1,4 +1,4 @@
-rcat_vers=2_4  # Version of the rcat
+rcat_vers=3_0  # Version of the rcat
 rtype=RCAT_KIN # Use rcat values for kinematic quantities, not recomputed values
 dist_err=0.1   # distance uncertainty to use for mocks
 dly=+0.0       # shift in Ly-Lz selection line
@@ -7,7 +7,8 @@ max_rank=2     # only use stars with XFIT_RANK <= this
 refit=false    # whether to refit the velocities
 extras=false
 
-fdir=figures #V$rcat_vers/dly$dly
+fdir=figures/V$rcat_vers/dly$dly
+echo $fdir
 ext=pdf
 mkdir -p $fdir
 

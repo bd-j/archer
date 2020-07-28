@@ -29,7 +29,8 @@ if __name__ == "__main__":
     # rcat
     rcat = fits.getdata(config.rcat_file)
     rcat_r = rectify(homogenize(rcat, rtype), config.gc_frame)
-    wcat = fits.getdata("../data/catalogs/wcat_V2.4_MSG[ebv_alpha_age_PSr].fits")
+    wcat_root = "wcat_V{}_MSG".format(config.rcat_vers.replace("_", "."))
+    wcat = fits.getdata("../data/catalogs/{}[ebv_alpha_age_PSr].fits".format(wcat_root))
     #wcat = fits.getdata("../data/catalogs/wcat_V2.4_MSG_rohan.fits")
     #wcat = fits.getdata("../data/catalogs/wcat_V2.4_MSG[ebv_alpha_age_PSg].fits")
     #wcat = fits.getdata("../data/catalogs/wcat_V2.4_MSG[ebv_PSr].fits")
