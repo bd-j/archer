@@ -126,6 +126,8 @@ if __name__ == "__main__":
     art["Globular Clusters (B19)"] = Line2D([], [], linestyle="", marker="s", markersize=ms*2,
                                         markerfacecolor="tomato", markeredgecolor='k')
 
+
+
     leg = list(art.keys())
     ax.legend([art[l] for l in leg], leg, fontsize=9)
 
@@ -163,6 +165,18 @@ if __name__ == "__main__":
     #ax.text(text[0], text[1], "H3 Giants",
     #        transform=ax.transAxes, bbox=bbox)
 
+
+    # plot 5824
+    #show = gcat["name"] == "NGC 5824"
+    #ax = show_lzly(gcat_r, show, lax, linestyle="",
+    #                marker="s", markersize=ms*2, markerfacecolor="cyan",
+    #                markeredgecolor='k', alpha=1.0)
+
+    #for i, ax in enumerate(axes[0, :]):
+    #    _ = show_xlam(gcat_r, show, dist=bool(i), ax=ax, colorby=gc_feh,
+    #                    #color="cyan",
+    #                    vmin=zmin, vmax=zmax, cmap="magma",
+    #                    marker='o', s=36, alpha=1.0, zorder=3, linewidth=0.75, edgecolor="k")
 
 
     # --- plot selection line ---
