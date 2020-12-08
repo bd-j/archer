@@ -107,16 +107,17 @@ if __name__ == "__main__":
             #                        vmin=zrange[0], vmax=zrange[1], cmap="magma",
             #                        marker='o', s=4, alpha=0.8, zorder=2, linewidth=0)
             ax, cbh = show_vlam(rcat_r, show, ax=ax, color="black", linestyle="", mew=0,
-                                marker='o', ms=2, alpha=0.9, zorder=2, linewidth=0, label="Cold")
+                                marker='o', ms=2, alpha=1.0, zorder=2, linewidth=0, label="Cold")
             show = good & sgr & inz & inarm & (~cold)
             print("{} diffuse: {:.0f}".format(aname[iarm], show.sum()))
             from matplotlib import colors
             face = colors.to_rgb(diffcolor)
             face = tuple(list(face) + [0.25])
-            ax, cb = show_vlam(rcat_r, show, ax=ax, markeredgecolor=diffcolor, markerfacecolor=face,
-                              linestyle="", mew=0.75, #fillstyle="none",
-                              marker='o', ms=2, zorder=2, linewidth=0.7, label="Diffuse",)
-            cb.set_markerfacecolor(face)
+            ax, cb = show_vlam(rcat_r, show, ax=ax, color="black", linestyle="", mew=0,
+                               #markeredgecolor=diffcolor, markerfacecolor=face,
+                               #fillstyle="none",
+                               marker='o', ms=2, zorder=2, alpha=1.0, linewidth=0, label="Diffuse",)
+            #cb.set_markerfacecolor(face)
             cbars.append(cbh)
 
     vlaxes = np.array(vlaxes).reshape(nrow, ncol)
@@ -132,7 +133,7 @@ if __name__ == "__main__":
         [ax.plot(llam, lmu - config.nsigma * lsig, **mkwargs) for ax in vlaxes[:, 1]]
 
     # prettify
-    vlaxes[0, 0].legend(loc="upper left", fontsize=10)
+    #vlaxes[0, 0].legend(loc="upper left", fontsize=10)
 
     [ax.set_xlim(40, 145) for ax in vlaxes[:, 0]]
     [ax.set_xlim(195, 300) for ax in vlaxes[:, 1]]

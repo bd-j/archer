@@ -9,7 +9,7 @@ extras=false   # whether to make extra diagnostic figures
 
 fdir=figures/V$rcat_vers/dly$dly
 echo $fdir
-ext=pdf
+ext=png
 mkdir -p $fdir
 
 # Fit velocities
