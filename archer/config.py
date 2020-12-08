@@ -43,8 +43,9 @@ parser.add_argument("--max_rank", type=int,
 # --- catalog versions ---
 parser.add_argument("--rcat_vers", type=str, default="2_4")
 parser.add_argument("--rcat_type", type=str, default="RCAT_KIN")
+parser.add_argument("--gaia_vers", type=str, default="GAIADR2")
 
-parser.add_argument("--segue_cat", action="store_true")
+parser.add_argument("--use_segue", action="store_true")
 parser.add_argument("--covar_dir", type=str,
                     default=epath("$HOME/Projects/archer/data/catalogs/covar"))
 

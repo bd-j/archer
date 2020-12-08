@@ -1,4 +1,6 @@
-rcat_vers=2_4  # Version of the rcat
+#rcat_vers=2_4  # Version of the rcat
+rcat_vers=3_0_2_d20201005
+gaia_vers=GAIAEDR3
 rtype=RCAT_KIN # Use rcat values for kinematic quantities, not recomputed values
 dist_err=0.1   # distance uncertainty to use for mocks
 dly=+0.0       # shift in Ly-Lz selection line
@@ -21,7 +23,7 @@ fi
 
 # Figure 1
 python selection_lylz.py    --dly $dly --flx $flx --max_rank=$max_rank \
-                            --rcat_vers $rcat_vers --rcat_type $rtype \
+                            --rcat_vers $rcat_vers --rcat_type $rtype --gaia_vers=$gaia_vers \
                             --savefig --figure_dir $fdir --figure_extension $ext --ncol 3 \
                             --fractional_distance_error $dist_err --mag_cut --noisify_pms
 # Figure 2
@@ -95,3 +97,7 @@ if [ "${extras}" = true ]; then
                                 --rcat_vers $rcat_vers --rcat_type $rtype \
                                 --savefig --flx $flx --figure_dir $fdir
 fi
+
+if false; then
+    python make_weight.py --rcat_vers $rcat_vers --snr_limt=3 --limit_band=r \
+                          --use_ebv --use_afe --use_age

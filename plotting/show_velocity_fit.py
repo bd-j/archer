@@ -73,7 +73,7 @@ if __name__ == "__main__":
     nsig = config.nsig
 
     rcat = fits.getdata(config.rcat_file)
-    rcat_r = rectify(homogenize(rcat, rtype), config.gc_frame)
+    rcat_r = rectify(homogenize(rcat, rtype, gaia_vers=config.gaia_vers), config.gc_frame)
 
     # selection
     from make_selection import rcat_select

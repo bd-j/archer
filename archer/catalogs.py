@@ -37,8 +37,8 @@ derived_columns = [("x_gal", u.kpc, "galactocentric"),
 # H3 RCAT
 rcat_cols = {"ra": "RA",
              "dec": "DEC",
-             "pmra": "GAIADR2_PMRA",
-             "pmdec": "GAIADR2_PMDEC",
+             "pmra": "gaiavers_PMRA",
+             "pmdec": "gaiavers_PMDEC",
              "dist": "dist_adpt",
              "vrad": "Vrad",
              "flag": "FLAG"}
@@ -128,9 +128,9 @@ COLMAPS = {"RCAT": rcat_cols,
 
 
 def homogenize(cat, catname="", pcat=None, noisify_pms=False, seds=None,
-               fractional_distance_error=0.0):
+               fractional_distance_error=0.0, gaia_vers="GAIADR2"):
     """Construct an auxiliary, row matched, catalog that has a standardized
-    set of column names for phase spece infomation.
+    set of column names for phase spece information.
 
     Parameters
     ----------
@@ -156,6 +156,7 @@ def homogenize(cat, catname="", pcat=None, noisify_pms=False, seds=None,
         if type(mapping) is tuple:
             ncat[c] = mapping[1](cat[mapping[0]])
         else:
+            mapping = mapping.replace("gaiavers", gaia_vers)
             ncat[c] = cat[mapping]
 
     if (catname == "RCAT") & (len(cat) < 1000):
@@ -272,4 +273,4 @@ def pm_sigma(seds, bands=["Gaia_G_MAW", "Bessell_V", "Bessell_I"], dist=None):
     factors = np.array([0.556, 0.496]) # pmra, pmdec
 
     sigma = factors[:, None] * s_pi * 1e-3
-    return sigma  
+    return sigma

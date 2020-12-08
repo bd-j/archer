@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     # rcat
     rcat = fits.getdata(config.rcat_file)
-    rcat_r = rectify(homogenize(rcat, rtype), config.gc_frame)
+    rcat_r = rectify(homogenize(rcat, rtype, gaia_vers=config.gaia_vers), config.gc_frame)
     pcat = fits.getdata(config.pcat_file)
 
     # lm10
@@ -71,8 +71,8 @@ if __name__ == "__main__":
 
     maker = SEDmaker(nnfile=config.nnfile, mistfile=config.mistfile,
                      ageweight=False)
-    
-  
+
+
     n_star = len(energy)
     feh = -2 * (1 + energy)
     mini = power_rndm(0.76, 0.9, -2.3, size=n_star)
@@ -88,6 +88,6 @@ if __name__ == "__main__":
     ax.hist(cat["feh"][unbound], bins=20, density=True, alpha=0.5,
             label=r"$0.76 < M_{i} < 0.9, \, \log({\rm Age}) \sim \mathcal{N}(10.07, 0.01)$")
     mag = cat["PS_r"] + 5 * np.log10(lm10_r["dist"])
-    sel = (mag < 18.5) & (mag > 15) & (unbound)     
+    sel = (mag < 18.5) & (mag > 15) & (unbound)
     ax.hist(cat["feh"][sel], bins=20, density=True, alpha=0.5,
             label=r"$15 < r < 18.5$")

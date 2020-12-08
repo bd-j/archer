@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     # rcat
     rcat = fits.getdata(config.rcat_file)
-    rcat_r = rectify(homogenize(rcat, rtype), config.gc_frame)
+    rcat_r = rectify(homogenize(rcat, rtype, gaia_vers=config.gaia_vers), config.gc_frame)
     wcat = fits.getdata("../data/catalogs/wcat_V2.4_MSG[ebv_alpha_age_PSr].fits")
 
     # selections

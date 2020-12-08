@@ -13,7 +13,7 @@ except ImportError:
     from distutils.core import setup
     setup
 
-    
+
 setup(
     name="archer",
     url="https://github.com/bd=j/archer",
