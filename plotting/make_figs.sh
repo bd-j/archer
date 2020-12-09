@@ -99,5 +99,6 @@ if [ "${extras}" = true ]; then
 fi
 
 if false; then
-    python make_weight.py --rcat_vers $rcat_vers --snr_limt=3 --limit_band=r \
+    python make_weight.py --rcat_vers $rcat_vers --snr_limit=3 --limit_band=r \
                           --use_ebv --use_afe --use_age
+fi

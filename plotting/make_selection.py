@@ -16,7 +16,7 @@ def good_select(rcat, allow_flags=["hot", "high_vtan"], extras=True,
     # main quality selection
     with np.errstate(invalid="ignore"):
         good = (ok_flags & (rcat["SNR"] >= snr_limit) & (rcat["V_tan"] < 900) &
-                (rcat["logg"] < 3.5) & (rcat["FeH"] >= -3) &
+                (rcat["logg"] < 3.5) &
                 (rcat["XFIT_RANK"] <= (max_rank)))
 
     # remove large L uncertainties
@@ -24,7 +24,7 @@ def good_select(rcat, allow_flags=["hot", "high_vtan"], extras=True,
     if extras:
         with np.errstate(invalid="ignore"):
             good_l = (rcat["Lz_err"] < 3e3) & (rcat["Ly_err"] < 3e3)
-            good_c = (rcat["afe"] < (-0.3*rcat["FeH"]+0.2))
+            good_c = (rcat["afe"] < (-0.3*rcat["FeH"]+0.2)) & (rcat["FeH"] >= -3)
             good = good & good_l & good_c
     else:
         print("No L error or chem cut")
