@@ -10,6 +10,7 @@ from astropy.io import fits
 from .config import rectify_config
 from .catalogs import rectify, homogenize
 from .frames import gc_frame_law10, gc_frame_dl17
+from .plotting import make_cuts
 
 
 class FigureMaker:
@@ -48,10 +49,10 @@ class FigureMaker:
         self.lm10_r = rectify(homogenize(self.lm10, "LM10"), gc_frame_law10)
 
         # noisy lm10
-        self.lm10_rn = rectify(homogenize(self.lm10, "LM10", pcat=self.pcat,
-                                          seds=self.lm10_seds, noisify_pms=config.noisify_pms,
-                                          fractional_distance_error=config.fractional_distance_error),
-                               gc_frame_law10)
+        noisy = homogenize(self.lm10, "LM10", pcat=self.pcat, seds=self.lm10_seds,
+                           noisify_pms=config.noisify_pms,
+                           fractional_distance_error=config.fractional_distance_error)
+        self.lm10_rn = rectify(noisy, gc_frame_law10)
 
     def get_dl17(self, config):
         # dl17
@@ -68,6 +69,17 @@ class FigureMaker:
         self.good_sel = good
         self.sgr_sel = sgr
         return good, sgr
+
+    def break_axes(self, axes):
+        # break axes with a little slash mark.
+        [ax.spines['right'].set_visible(False) for ax in axes[:, 0]]
+        [ax.spines['left'].set_visible(False) for ax in axes[:, 1]]
+        [ax.yaxis.set_ticklabels([]) for ax in axes[:, 1]]
+        [ax.yaxis.tick_left() for ax in axes[:, 0]]
+        [ax.yaxis.tick_right() for ax in axes[:, 1]]
+        _ = [make_cuts(ax, right=True, angle=2.0) for ax in axes[:, 0]]
+        _ = [make_cuts(ax, right=False, angle=2.0) for ax in axes[:, 1]]
+
 
 
 if __name__ == "__main__":

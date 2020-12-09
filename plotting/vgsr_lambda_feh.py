@@ -10,7 +10,6 @@ from matplotlib.colors import ListedColormap
 from astropy.io import fits
 
 from archer.config import parser
-from archer.plotting import make_cuts
 from archer.fitting import best_model, sample_posterior
 
 from archer.figuremaker import FigureMaker
@@ -44,16 +43,6 @@ class Plotter(FigureMaker):
         self.axes = np.array(vlaxes).reshape(nrow, ncol)
 
         self.break_axes(self.axes)
-
-    def break_axes(self, axes):
-        # break axes
-        [ax.spines['right'].set_visible(False) for ax in axes[:, 0]]
-        [ax.spines['left'].set_visible(False) for ax in axes[:, 1]]
-        [ax.yaxis.set_ticklabels([]) for ax in axes[:, 1]]
-        [ax.yaxis.tick_left() for ax in axes[:, 0]]
-        [ax.yaxis.tick_right() for ax in axes[:, 1]]
-        _ = [make_cuts(ax, right=True, angle=2.0) for ax in axes[:, 0]]
-        _ = [make_cuts(ax, right=False, angle=2.0) for ax in axes[:, 1]]
 
     def read_velocity_fits(self):
         pass

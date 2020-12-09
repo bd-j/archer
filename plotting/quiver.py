@@ -6,13 +6,11 @@ import numpy as np
 import matplotlib.pyplot as pl
 from matplotlib import rcParams
 
-from astropy.io import fits
-
-from archer.config import parser, rectify_config, plot_defaults
-from archer.catalogs import rectify, homogenize
-from archer.frames import gc_frame_law10
+from archer.config import parser
 from archer.plotting import hquiver
 from archer.plummer import convert_estar_rmax
+
+from archer.figuremaker import FigureMaker
 
 
 def get_axes(rcParams, figxper=5, figyper=5, nrow=1, ncol=1, **extras):
@@ -31,7 +29,6 @@ def get_axes(rcParams, figxper=5, figyper=5, nrow=1, ncol=1, **extras):
     pdict.update(extras)
 
     from matplotlib.gridspec import GridSpec
-    rcParams = plot_defaults(rcParams)
     figsize = (figxper * ncol + rightbar*cdims[3],
                figyper * nrow + topbar*cdims[3])
     fig = pl.figure(figsize=figsize)
@@ -59,6 +56,58 @@ def get_axes(rcParams, figxper=5, figyper=5, nrow=1, ncol=1, **extras):
     return fig, axes, caxes
 
 
+class Plotter(FigureMaker):
+
+    def make_axes(self, split=False):
+        vlaxes, caxes, fig = [], [], []
+        if split:
+            ncol = nrow = 1
+            for i in range(2):
+                f, axes, cax = get_axes(rcParams, ncol=1, nrow=1)
+                vlaxes += axes
+                caxes += cax
+                fig += [f]
+        else:
+            ncol, nrow = 2, 1
+            fig, vlaxes, caxes = get_axes(rcParams, ncol=ncol, nrow=nrow)
+
+        self.hax, self.lax = vlaxes
+        self.caxes = caxes
+        return fig, ncol
+
+    def show_h3(self, ax, galaxes="xz"):
+        # Plot h3
+        show = self.sgr_sel & self.good_sel #& (rcat["FeH"] < -1.9)
+        ax, cb = hquiver(self.rcat_r, show, colorby=self.rcat["FeH"],
+                         ax=ax, axes=galaxes, scale=20, #width=2e-3, alpha=0.9,
+                         vmin=-2.0, vmax=-0.1, cmap="magma")
+        ax.text(self.text[0], self.text[1], "H3", bbox=self.bbox, transform=ax.transAxes)
+
+        return cb
+
+    def show_lm10(self, ax, colorby=None, cname="", galaxes="xz", **qkwargs):
+        nshow = (self.sgr_sel & self.good_sel).sum()
+        unbound = self.lm10["tub"] > 0
+        mag = self.lm10_seds["PS_r"] + 5 * np.log10(self.lm10["dist"])
+        with np.errstate(invalid="ignore"):
+            bright = (mag > 15) & (mag < 18.5)
+        sel = unbound
+        if config.mag_cut:
+            sel = sel & bright
+
+        show = sel
+        ax, cb = hquiver(self.lm10_rn, show, colorby=colorby,
+                        ax=ax, axes=galaxes, nshow=nshow*3,
+                        alpha=0.3, **qkwargs)
+        show = sel & (self.lm10_rn["in_h3"] > 0.)
+        ax, cb = hquiver(self.lm10_rn, show, colorby=colorby,
+                        ax=ax, axes=galaxes, nshow=nshow,
+                        **qkwargs)
+        ax.text(self.text[0], self.text[1], "LM10", bbox=self.bbox, transform=ax.transAxes)
+
+        return cb
+
+
 if __name__ == "__main__":
 
     np.random.seed(101)
@@ -69,102 +118,42 @@ if __name__ == "__main__":
     except:
         pass
 
-    config = rectify_config(parser.parse_args())
-    rtype = config.rcat_type
-    frac_err = config.fractional_distance_error
-    galaxes = config.galaxes
-
-    # rcat
-    rcat = fits.getdata(config.rcat_file)
-    rcat_r = rectify(homogenize(rcat, rtype, gaia_vers=config.gaia_vers), config.gc_frame)
-    pcat = fits.getdata(config.pcat_file)
-
-    # GCs
-    gcat = fits.getdata(config.b19_file)
-    gcat_r = rectify(homogenize(gcat, "B19"), config.gc_frame)
-
-    # lm10
-    lm10 = fits.getdata(config.lm10_file)
-    sedfile = os.path.join(os.path.dirname(config.lm10_file), "LM10_seds.fits")
-    lm10_seds = fits.getdata(sedfile)
-    rmax, energy = convert_estar_rmax(lm10["estar"])
-    lm10_noiseless = rectify(homogenize(lm10, "LM10"), gc_frame_law10)
-
-    # noisy lm10
-    lm10_r = rectify(homogenize(lm10, "LM10", pcat=pcat,
-                                 seds=lm10_seds, noisify_pms=config.noisify_pms,
-                                 fractional_distance_error=frac_err),
-                      gc_frame_law10)
+    # --- Setup ---
+    args = parser.parse_args()
+    plotter = Plotter(args)
+    config = plotter.config
+    rmax, energy = convert_estar_rmax(plotter.lm10["estar"])
 
     # selections
     from make_selection import rcat_select, gc_select
-    good, sgr = rcat_select(rcat, rcat_r, max_rank=config.max_rank,
-                            dly=config.dly, flx=config.flx)
-    sgr_gcs, gc_feh = gc_select(gcat)
-    unbound = lm10["tub"] > 0
-    mag = lm10_seds["PS_r"] + 5 * np.log10(lm10_noiseless["dist"])
-    with np.errstate(invalid="ignore"):
-        bright = (mag > 15) & (mag < 18.5)
-
+    good, sgr = plotter.select(config, selector=rcat_select)
 
     # plot setup
-    text = [0.1, 0.85]
-    bbox = dict(facecolor='white')
-    vlaxes, cbars, caxes, figs = [], [], [], []
-    if config.split:
-        ncol = nrow = 1
-        for i in range(2):
-            fig, axes, cax = get_axes(rcParams, ncol=1, nrow=1)
-            vlaxes += axes
-            caxes += cax
-            figs += [fig]
-    else:
-        ncol, nrow = 2, 1
-        fig, vlaxes, caxes = get_axes(rcParams, ncol=ncol, nrow=nrow)
-
-    hax, lax = vlaxes
-
-    # Plot h3
-    show = sgr & good #& (rcat["FeH"] < -1.9)
-    nshow = show.sum()
-    ax, cb = hquiver(rcat_r, show, colorby=rcat["FeH"],
-                     ax=hax, axes=galaxes, scale=20, #width=2e-3, alpha=0.9,
-                     vmin=-2.0, vmax=-0.1, cmap="magma")
-    ax.text(text[0], text[1], "H3", bbox=bbox, transform=ax.transAxes)
-    vlaxes.append(ax)
-    cbars.append(cb)
+    plotter.plot_defaults(rcParams)
+    fig, ncol = plotter.make_axes(split=config.split)
+    plotter.bbox = dict(facecolor='white')
+    plotter.text = [0.1, 0.85]
 
     # Plot lm10
-    colorby, cname = 0.66*0.85*rmax, r"$\hat{\rm R}_{\rm prog}$ (kpc)" #r"typical radius ($\sim 0.66 \, r_{\rm max}/r_0$)"
-    vmin, vmax = 0.25, 2.5
     #colorby, cname = lm10["Estar"], r"E$_\ast$"
     #vmin, vmax = 0, 1
     #colorby, cname = lm10["tub"], r"t$_{\rm unbound}$"
     #vmin, vmax = 0, 5
+    colorby, cname = 0.66*0.85*rmax, r"$\hat{\rm R}_{\rm prog}$ (kpc)" #r"typical radius ($\sim 0.66 \, r_{\rm max}/r_0$)"
+    qkwargs = dict(colorby=colorby, cname=cname, vmin=0.25, vmax=2.5, cmap="magma_r")
 
-    sel = unbound
-    if config.mag_cut:
-        sel = sel & bright
-
-    show = sel
-    ax, cb = hquiver(lm10_r, show, colorby=colorby,
-                     ax=lax, axes=galaxes, nshow=nshow*3,
-                     vmin=vmin, vmax=vmax, cmap="magma_r", alpha=0.3)
-    show = sel & (lm10_r["in_h3"] > 0.)
-    ax, cb = hquiver(lm10_r, show, colorby=colorby,
-                     ax=ax, axes=galaxes, nshow=nshow,
-                     vmin=vmin, vmax=vmax, cmap="magma_r")
-    ax.text(text[0], text[1], "LM10", bbox=bbox, transform=ax.transAxes)
-    vlaxes.append(ax)
-    cbars.append(cb)
+    # Plots
+    cbh = plotter.show_h3(plotter.hax, galaxes=config.galaxes)
+    cbl = plotter.show_lm10(plotter.lax, galaxes=config.galaxes, **qkwargs)
 
     # prettify
-    [ax.set_xlim(-70, 40) for ax in vlaxes]
-    [ax.set_ylim(-80, 80) for ax in vlaxes]
-    [ax.set_xlabel(r"{}$_{{\rm Gal}}$ (kpc)".format(galaxes[0].upper())) for ax in vlaxes]
-    [ax.set_ylabel(r"{}$_{{\rm Gal}}$ (kpc)".format(galaxes[1].upper())) for ax in vlaxes]
+    axes = [plotter.hax, plotter.lax]
+    [ax.set_xlim(-70, 40) for ax in axes]
+    [ax.set_ylim(-80, 80) for ax in axes]
+    [ax.set_xlabel(r"{}$_{{\rm Gal}}$ (kpc)".format(config.galaxes[0].upper())) for ax in axes]
+    [ax.set_ylabel(r"{}$_{{\rm Gal}}$ (kpc)".format(config.galaxes[1].upper())) for ax in axes]
     [ax.text(-8, 0, r"$\odot$", horizontalalignment='center', verticalalignment='center')
-     for ax in vlaxes]
+     for ax in axes]
 
     # colorbars
     labels = [r"[Fe/H]", cname]
@@ -172,19 +161,18 @@ if __name__ == "__main__":
         orient = "horizontal"
     else:
         orient = "vertical"
-    for j, cb in enumerate(cbars):
-        cax = caxes[j]
+    for j, cb in enumerate([cbh, cbl]):
+        cax = plotter.caxes[j]
         cb = pl.colorbar(cb, cax=cax, label=labels[j], orientation=orient)
-
     if ncol > 1:
-        [ax.xaxis.set_ticks_position("top") for ax in caxes]
-        [ax.xaxis.set_label_position("top") for ax in caxes]
+        [ax.xaxis.set_ticks_position("top") for ax in plotter.caxes]
+        [ax.xaxis.set_label_position("top") for ax in plotter.caxes]
 
     if config.savefig:
         if config.split:
             for i, n in enumerate(["h3", "lm10"]):
                 name = "{}/quiver_{}.{}".format(config.figure_dir, n, config.figure_extension)
-                figs[i].savefig(name, dpi=config.figure_dpi)
+                fig[i].savefig(name, dpi=config.figure_dpi)
         else:
             name = "{}/quiver.{}".format(config.figure_dir, config.figure_extension)
             fig.savefig(name, dpi=config.figure_dpi)
