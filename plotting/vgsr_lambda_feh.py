@@ -10,7 +10,7 @@ from matplotlib.colors import ListedColormap
 from astropy.io import fits
 
 from archer.config import parser
-from archer.fitting import best_model, sample_posterior
+from archer.fitting import best_model
 
 from archer.figuremaker import FigureMaker
 
@@ -97,20 +97,6 @@ class Plotter(FigureMaker):
         lam = np.sort(self.rcat_r[self.good_sel & self.sgr_sel & arm]["lambda"])
         mu, sig, _ =  best_model(model, lam)
         [ax.plot(lam, mu + nsigma * sig, **mkwargs) for ax in axes]
-
-    def select_arms(self, nsigma=2):
-        self.trailing_model = "fits/h3_trailing_fit.h5"
-        self.leading_model = "fits/h3_leading_fit.h5"
-        self.trail_sel = self.rcat_r["lambda"] < 175
-        self.lead_sel =  self.rcat_r["lambda"] > 175
-
-        tmu, tsig, _ = best_model(self.trailing_model, self.rcat_r["lambda"])
-        self.cold_trail = np.abs(self.rcat_r["vgsr"] - tmu) < (nsigma * tsig)
-
-        lmu, lsig, _ = best_model(self.leading_model, self.rcat_r["lambda"])
-        self.cold_lead = np.abs(self.rcat_r["vgsr"] - lmu) < (nsigma * lsig)
-
-        self.cold = (self.trail_sel & self.cold_trail) | (self.lead_sel & self.cold_lead)
 
 
 if __name__ == "__main__":

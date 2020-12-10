@@ -10,13 +10,12 @@ from matplotlib.lines import Line2D
 
 from astropy.io import fits
 
-from archer.config import parser, rectify_config, plot_defaults
-from archer.catalogs import rectify, homogenize
-from archer.frames import gc_frame_law10, gc_frame_dl17
+from archer.config import parser
 from archer.cornerplot import twodhist
 from archer.chains import ellipse_pars, ellipse_artist
 from archer.fitting import best_model, sample_posterior
 
+from archer.figuremaker import FigureMaker
 
 def show_lzly(cat, show, ax, colorby=None, **plot_kwargs):
     if colorby is not None:
@@ -38,6 +37,23 @@ def remnant_L():
     return Lstar / 1e3
 
 
+class Plotter(FigureMaker):
+
+    def make_axes(self, nrow, ncol, span=[(-9.9, 11.5), (-14, 11)]):
+        self.ms = 3
+        figsize = (4 * ncol +2, 4 * nrow + 2)
+        self.fig = pl.figure(figsize=figsize)
+        from matplotlib.gridspec import GridSpec
+        self.gs = GridSpec(nrow, ncol, width_ratios=ncol * [10],
+                           left=0.1, right=0.95, wspace=0.25, top=0.93)
+        #gsc = GridSpec(1, 2, left=0.1, right=0.95, wspace=0.3,
+        #               bottom=0.89, top=0.95)
+        axes = [self.fig.add_subplot(self.gs[iz, iarm]) for iz in range(nrow) for iarm in range(ncol)]
+        self.axes = np.array(axes).reshape(nrow, ncol)
+
+        return self.fig, self.axes
+
+
 if __name__ == "__main__":
 
     zbins = [(-0.8, -0.1),
@@ -49,88 +65,46 @@ if __name__ == "__main__":
         parser.add_argument("--nsigma", type=float, default=2.)
     except:
         pass
-    config = rectify_config(parser.parse_args())
-    rtype = config.rcat_type
-    frac_err = config.fractional_distance_error
-    nrow = len(zbins)
-    ncol = 2
-    pcat = fits.getdata(config.pcat_file)
-
-    # rcat
-    rcat = fits.getdata(config.rcat_file)
-    rcat_r = rectify(homogenize(rcat, rtype, gaia_vers=config.gaia_vers), config.gc_frame)
-    lsgr = remnant_L()
+    args = parser.parse_args()
+    plotter = Plotter(args)
+    config = plotter.config
 
     # selections
     from make_selection import rcat_select, gc_select
-    good, sgr = rcat_select(rcat, rcat_r, max_rank=config.max_rank,
-                            dly=config.dly, flx=config.flx)
+    good, sgr = plotter.select(config, selector=rcat_select)
+    lsgr = remnant_L()
     n_tot = (good & sgr).sum()
-
-    trail = rcat_r["lambda"] < 175
-    lead = rcat_r["lambda"] > 175
-    arms = [trail, lead]
-
-    # trailing
-    tsel = good & sgr & trail
-    tmu, tsig, _ = best_model("fits/h3_trailing_fit.h5", rcat_r["lambda"])
-    cold_trail = np.abs(rcat_r["vgsr"] - tmu) < (config.nsigma * tsig)
-    delta_vt = np.abs(rcat_r["vgsr"] - tmu) / (config.nsigma * tsig)
-
-    # leading
-    lsel = good & sgr & lead
-    lmu, lsig, _ = best_model("fits/h3_leading_fit.h5", rcat_r["lambda"])
-    cold_lead =  np.abs(rcat_r["vgsr"] - lmu) < (config.nsigma * lsig)
-    delta_vl = np.abs(rcat_r["vgsr"] - lmu) / (config.nsigma * lsig)
-
-    cold = (lead & cold_lead) | (trail & cold_trail)
-    deltas = [delta_vt, delta_vl]
+    plotter.select_arms()
+    arms = [plotter.trail_sel, plotter.lead_sel]
 
     # --- plot setup ---
-    rcParams = plot_defaults(rcParams)
+    rcParams = plotter.plot_defaults(rcParams)
     span = [(-9.9, 11.5), (-14, 11)]
-    ms = 3
-    figsize = (4 * ncol +2, 4 * nrow + 2)
-    fig = pl.figure(figsize=figsize)
-    from matplotlib.gridspec import GridSpec
-    gs = GridSpec(nrow, ncol, width_ratios=ncol * [10],
-                  left=0.1, right=0.95, wspace=0.25, top=0.93)
-    #gsc = GridSpec(1, 2, left=0.1, right=0.95, wspace=0.3,
-    #               bottom=0.89, top=0.95)
-    axes = []
+    nrow, ncol = len(zbins), 2
+    fig, axes = plotter.make_axes(nrow, ncol, span=span)
 
     # --- plot H3 ---
     for iz, zrange in enumerate(zbins):
+        with np.errstate(invalid="ignore"):
+            inz = (plotter.rcat["FeH"] < zrange[1]) & (plotter.rcat["FeH"] >= zrange[0])
         for iarm, inarm in enumerate(arms):
-            ax = fig.add_subplot(gs[iz, iarm])
-            with np.errstate(invalid="ignore"):
-                inz = (rcat["FeH"] < zrange[1]) & (rcat["FeH"] >= zrange[0])
-            show = good & sgr & inz & inarm & cold
-            ax = show_lzly(rcat_r, show, ax, linestyle="",
-                           marker="o", markersize=ms, mew=0, color='black', alpha=1.0)
-            show = good & sgr & inz & inarm & (~cold)
-            #ax, cb = show_lzly(rcat_r, show, ax, colorby=deltas[iarm],
-            #                   vmin=0, vmax=10, marker='o', s=ms**2, alpha=1.0)
-            ax = show_lzly(rcat_r, show, ax,  color="tomato", linestyle="", mew=0.7,
-                           marker='o', ms=ms, alpha=1.0, zorder=10, linewidth=0.7, label="Diffuse",
-                           fillstyle="none")
-
+            ax = axes[iz, iarm]
+            show = good & sgr & inz & inarm & plotter.cold
+            plotter.show_lylz(ax, show, color='black', alpha=1.0, label="Cold")
+            show = good & sgr & inz & inarm & (~plotter.cold)
+            plotter.show_lylz(ax, show, color="tomato", alpha=1.0, mew=0.8, zorder=10, linewidth=0.8,
+                              fillstyle="none", label="Diffuse")
             show = good & (~sgr) & inz & inarm
-            ax = show_lzly(rcat_r, show, ax, linestyle="",
-                           marker="o", markersize=2, mew=0, color='grey', alpha=1.0)
-
-            axes.append(ax)
+            plotter.show_lylz(ax, show, markersize=2, mew=0, color='grey', alpha=1.0)
 
     # --- plot selection line ---
     zz =  np.linspace(-9, 10, 100)
-    [ax.plot(zz, -0.3 * zz - 2.5, linestyle="--", color="royalblue", linewidth=2) for ax in axes]
-    [ax.plot(zz, 0.3 * zz + 2.5, linestyle="--", color="royalblue", linewidth=1) for ax in axes]
+    [ax.plot(zz, -0.3 * zz - 2.5, linestyle="--", color="royalblue", linewidth=2) for ax in axes.flat]
+    [ax.plot(zz, 0.3 * zz + 2.5, linestyle="--", color="royalblue", linewidth=1) for ax in axes.flat]
 
     [ax.plot([lsgr[2]], [lsgr[1]], label="Sgr remnant", linestyle="",
-             marker="*", markerfacecolor="royalblue", markersize=8, markeredgecolor="k",
-             ) for ax in axes]
-
-    axes = np.array(axes).reshape(nrow, ncol)
+             marker="*", markerfacecolor="royalblue", markersize=8, markeredgecolor="k")
+     for ax in axes.flat]
 
     # --- prettify ---
     lunit = r" ($10^3 \,\, {\rm kpc} \,\, {\rm km} \,\, {\rm s}^{-1}$)"

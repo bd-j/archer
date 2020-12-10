@@ -30,7 +30,7 @@ def ellipse_pars(px="Lz", py="Etot", starname="", covdir=cdir):
     cyy = cov[py][j]
     cxy = cov[px][j]
     return cxx, cyy, cxy
-    
+
 
 def ellipse_artist(x, y, vxx, vyy, vxy):
     """Get an ellipse artist based on 2-d position and covariance matrix.
@@ -40,7 +40,7 @@ def ellipse_artist(x, y, vxx, vyy, vxy):
     #e.set_clip_box(ax.bbox)
     ell.set_alpha(0.3)
     ell.set_facecolor(cmap(params[i]["amp"]))
-    """    
+    """
     from matplotlib.patches import Ellipse
 
     mu = np.array([x, y])
@@ -67,7 +67,8 @@ def samples_struct(starname, msID="V2.4", nsamples=1000):
     return dat[s]
 
 
-def get_Lstar_samples(samples, rcat_row, gc_frame=None, seed=None):
+def get_Lstar_samples(samples, rcat_row, gaia_vers="GAIAEDR3",
+                      gc_frame=None, seed=None):
     if seed is not None:
         np.random.seed(seed)
     rcat = rcat_row
@@ -82,11 +83,11 @@ def get_Lstar_samples(samples, rcat_row, gc_frame=None, seed=None):
     scat["ra"] = np.ones(n) * rcat["RA"]
     scat["dec"] = np.ones(n) * rcat["DEC"]
     # add pm uncertainties as gaussians
-    scat["pmra"] = np.random.normal(rcat["GAIADR2_PMRA"],
-                                    rcat["GAIADR2_PMRA_ERROR"],
+    scat["pmra"] = np.random.normal(rcat["{}_PMRA".format(gaia_vers)],
+                                    rcat["{}_PMRA_ERROR".format(gaia_vers)],
                                     size=n)
-    scat["pmdec"] = np.random.normal(rcat["GAIADR2_PMDEC"],
-                                     rcat["GAIADR2_PMDEC_ERROR"],
+    scat["pmdec"] = np.random.normal(rcat["{}_PMDEC".format(gaia_vers)],
+                                     rcat["{}_PMDEC_ERROR".format(gaia_vers)],
                                      size=n)
     # use the minesweeper samples for dist, vrad
     scat["dist"] = samples["Dist"] / 1e3
