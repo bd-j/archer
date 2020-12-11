@@ -59,3 +59,24 @@ sgr_fritz18 = coord.SkyCoord(ra=283.7629 * u.deg, dec=-30.4783 * u.deg,
                              pm_ra_cosdec=-2.736 * u.mas / u.yr,
                              pm_dec=-1.357 * u.mas / u.yr,
                              radial_velocity=140 * u.km / u.s)
+
+# -------------
+# AAU
+
+
+def aau_to_radec(phi1, phi2):
+    p1 = np.deg2rad(phi1)
+    p2 = np.deg2rad(phi2)
+    # Li et al 2020
+    b = np.array([np.cos(p1)*np.cos(p2),
+                  np.sin(p1)*np.cos(p2),
+                  np.sin(p2)])
+    R = np.array([[0.83697865, 0.29481904, -0.4610298],
+                  [0.51616778, -0.70514011, 0.4861566],
+                  [0.18176238, 0.64487142, 0.74236331]])
+
+    a = np.linalg.solve(R, b)
+    delta = np.arcsin(a[-1])
+    alpha = np.arcsin(a[-2] / np.cos(delta))
+
+    return np.rad2deg(alpha), np.rad2deg(delta)
